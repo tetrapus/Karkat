@@ -13,14 +13,15 @@ class Address(object):
 
 class Message(object):
     def __init__(self, raw_message):
-        address, method, target, message = raw_message.split(" ", 4)
+        address, method, target, message = raw_message.split(" ", 3)
         message = message[1:]
         self.address = Address(address)
         self.method = method
         self.context = target
         if not target.startswith("#"):
             self.context = self.address.nick
-        self.message = message
+        self.text = message
+        self.message = raw_message
 
 
 class Callback(object):

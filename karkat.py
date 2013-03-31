@@ -5,7 +5,9 @@ import collections
 import decimal
 import difflib
 import enchant
+import functools
 import fractions
+import inspect
 import json
 import math
 import os
@@ -27,7 +29,7 @@ from xml.etree import ElementTree as etree
 import yaml
 
 from threads import ColourPrinter, Caller
-from irc import Address, Callback
+from irc import Address, Callback, Message
 from text import pretty_date, ordinal, ircstrip, striplen, justifiedtable, aligntable, Buffer
 
 if "init" in sys.argv:
@@ -165,16 +167,65 @@ caller    = callers[1] # second caller is the general caller
 bg_caller = callers[0] # first caller is the background caller
 for c in callers: 
     c.start()
+                                
+# Decorators!
+def command(triggers, args=None, key=str.lower, help=None):
+    private = "!"
+    public = "@"
+    if type(triggers) == type(str):
+        triggers = [triggers]
+    triggers = map(key, triggers)
+    def decorator(funct):
+        @functools.wraps(funct)
+        def _(words, line):
+            user = Address(words[0])
+            message = Message(line)
+            try:
+                command = message.text.split(" ", 1)[0]
+                prefix, command = command[0], command[1:]
+            except IndexError:
+                return
+            else:
+                if prefix in [private, public] and key(command) in triggers:
+                    # Triggered.
 
+                    # Set up output
+                    if prefix == private:
+                        output = printer.buffer(user.nick, "NOTICE")
+                    else:
+                        output = printer.buffer(message.context, "PRIVMSG")
+
+                    # Check arguments
+                    if args is None:
+                        fargs = ()
+                    else:
+                        try:
+                            argument = message.text.split(" ", 1)[1]
+                            fargs = re.match(args, argument).groups()
+                        except (AttributeError, IndexError):
+                            if help is not None:
+                                with output as out:
+                                    out += help
+                            return
+                        else:
+                            if inspect.isgeneratorfunction(funct):
+                                with output as out:
+                                    for line in funct(message, *fargs):
+                                        out += line
+                            else:
+                                rval = funct(message, *fargs)
+                                if rval is not None:
+                                    with output as out:
+                                        out += rval
+        return _
+    return decorator
 
 class URL(object):
 
-    ssite = "http://api.bitly.com/v3/shorten?"
-    bitly = {'login': apikeys["bit.ly"]["user"], 'apiKey':apikeys["bit.ly"]["key"], 'format': "json"}
     regex = re.compile(r"\b(\w+://)?\w+(\.\w+)+/[^\s]*\b")
         
-    @classmethod
-    def uncaps(cls, url):
+    @staticmethod
+    def uncaps(url):
         page = json.decoder.JSONDecoder().decode(urllib.urlopen("http://ajax.googleapis.com/ajax/services/search/web?v=1.0&q=%s" % urllib.quote(url)).read())
         urls = [i["unescapedUrl"].encode("utf-8") for i in page["responseData"]["results"]]
         urls = [(difflib.SequenceMatcher(None, url.upper(), x.upper()).ratio(), x) for x in urls]
@@ -182,38 +233,35 @@ class URL(object):
         if urls: return max(urls, key=lambda x:x[0])[1]
         else: return url.lower()
         
-    @classmethod
-    def format(cls, url):
+    @staticmethod
+    def format(url):
         return "\x0312\x1f%s\x1f\x03" % url
     
-    @classmethod
-    def shorten(cls, url):
+    @staticmethod
+    def shorten(url):
+        args = {'login': apikeys["bit.ly"]["user"], 'apiKey':apikeys["bit.ly"]["key"], 'format': "json"}
         if not url.lower().startswith("http://"):
             url = "http://" + url
-        data = urllib.urlopen(cls.ssite + urllib.urlencode(cls.bitly) + "&longUrl=" + urllib.quote(url)).read()
+        data = urllib.urlopen("http://api.bitly.com/v3/shorten?" + urllib.urlencode(args) + "&longUrl=" + urllib.quote(url)).read()
         data = json.decoder.JSONDecoder().decode(data)
         return data["data"]["url"].encode("utf-8")        
-                                
 
-def codify(x):
-    data = dict(zip(('HOSTMASK', 'TYPE', 'CONTEXT', 'MESSAGE'), x.split(" ",3)))
-    data["CONTEXT"] = Address(data["HOSTMASK"]).nick if data["CONTEXT"] == server.nick else data["CONTEXT"]
-    return data
+@command("shorten shortgo bl bitly bit.ly".split(), "(.+)")
+def shortgo(message, url):
+    try:
+        return "「 ShortGo 」 %s" % URL.format(URL.shorten(url))
+    except:
+        return "「 ShortGo 」 That didn't work somehow."
 
-@Callback.threadsafe
-def shortgo(x, y):
-    if len(x) > 3 and len(x[3]) > 2 and x[3][1] in "!@" and x[3][2:].lower() in ["shorten", "shortgo", "bl", "bitly", "bit.ly"]:
-        target, msgtype = x[2], "PRIVMSG"
-        nick = Address(x[0]).nick
-        if target[0] != "#": 
-            target = nick
-        
+@Callback.msghandler
+def shortgo2(user, context, message):
+    if re.match("[!@](short(en|go)|bl|bit\.?ly) .+", message.text):
         try:
-            data = URL.shorten(" ".join(x[4:]))
+            data = URL.shorten(message.text.split(" ", 1)[-1])
         except:
-            printer.message("「 ShortGo 」 That didn't work somehow.", target, msgtype)
+            printer.message("「 ShortGo 」 That didn't work somehow.", message.context)
         else:
-            printer.message("「 ShortGo 」 %s" % URL.format(data), target, msgtype)
+            printer.message("「 ShortGo 」 %s" % URL.format(data), message.context)
 
 class PiApproximator(object):
     precision = 75
@@ -404,7 +452,7 @@ class SpellChecker(object):
         target = x[2]
         if target[0] != "#": 
             target = Address(x[0]).nick
-        data = self.spellcheck(codify(line)["MESSAGE"][1:])
+        data = self.spellcheck(Message(line).text)
         with sqlite3.connect("spellchecker.db") as typos:
             for i in (data or []):
                 typos.execute("INSERT INTO typos VALUES (?, ?, ?, ?)", (time.time(), nick, target, i))
@@ -424,9 +472,7 @@ class SpellChecker(object):
     @Callback.threadsafe
     def activeCorrector(self, x, y):
         if len(x) > 4 and len(x[3]) > 2 and x[3][1:].lower() == "!spell":
-            nick, msgtype = (codify(y)["CONTEXT"], "PRIVMSG")
-            if nick[0] != "#": 
-                nick = Address(x[0]).nick
+            nick, msgtype = (Message(y).context, "PRIVMSG")
             
             query = x[4]
             
@@ -462,9 +508,7 @@ class SpellChecker(object):
                 
     def correctChannel(self, x, y):
         if len(x) == 5 and x[3].lower().startswith(":!spellcheck") and (x[4].lower() in ["on", "off"] or x[4].isdigit()):
-            nick, msgtype = (codify(y)["CONTEXT"], "PRIVMSG")
-            if nick[0] != "#": 
-                nick = Address(x[0]).nick
+            nick, msgtype = (Message(y).context, "PRIVMSG")
             if x[4].lower() == "off":
                 if nick.lower() in self.channels:
                     del self.channels[nick.lower()]
@@ -1148,9 +1192,7 @@ class WolframAlpha(object):
         """
         if len(x) > 3 and len(x[3]) > 2 and ((x[3][1] in "!@" and x[3][2:].lower() in ["wolfram", "wa"]) or x[3][1] in "~`" and (len(x) > 4 or (len(x) > 3 and len(x[3]) > 3 and x[3][2] in "`~"))):
 
-            nick, msgtype = (codify(y)["CONTEXT"], "PRIVMSG")  if x[3][1] in "@~" else ("llama", "NOTICE")
-            if nick[0] != "#": 
-                nick = Address(x[0]).nick
+            nick, msgtype = (Message(y).context, "PRIVMSG")  if x[3][1] in "@~" else ("llama", "NOTICE")
             h_max = self.h_max
             if nick.lower() in self.nerf or Address(x[0]).nick.lower() in self.nerf:
                 h_max = 3
@@ -1164,7 +1206,7 @@ class WolframAlpha(object):
                         category = x[3][2:]
                         query = " ".join(x[4:])
                 else:
-                    query = codify(y)["MESSAGE"]
+                    query = Message(y).text
                     category = query[3:query.find({"(":")", "{":"}", "[":"]", "<":">"}[query[2]])]
                     query = str.rstrip(query[len(category)+4:])
             else:
@@ -1319,33 +1361,21 @@ def completetable(query, results, size=100, rowmax=None):
     return data     
 
 @Callback.threadsafe
-def complete_trigger(x, y):
+@command(triggers = ["complete", "suggest"], 
+         args     = "(.+)", 
+         help    = "「 03Google 12suggest 」 Syntax is [!@](complete|suggest) QUERY. @ will truncate the output to 3 lines, and send to the channel.")
+def complete_trigger(message, query):
     """
-    - Name: Google Suggest
-    - Identifier: Complete
     - Syntax: [!@](complete|suggest) 03query
     - Description: Ask Google for similar search queries.
-    - Access: ALL
-    - Type: Command
     """
-    if len(x) > 3 and len(x[3]) > 2 and x[3][1] in "!@" and x[3][2:].lower() in ["complete", "suggest"]:
-        nick, msgtype = (codify(y)["CONTEXT"], "PRIVMSG")  if x[3][1] == "@" else ("llama", "NOTICE")
-        if nick[0] != "#": 
-            nick = Address(x[0]).nick
-            truncate = None
-        else:
-            truncate = 3
-        if len(x) == 4:
-            printer.message("「 03Google 12suggest 」 Syntax is [:@](complete|suggest) QUERY. @ will truncate the output to 3 lines, and send to the channel.", nick, msgtype)
-        else:
-            query = " ".join(x[4:])
-            result = complete(query)
-            if result:
-                table = completetable(query, result, 100, truncate)
-                printer.message("\n".join(table), nick, msgtype)
-            else:
-                printer.message("「 03Google 12suggest 」 No results.", nick, msgtype)
-            #maxlen = len(max(result, key=len))
+    result = complete(query)
+    if result:
+        table = completetable(query, result, 100, 3 if message.context.startswith("#") else None)
+        for line in table:
+            yield line
+    else:
+        yield "「 03Google 12suggest 」 No results."
             
 def average(x): return float(sum(x))/len(x) if x else 0.00
 
@@ -1493,8 +1523,8 @@ class AI(object):
 
     @Callback.background
     def ircTrigger(self, l, data):
-        target = codify(data)["CONTEXT"]
-        data = codify(data)["MESSAGE"][1:]
+        target = l[2]
+        data = Message(data).text
         if data.lower() == ":ai":
             printer.message(self.getStats(), target)
             return
@@ -1550,9 +1580,7 @@ ai = AI()
 @Callback.threadsafe
 def google(x, y):
     if len(x) > 4 and len(x[3]) == 8 and x[3][1] in "!@." and x[3][2:].lower() == "google":
-        nick, msgtype = (codify(y)["CONTEXT"], "PRIVMSG")  if x[3][1] == "@" else ("llama", "NOTICE")
-        if nick[0] != "#": 
-            nick = Address(x[0]).nick
+        nick, msgtype = (Message(y).context, "PRIVMSG")  if x[3][1] == "@" else ("llama", "NOTICE")
         query = " ".join(x[4:])
         page = json.loads(urllib.urlopen("http://ajax.googleapis.com/ajax/services/search/web?v=1.0&q=%s" % urllib.quote(query) ).read())
         for i in page["responseData"]["results"]: 
@@ -1720,9 +1748,8 @@ class AddGame(object):
         self.history = {}
 
     def trigger(self, x, y):
-        target = codify(y)
-        nick = Address(target["HOSTMASK"]).nick
-        if target["MESSAGE"].split()[0].lower()[1:] == ".add":
+        nick = Address(x[0]).nick
+        if Message(y).text.lower() == ".add":
             if nick in self.history:
                 self.history[nick] = [(t, d) for t, d in self.history[nick] if time.time() - t < 150]
                 self.history[nick].append((time.time(), time.time() - self.history[nick][-1][0] if self.history[nick] else 0))
@@ -1831,13 +1858,9 @@ flist = {
          "376" : [aj.join,
                   lambda *x: printer.start(),
                   lambda x, y: bot.mode(server.nick, "+B")
-                  #piApprox.activate
                   ],
-         "ALL" : [
-                  #piApprox,
-                 ],
+         "ALL" : [],
          "DIE" : [ai.close,
-
                  ]
         }
 
