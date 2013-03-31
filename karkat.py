@@ -1578,15 +1578,13 @@ class AI(object):
 ai = AI()
 
 @Callback.threadsafe
-def google(x, y):
-    if len(x) > 4 and len(x[3]) == 8 and x[3][1] in "!@." and x[3][2:].lower() == "google":
-        nick, msgtype = (Message(y).context, "PRIVMSG")  if x[3][1] == "@" else ("llama", "NOTICE")
-        query = " ".join(x[4:])
-        page = json.loads(urllib.urlopen("http://ajax.googleapis.com/ajax/services/search/web?v=1.0&q=%s" % urllib.quote(query) ).read())
-        for i in page["responseData"]["results"]: 
-            printer.message("「 07Google 」 03%s :: 12%s" % (i["titleNoFormatting"].encode("utf-8"), i["unescapedUrl"].encode("utf-8")), nick, msgtype)
-            if x[3][1] != ".": break
-        if not page["responseData"]["results"]: printer.message("「 07Google 」 14No results found.", nick, msgtype)
+@command("google", "(.+)")
+def google(message, query):
+    page = json.loads(urllib.urlopen("http://ajax.googleapis.com/ajax/services/search/web?v=1.0&q=%s" % urllib.quote(query) ).read())
+    for i in page["responseData"]["results"]: 
+        yield "「 07Google 」 03%s :: 12%s" % (i["titleNoFormatting"].encode("utf-8"), i["unescapedUrl"].encode("utf-8"))
+    if not page["responseData"]["results"]:
+        yield "「 07Google 」 14No results found."
 
 
 class Weather(object):
@@ -1654,20 +1652,15 @@ class FilthRatio(object):
         return 1-ratio
 
     @Callback.threadsafe
-    def trigger(self, x, y):
-        if len(x) > 4 and len(x[3]) > 2 and x[3][1] in "!@" and x[3][2:].lower() == "filth":
-            nick, msgtype = (x[2], "PRIVMSG")  if x[3][1] == "@" else ("llama", "NOTICE")
-            if nick[0] != "#": 
-                nick = Address(x[0]).nick
-            
-            query = " ".join(x[4:])
-            try:
-                data = self.filthratio(urllib.quote(query), nick)
-                printer.message("「 05Filth ratio for %r 」 %.2f%%" % (query, data*100), nick, msgtype)
-            except TypeError:
-                printer.message("「 05Filth ratio 」 Error: Google is an asshole.", nick, msgtype)
-            except KeyError:
-                printer.message("「 05Filth ratio for %r 」 The fuck is that?" % (query), nick, msgtype)
+    @command("filth", "(.+)")
+    def trigger(self, message, query):
+        try:
+            data = self.filthratio(urllib.quote(query), message.address.nick)
+            return "「 05Filth ratio for %r 」 %.2f%%" % (query, data*100)
+        except TypeError:
+            return "「 05Filth ratio 」 Error: Google is an asshole."
+        except KeyError:
+            return "「 05Filth ratio for %r 」 The fuck is that?" % query
 
 class Checker(threading.Thread):
 
