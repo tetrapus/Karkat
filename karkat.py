@@ -177,9 +177,13 @@ def command(triggers, args=None, key=str.lower, help=None):
     triggers = map(key, triggers)
     def decorator(funct):
         @functools.wraps(funct)
-        def _(words, line):
-            user = Address(words[0])
-            message = Message(line)
+        def _(*argv):
+            message = Message(argv[-1]).text
+            user = message.address
+            if len(argv) == 3:
+                fargs = [argv[0], message]
+            else:
+                fargs = [message]
             try:
                 command = message.text.split(" ", 1)[0]
                 prefix, command = command[0], command[1:]
@@ -196,12 +200,10 @@ def command(triggers, args=None, key=str.lower, help=None):
                         output = printer.buffer(message.context, "PRIVMSG")
 
                     # Check arguments
-                    if args is None:
-                        fargs = ()
-                    else:
+                    if args is not None:
                         try:
                             argument = message.text.split(" ", 1)[1]
-                            fargs = re.match(args, argument).groups()
+                            fargs.extend(list(re.match(args, argument).groups()))
                         except (AttributeError, IndexError):
                             if help is not None:
                                 with output as out:
@@ -210,10 +212,10 @@ def command(triggers, args=None, key=str.lower, help=None):
                         else:
                             if inspect.isgeneratorfunction(funct):
                                 with output as out:
-                                    for line in funct(message, *fargs):
+                                    for line in funct(*fargs):
                                         out += line
                             else:
-                                rval = funct(message, *fargs)
+                                rval = funct(*fargs)
                                 if rval is not None:
                                     with output as out:
                                         out += rval
@@ -1634,7 +1636,6 @@ class Weather(object):
 
 
 class FilthRatio(object):
-    @staticmethod
     def filthratio(self, query, user=None):
         if user not in ipscan.known:
             ip = random.choice(ipscan.known.values())
@@ -1651,12 +1652,12 @@ class FilthRatio(object):
         
         return 1-ratio
 
-    @staticmethod
     @Callback.threadsafe
     @command("filth", "(.+)")
     def trigger(self, message, query):
+        print self, message, query
         try:
-            data = FilthRatio.filthratio(urllib.quote(query), message.address.nick)
+            data = self.filthratio(urllib.quote(query), message.address.nick)
             return "「 05Filth ratio for %r 」 %.2f%%" % (query, data*100)
         except TypeError:
             return "「 05Filth ratio 」 Error: Google is an asshole."
