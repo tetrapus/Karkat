@@ -172,14 +172,15 @@ for c in callers:
 def command(triggers, args=None, key=str.lower, help=None):
     private = "!"
     public = "@"
-    if type(triggers) == type(str):
+    if type(triggers) == str:
         triggers = [triggers]
     triggers = map(key, triggers)
     def decorator(funct):
         @functools.wraps(funct)
         def _(*argv):
-            message = Message(argv[-1]).text
+            message = Message(argv[-1])
             user = message.address
+
             if len(argv) == 3:
                 fargs = [argv[0], message]
             else:
@@ -192,7 +193,6 @@ def command(triggers, args=None, key=str.lower, help=None):
             else:
                 if prefix in [private, public] and key(command) in triggers:
                     # Triggered.
-
                     # Set up output
                     if prefix == private:
                         output = printer.buffer(user.nick, "NOTICE")
@@ -1655,7 +1655,6 @@ class FilthRatio(object):
     @Callback.threadsafe
     @command("filth", "(.+)")
     def trigger(self, message, query):
-        print self, message, query
         try:
             data = self.filthratio(urllib.quote(query), message.address.nick)
             return "「 05Filth ratio for %r 」 %.2f%%" % (query, data*100)
