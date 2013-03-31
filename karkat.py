@@ -1124,7 +1124,7 @@ class WolframAlpha(object):
         data = [re.sub(r"\\:([a-f0-9]{4})", lambda x: unichr(int(x.group(1), 16)).encode("utf-8"), i) for i in data]
         
         if len(filter(str.isalpha, reduce(lambda x, y: x.replace(y, ""), symbols.keys(), "".join(data)))) < len("".join(data)) / 2:
-            # Probably mathematical!
+            # Probably mathematical! ... Fix this.
             data = [re.sub(r"[a-z]+", lambda x: symbols[x.group(0).lower()] if x.group(0) in symbols else x.group(0), i, flags=re.IGNORECASE) for i in data]
         newdata = []
         for line in data:
@@ -1371,7 +1371,7 @@ def complete_trigger(message, query):
     """
     result = complete(query)
     if result:
-        table = completetable(query, result, 100, 3 if message.context.startswith("#") else None)
+        table = completetable(query, result, 100, 3 if message.text.startswith("!") else None)
         for line in table:
             yield line
     else:
