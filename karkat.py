@@ -1371,7 +1371,7 @@ def complete_trigger(message, query):
     """
     result = complete(query)
     if result:
-        table = completetable(query, result, 100, 3 if message.text.startswith("!") else None)
+        table = completetable(query, result, 100, 3 if message.text.startswith("@") else None)
         for line in table:
             yield line
     else:
@@ -1634,7 +1634,7 @@ class Weather(object):
 
 
 class FilthRatio(object):
-
+    @staticmethod
     def filthratio(self, query, user=None):
         if user not in ipscan.known:
             ip = random.choice(ipscan.known.values())
@@ -1651,11 +1651,12 @@ class FilthRatio(object):
         
         return 1-ratio
 
+    @staticmethod
     @Callback.threadsafe
     @command("filth", "(.+)")
     def trigger(self, message, query):
         try:
-            data = self.filthratio(urllib.quote(query), message.address.nick)
+            data = FilthRatio.filthratio(urllib.quote(query), message.address.nick)
             return "「 05Filth ratio for %r 」 %.2f%%" % (query, data*100)
         except TypeError:
             return "「 05Filth ratio 」 Error: Google is an asshole."
