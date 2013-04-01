@@ -1965,7 +1965,7 @@ try:
                     except BaseException:
                         sys.excepthook(*sys.exc_info())
 
-            if Address(line[0]).mask in server.admins and line[1] == "PRIVMSG" and (line[3][1:] in [">>>", '"""'] + map(lambda x: x+",", server.nicks) or codeReact):
+            if line[1] == "PRIVMSG" and Address(line[0]).mask in server.admins and (line[3][1:] in [">>>", '"""'] + map(lambda x: x+",", server.nicks) or codeReact):
                 if line[3][1:-1] in server.nicks and line[3][-1] == "," and line[4] == "undo":
                     # Delete the last command off the buffer
                     curcmd = curcmd[:-1]
