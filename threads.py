@@ -151,6 +151,7 @@ class Printer(WorkerThread):
                         self.send("%s %s :%s\r\n" % data)
                     except BaseException as err:
                         print >> sys.__stdout__, "Shit, error: %r\n" % err
+                        print >> sys.__stdout__, data
                     else:
                         sys.__stdout__.write(">>> %s sent." % data[0])
                         if self.work.qsize():
