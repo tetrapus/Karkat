@@ -142,7 +142,7 @@ server.connect()
 s = server.sock
 
 
-printer = ColourPrinter(server)
+printer   = ColourPrinter(server)
 callers   = [Caller() for _ in range(GP_CALLERS + 2)] # Make 4 general purpose callers.
 caller    = callers[1] # second caller is the general caller
 bg_caller = callers[0] # first caller is the background caller

@@ -1368,52 +1368,6 @@ def google(message, query):
         yield "「 07Google 」 14No results found."
 
 
-class Weather(object):
-
-    locationdata = shelve.open("weather/defaults", writeback=True)
-    locationhistory = shelve.open("weather/history", writeback=True)
-    countryformats = ["%(city)s, %(region_name)s", "%(city)s, %(country_name)s"]
-
-    api_key = apikeys["wunderground"]["key"]
-
-    @classmethod
-    def guess_location(cls, user):
-        if user in cls.locationdata:
-            return cls.locationdata["user"]
-        elif user in cls.locationhistory:
-            return max(cls.locationhistory[user], key=list.count) + ".json"
-        elif user in ipscan.known:
-            return "autoip.json?geo_ip=" + ipscan.known[user]
-
-    def get_weatherdata(self, user):
-        location = self.guess_location(user)
-        if location:
-            data = "http://api.wunderground.com/api/%s/conditions/q/%s" % (self.api_key, location)
-            data = json.loads(urllib.urlopen(data).read())
-            data = data["current_observation"]
-            station = data["station_id"]
-            # Store history.
-            self.locationhistory.setdefault("user", []).append(station)
-            conditions = {"location"     : data["display_location"]["full"],
-                          "time"         : pretty_date(int(data["local_epoch"]) - int(data["observation_epoch"])),
-                          "weather"      : data["weather"],
-                          "temperature"  : data["temperature_string"],
-                          "feels_like"   : data["feelslike_string"],
-                          "wind"         : data["wind_string"],
-                          "windchill"    : data["windchill_string"],
-                          "humidity"     : data["relative_humidity"],
-                          "visibility"   : data["visibility_km"],
-                          "precipitation": data["precip_today_metric"],
-                          "UV"           : data["UV"]
-                          }
-            format = u"""12%(location)s (%(time)s)                  Wunderground
-⎜%(weather)s, %(temperature)s                   Feels like %(feels_like)s⎟
-⎜%(wind)s                                       Wind chill %(windchill)s⎟
-⎜%(humidity)s humidity, visibility %(visibility)skm, %(precipitation)smm of precipitation. UV Index %(UV)s⎟
-⎜Monday:       ⎟""" % conditions
-        printer.message(format.encode("utf-8"))
-
-
 class FilthRatio(object):
     def filthratio(self, query, user=None):
         if user not in ipscan.known:
