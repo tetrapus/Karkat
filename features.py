@@ -386,7 +386,7 @@ def getexpr(expr, mapping):
     try:
         assert expr[0] + expr[count-1] == "()" or not expr
     except: 
-        print >> sys.__stdout__, "%s | %s | %s" % (expr, expr[0] + expr[count-1], expr[:count])
+        print >> sys.stderr, "%s | %s | %s" % (expr, expr[0] + expr[count-1], expr[:count])
     return expr[:count]
 
 def substitute(regex, sub, raw_subset):
@@ -1262,14 +1262,14 @@ class AI(object):
                 word = list(common)[0]
                 other = random.choice([i for i in stuff if word in i.lower().split()])
                 self.recent.append(other)
-                print >> sys.__stdout__, "Value constructed. Baseword: %r :: Seeds: %r & %r" % (word, answer, other)
+                print "Value constructed. Baseword: %r :: Seeds: %r & %r" % (word, answer, other)
                 answer = " ".join(answer.split()[:answer.lower().split().index(word)] + other.split()[other.lower().split().index(word):])
         
         if random.random() < self.wadsworthrate and answer[0] != "\x01":
             truncate = int(self.wadsworthconst * len(answer))
             truncate, keep = answer[:truncate], answer[truncate:]
             answer = keep.lstrip() if keep.startswith(" ") else (truncate.split(" ")[-1] + keep).lstrip()
-            print >> sys.__stdout__, "Wadsworthing. Throwing away %r, product is %r" % (truncate, answer)
+            print "Wadsworthing. Throwing away %r, product is %r" % (truncate, answer)
         
         answer = answer.split(" ")
         
@@ -1279,11 +1279,11 @@ class AI(object):
                 correction = spellchecker.spellcheck(i.lower())
                 fixed.append(i if not correction else correction[i.lower()][0])
             if " ".join(answer) != " ".join(fixed):
-                print >> sys.__stdout__, "Spellchecked. Original phrase: %r ==> %r" % (" ".join(answer), " ".join(fixed))
+                print "Spellchecked. Original phrase: %r ==> %r" % (" ".join(answer), " ".join(fixed))
                 answer = fixed
             
         if random.random() < self.tangentrate:
-            print >> sys.__stdout__, "Reprocessing data. Current state: %r" % (" ".join(answer))
+            print "Reprocessing data. Current state: %r" % (" ".join(answer))
             answer = self.getData(" ".join(answer), nick).split(" ")
         
         rval = [nick if filter(str.isalnum, i).lower() in map(str.lower, server.nicks) + ["binary", "linux"] else (i.lower().replace("bot", random.choice(["human","person"])) if i.lower().find("bot") == 0 and (i.lower() == "bot" or i[3].lower() not in "ht") else i) for i in answer]
@@ -1411,7 +1411,7 @@ class Weather(object):
 ⎜%(wind)s                                       Wind chill %(windchill)s⎟
 ⎜%(humidity)s humidity, visibility %(visibility)skm, %(precipitation)smm of precipitation. UV Index %(UV)s⎟
 ⎜Monday:       ⎟""" % conditions
-        print format.encode("utf-8")
+        printer.message(format.encode("utf-8"))
 
 
 class FilthRatio(object):

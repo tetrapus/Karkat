@@ -143,7 +143,6 @@ s = server.sock
 
 
 printer = ColourPrinter(server)
-sys.stdout = printer
 callers   = [Caller() for _ in range(GP_CALLERS + 2)] # Make 4 general purpose callers.
 caller    = callers[1] # second caller is the general caller
 bg_caller = callers[0] # first caller is the background caller
@@ -252,6 +251,7 @@ class Shell(threading.Thread):
 
     activeShell = False
     shellThread = None
+    target = None
 
     def __init__(self, shell):
         self.shell = shell
@@ -261,21 +261,22 @@ class Shell(threading.Thread):
     def run(self):
         started = time.time()
         for line in iter(self.stdout.readline, ""):
-            print line
+            printer.message(line, Shell.target)
         Shell.activeShell = False
         if time.time() - started > 2:
-            print "[Shell] Program exited with code %s"%(self.shell.poll())
+            printer.message("[Shell] Program exited with code %s"%(self.shell.poll()), Shell.target)
 
     @classmethod
     def trigger(cls, words, line):
         if Address(words[0]).mask in server.admins and words[3] == ":$":
             args = line.split(" ", 4)[-1]
+            cls.target = Message(line).context
 
             if not cls.activeShell:
                 try:
                     shell = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, preexec_fn=os.setsid)
                 except OSError:
-                    print "「 Shell Error 」 Command failed."
+                    printer.message("「 Shell Error 」 Command failed.", cls.target)
                     return
                 cls.activeShell = True
                 cls.shellThread = cls(shell)
@@ -298,6 +299,83 @@ def authenticate(x, y):
         else:
             server.sendline("msg nickserv identify %s" % password)
        
+class Interpretter(object):
+    def __init__(self):
+        self.curcmd = []
+        self.codeReact = 0
+
+    def trigger(self, words, line):
+        if Address(words[0]).mask in server.admins:
+            # TODO: modify passed in namespace's stdout.
+            if words[3][1:-1] == server.nick and words[3][-1] == "," and words[4] == "undo":
+                # Delete the last command off the buffer
+                self.curcmd.pop()
+                printer.message("oh, sure", Message(line).context)
+            elif self.codeReact:
+                # Code is being added to the buffer.
+                do = False
+                if words[3] == ':"""':
+                    # We've finished a multiline input, evaluate.
+                    self.codeReact = 0
+                    do = True
+                else:
+                    # Keep building
+                    act = line.split(" ", 3)[-1]
+                    if '"""' in act:
+                        # Is the end of the input somewhere in the text?
+                        act = act[:act.find('"""')]
+                        self.codeReact = 0
+                        do = True
+                    self.curcmd += [act[1:]]
+                if do:
+                    # Do we execute yet?
+                    try:
+                        printer.message(eval(chr(10).join(self.curcmd), globals()))
+                    except:
+                        try:
+                            exec(chr(10).join(self.curcmd), globals())
+                        except BaseException, e:
+                            printer.message("\x02「\x02\x0305 hah error \x0307 \x0315%s\x03\x02」\x02 "%(repr(e)[:repr(e).find("(")]) + str(e))
+                    self.curcmd = []
+                return
+                
+            elif words[3] == ':"""':
+                # Enable code building.
+                self.codeReact = 1
+                return
+
+            elif words[3] == ":>>>":
+
+                act = line.split(" ", 3)[-1]
+                ret = ""
+                try:
+                    act = str(act[act.index(" ")+1:]) # What the fuck?
+                except ValueError:
+                    act = ""
+                if act and (act[-1] in "\\:" or act[0] in " \t@"):
+                    self.curcmd += [act[:-1]] if act[-1] == "\\" else [act] #NTS add pre-evaluation syntax checking
+                    return
+                elif act and (act[0] + act[-1] == "\x02\x02"):
+                    ret = str(act)[1:-1]
+                    act = chr(10).join(self.curcmd)
+                    self.curcmd = []
+                elif self.curcmd:
+                    act = chr(10).join(self.curcmd) + "\n" + act
+                    self.curcmd = []
+                try: 
+                    assert "\n" not in act and not ret
+                    output = eval(act, globals())
+                    if output != None: 
+                        printer.message(repr(output))
+                except:
+                    try:
+                        exec(act, globals())
+                        if ret: 
+                            printer.message(repr(eval(ret, globals())))
+                    except BaseException, e:
+                        printer.message("\x02「\x02\x0305 oh wow\x0307 \x0315%s \x03\x02」\x02 "%(repr(e)[:repr(e).find("(")]) + str(e))      
+
+
 class CallbackSystem(object):
     def __init__(self, config="callbacks.yaml"):
         pass
@@ -319,7 +397,7 @@ flist = {
         }
 
 inline = {
-         "privmsg" : [Shell.trigger, lambda x, y: printer.setTarget(Message(y).context)],
+         "privmsg" : [Shell.trigger, lambda x, y: printer.setTarget(Message(y).context), Interpretter().trigger],
          "ping" : [lambda x, y: bot.PONG(x[1])], # refactor pls.
          "quit" : [server.userQuit],
          "part" : [server.userLeft],
@@ -396,16 +474,6 @@ class PipeWrapper(object):
         
 run = PipeWrapper()
 
-class Debugger(object):
-    def __init__(self):
-        self.curcmd = []
-        self.codereact = []
-        self.activeShell = 0
-
-curcmd = []
-codeReact = 0
-            
-
 buff = Buffer()
 
 try:
@@ -422,7 +490,7 @@ try:
             callertimeout = [_.last for _ in callers[2:]]
             longestqueue = max(callers[2:], key=lambda x: x.work.qsize())
             if all(callertimeout) and longestqueue.work.qsize() > 50:
-                print >> sys.__stdout__, "All queues backed up: expanding."
+                print "All queues backed up: expanding."
                 callers.append(Caller())
                 callers[-1].start()
                 callers.remove(longestqueue)
@@ -430,12 +498,13 @@ try:
             for c in callers[2:]:
                 ltime = c.last
                 if ltime and time.time() - ltime > 8:
-                    print >> sys.__stdout__, "Caller is taking too long: forking."
+                    print "Caller is taking too long: forking."
                     callers.remove(c)
                     callers.append(Caller(c.dump()))
                     callers[-1].start()
-                    print >> sys.__stdout__, "Caller added."
+                    print "Caller added."
 
+            # TODO: add a guard on inline functions
             for funct in inline["ALL"]:
                 funct(line_w_spaces)
             for funct in flist["ALL"]:
@@ -444,73 +513,6 @@ try:
             # Inline functions: execute immediately.
             for funct in inline.get(msgType.lower(), []):
                 funct(line, line_w_spaces)
-
-            if line[1] == "PRIVMSG" and Address(line[0]).mask in server.admins and (line[3][1:] in [">>>", '"""'] + map(lambda x: x+",", server.nicks) or codeReact):
-                if line[3][1:-1] in server.nicks and line[3][-1] == "," and line[4] == "undo":
-                    # Delete the last command off the buffer
-                    curcmd = curcmd[:-1]
-                    print "oh, sure"
-                elif codeReact:
-                    # Code is being added to the buffer.
-                    do = False
-                    if line[3] == ':"""':
-                        # We've finished a multiline input, evaluate.
-                        codeReact = 0
-                        do = True
-                    else:
-                        # Keep building
-                        act = line_w_spaces.split(" ", 3)[-1]
-                        if '"""' in act:
-                            # Is the end of the input somewhere in the text?
-                            act = act[:act.find('"""')]
-                            codeReact = 0
-                            do = True
-                        curcmd += [act[1:]]
-                    if do:
-                        # Do we execute yet?
-                        try:
-                            print eval(chr(10).join(curcmd))
-                        except:
-                            try:
-                                exec(chr(10).join(curcmd))
-                            except BaseException, e:
-                                print "\x02「\x02\x0305 hah error \x0307 \x0315%s\x03\x02」\x02 "%(repr(e)[:repr(e).find("(")]) + str(e)
-                        curcmd = []
-                    continue
-                    
-                elif line[3] == ':"""':
-                    # Enable code building.
-                    codeReact = 1
-                    continue
-
-                else:
-
-                    act = line_w_spaces.split(" ", 3)[-1]
-                    ret = ""
-                    try:
-                        act = str(act[act.index(" ")+1:]) # What the fuck?
-                    except ValueError:
-                        act = ""
-                    if act and (act[-1] in "\\:" or act[0] in " \t@"):
-                        curcmd += [act[:-1]] if act[-1] == "\\" else [act] #NTS add pre-evaluation syntax checking
-                        continue
-                    elif act and (act[0] + act[-1] == "\x02\x02"):
-                        ret = str(act)[1:-1]
-                        act = chr(10).join(curcmd)
-                        curcmd = []
-                    elif curcmd:
-                        act = chr(10).join(curcmd) + "\n" + act
-                        curcmd = []
-                    try: 
-                        assert "\n" not in act and not ret
-                        output = eval(act)
-                        if output != None: print output
-                    except:
-                        try:
-                            exec(act)
-                            if ret: print eval(ret)
-                        except BaseException, e:
-                            print "\x02「\x02\x0305 oh wow\x0307 \x0315%s \x03\x02」\x02 "%(repr(e)[:repr(e).find("(")]) + str(e)
 
             for funct in flist.get(msgType.lower(), []):
                 if Callback.isBackground(funct):
@@ -522,20 +524,20 @@ try:
 
 
 finally:
-    print >> sys.__stdout__, "Bot ended; terminating threads."
+    print "Bot ended; terminating threads."
 
     s.close()
     connected = 0
-    print >> sys.__stdout__, "Connection closed."
+    print "Connection closed."
 
     for funct in inline["DIE"]:
         funct()
-    print >> sys.__stdout__, "Cleaned up."
+    print "Cleaned up."
 
     for c in callers: c.terminate()
     printer.terminate()
-    print >> sys.__stdout__, "Terminating threads..."
+    print "Terminating threads..."
 
     printer.join()
     for c in callers: c.join()
-    print >> sys.__stdout__, "Threads terminated."
+    print "Threads terminated."
