@@ -56,7 +56,7 @@ class Connection(object):
         self.nick = None
         self.nicks = config["Nick"]
 
-        self.owners = config["Admins"]
+        self.admins = config["Admins"]
 
     def connect(self):
         self.sock = socket.socket()
@@ -1847,7 +1847,7 @@ flist = {
          "quit" : [server.userQuit],
          "part" : [server.userLeft],
          "invite" : [
-                     ajoinoi,
+                     #ajoinoi,
                     ],
          "353" : [lambda x, y: [ipscan.trigger(i if i.startswith(":") else ":"+i[1:], "") for i in x[5:]],
                  ],
