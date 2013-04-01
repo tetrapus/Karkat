@@ -29,6 +29,11 @@ Karkat reads from a socket connection to a server one line at a time and queues 
 The printer class should be the only method for sending data to the server, to prevent threading issues. NOTE: ``karkat.py`` sets stdout to privmsg to the last used channel. 
 Use printer.message(text, <channel, <method>>) to send a message to the server, or use the printer.buffer(channel) context manager to ensure multiple lines are not interleaved.
 
+### features.py
+All of the like, features are here. Currently they're just ``execfile()``'d after everything else is defined, so uh, be careful with that.
+
+It also only is run if the -f flag is passed in for some reason.
+
 ## Defining a callback
 The basic callback takes the arguments ``(words, line)`` where words is the line split by spaces, and line is the raw line from the server. Put the function in the corresponding entry in flist (where the keys are ``.lower()``'d ``word[1]``s).
 
