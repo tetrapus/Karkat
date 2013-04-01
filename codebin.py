@@ -311,3 +311,8 @@ def tabulate(items, maxlen=80, spacer="   ", outliers=0.4, dynamic=True, border=
         
     return [spacer.join(items)] # Placeholder
     # TODO: Loop to determine outliers and have variable columns if only one row exists.
+
+@Callback.threadsafe
+def ajoinoi(l, sl):
+    if Address(l[0]).nick in ["Lyucit","Lukion","Hexadecimal", "Lion"] or l[3][1:].lower() in server.channels:
+        bot.join(":%s" % l[3][1:])

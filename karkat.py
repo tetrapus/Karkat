@@ -527,11 +527,6 @@ spellchecker = SpellChecker()
 spellchecker.dictionary._add = spellchecker.dictionary.add
 spellchecker.dictionary.add = lambda x: spellchecker.dictionary._add(x) if "\n" not in x else sys.__stdout__.write("fuck you.")
 # TODO: Reintegrate spellchecker callbacks that update the nicklist.
-   
-@Callback.threadsafe
-def ajoinoi(l, sl):
-    if Address(l[0]).nick in ["Lyucit","Lukion","Hexadecimal", "Lion"] or l[3][1:].lower() in server.channels:
-        bot.join(":%s" % l[3][1:])
 
 
 class PiracyMonitor(object):
@@ -1390,27 +1385,6 @@ def benchmark(funct, args=(), kwargs={}, iterations=1000):
     return average(values)
     
 
-class AutoJoin(object):
-    chans = open("./autojoin.txt").read().strip() if "-t" not in sys.argv else "#homestuck,#adult"
-    def join(self, x, y):
-        bot.join(self.chans)
-    def trigger(self, x, y):
-        if x[3].lower() == "::autojoin" and x[2].startswith("#"):
-            if x[2].lower() in self.chans.split(","):
-                chans = self.chans.split(",")
-                chans.remove(x[2].lower())
-                self.chans = ",".join(chans)
-                with open("./autojoin.txt", "w") as chanfile:
-                    chanfile.write(self.chans)
-                printer.message("Channel removed from autojoin.", x[2])
-            else:
-                self.chans = ",".join(self.chans.split(",") + [x[2].lower()])
-                with open("./autojoin.txt", "w") as chanfile:
-                    chanfile.write(self.chans)
-                printer.message("Channel added to autojoin.", x[2])
-
-aj = AutoJoin()
-
 class AI(object):
     rickroll = open("./rickroll.txt").readlines()
     bots = "Binary Linux Google Hurd Viengoos adiosToreador gallowsCalibrator terminallyCapricious apocalypseArisen arsenicCatnip Jaheira Soap".split()
@@ -1720,20 +1694,6 @@ class Checker(threading.Thread):
 checker = Checker()
 checker.start()
 
-class Allbots:
-    def __init__(self, bots, args = ""):
-        self.bots = bots
-        self.args = args
-    def __call__(self, *data):
-        pref = self.args + (" " * bool(self.args))
-        for i in self.bots:
-            i.send(pref + (" ".join(data)) + "\n")
-    def __getattr__(self, d):
-        return Allbots(self.bots, self.args + " " + d)
-bot = Allbots([s])
-
-# 1010100100100010001011000001000011100000110010111000101100000100100110100111000001000001100000100110010010011000101
-        
         
 class AddGame(object):
     def __init__(self, path):
@@ -1760,6 +1720,47 @@ class AddGame(object):
                 printer.message("02Thanks for that %s, 03%s"%(nick, "The number has been increased to %s."%self.num))
 addg = AddGame("./addgame")
 
+
+class AutoJoin(object):
+    try:
+        chans = open("autojoin.txt").read().strip() if "-t" not in sys.argv else "#karkat"
+    except OSError:
+        open("autojoin.txt", "w")
+        chans = ""
+    def join(self, x, y):
+        if self.chans:
+            bot.join(self.chans)
+    def trigger(self, x, y):
+        if x[3].lower() == "::autojoin" and x[2].startswith("#"):
+            if x[2].lower() in self.chans.split(","):
+                chans = self.chans.split(",")
+                chans.remove(x[2].lower())
+                self.chans = ",".join(chans)
+                with open("./autojoin.txt", "w") as chanfile:
+                    chanfile.write(self.chans)
+                printer.message("Channel removed from autojoin.", x[2])
+            else:
+                self.chans = ",".join(self.chans.split(",") + [x[2].lower()])
+                with open("./autojoin.txt", "w") as chanfile:
+                    chanfile.write(self.chans)
+                printer.message("Channel added to autojoin.", x[2])
+
+aj = AutoJoin()
+
+class Allbots:
+    def __init__(self, bots, args = ""):
+        self.bots = bots
+        self.args = args
+    def __call__(self, *data):
+        pref = self.args + (" " * bool(self.args))
+        for i in self.bots:
+            i.send(pref + (" ".join(data)) + "\n")
+    def __getattr__(self, d):
+        return Allbots(self.bots, self.args + " " + d)
+bot = Allbots([s])
+
+# 1010100100100010001011000001000011100000110010111000101100000100100110100111000001000001100000100110010010011000101
+        
 
 class Shell(threading.Thread):
 
