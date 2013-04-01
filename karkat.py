@@ -56,6 +56,8 @@ class Connection(object):
         self.nick = None
         self.nicks = config["Nick"]
 
+        self.owners = config["Admins"]
+
     def connect(self):
         self.sock = socket.socket()
         self.sock.connect(self.server)
@@ -1782,7 +1784,7 @@ class Shell(threading.Thread):
 
     @classmethod
     def trigger(cls, words, line):
-        if Address(words[0]).mask == "goes.rawr" and words[3] == ":$":
+        if Address(words[0]).mask in server.admins and words[3] == ":$":
             args = line.split(" ", 4)[-1]
 
             if not cls.activeShell:
@@ -1809,7 +1811,7 @@ class CallbackSystem(object):
         pass
 
 flist = {
-         "privmsg" : [#spell,
+         "privmsg" : [
                       ipscan.trigger,
                       ai.ircTrigger,
                       google,
@@ -1958,7 +1960,7 @@ try:
                     except BaseException:
                         sys.excepthook(*sys.exc_info())
 
-            if "@goes.rawr" in line[0] and line[1] == "PRIVMSG" and (line[3][1:] in [">>>", '"""'] + map(lambda x: x+",", server.nicks) or codeReact):
+            if Address(line[0]).mask in server.admins and line[1] == "PRIVMSG" and (line[3][1:] in [">>>", '"""'] + map(lambda x: x+",", server.nicks) or codeReact):
                 if line[3][1:-1] in server.nicks and line[3][-1] == "," and line[4] == "undo":
                     # Delete the last command off the buffer
                     curcmd = curcmd[:-1]

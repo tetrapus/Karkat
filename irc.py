@@ -57,7 +57,3 @@ class Callback(object):
             message = Message(line)
             return funct(user, words[2], message) # TODO: actually make these fucking classes
         return _
-
-    @staticmethod
-    def command(funct):
-        pass
