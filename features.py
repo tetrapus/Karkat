@@ -1557,7 +1557,8 @@ flist.update({
                    #lambda x: spellchecker.dictionary.add(Address(x[0]).nick) if not spellchecker.dictionary.check(Address(x[0]).nick) else None,
                   ],
          "353" : [lambda x, y: [ipscan.trigger(i if i.startswith(":") else ":"+i[1:], "") for i in x[5:]],
-                 ],
+                 ]}
+inline.update({
          "DIE" : [ai.close,
                   joinchecker
                  ]

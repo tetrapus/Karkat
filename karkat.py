@@ -291,36 +291,42 @@ class Shell(threading.Thread):
         if cls.activeShell:
             os.killpg(cls.shellThread.shell.pid, signal.SIGTERM)
 
-
+def authenticate(x, y):
+    if "-i" in sys.argv:
+        flag = sys.argv.index("-i")
+        password = 
        
 class CallbackSystem(object):
     def __init__(self, config="callbacks.yaml"):
         pass
 
 flist = {
-         "privmsg" : [Shell.trigger],
-         "PING" : [],
-         "join" : [server.userJoin],
-         "nick" : [
-                    server.userNickchange,
-                  ],
+
          "kick" : [
-                    server.userKicked,
                     lambda x, y: bot.join(x[2]) if x[3].lower() == server.nick.lower() else None,
                   ],
-         "quit" : [server.userQuit],
-         "part" : [server.userLeft],
          "invite" : [
                      aj.onInvite
                     ],
-         "352" : [server.joinedChannel],
          "376" : [aj.join,
                   lambda *x: printer.start(),
                   lambda x, y: bot.mode(server.nick, "+B")
                   ],
          "ALL" : [],
-         "DIE" : []
         }
+
+inline = {
+         "privmsg" : [Shell.trigger, lambda x, y: printer.setTarget(Message(y).context)],
+         "ping" : [lambda x, y: bot.PONG(x[1])], # refactor pls.
+         "quit" : [server.userQuit],
+         "part" : [server.userLeft],
+         "join" : [server.userJoin],
+         "nick" : [server.userNickchange],
+         "kick" : [server.userKicked],
+         "352" : [server.joinedChannel],
+         "ALL" : [],
+         "DIE" : []
+}
 
 if "-f" in sys.argv:
     execfile("features.py")
@@ -405,19 +411,36 @@ try:
             line_w_spaces = line_w_spaces.rstrip()
             line = line_w_spaces.split()
 
-            if line[1] == "PRIVMSG" and line[2][0] == "#": # This is an inline callback.
-                printer.last = line[2]
-            elif line[1] == "PRIVMSG": 
-                printer.last = Address(line[0]).nick
-            
-            # TODO: implement priority callback.
-            if line[0]=="PING":
-                s.send("PONG %s\r\n" % line[1])
-                for i in flist["PING"]:
-                    try:
-                        i() # temp
-                    except BaseException:
-                        sys.excepthook(*sys.exc_info())
+            if line[0] == "PING":
+                msgType = line[0]
+            else:
+                msgType = line[1]
+
+            callertimeout = [_.last for _ in callers[2:]]
+            longestqueue = max(callers[2:], key=lambda x: x.work.qsize())
+            if all(callertimeout) and longestqueue.work.qsize() > 50:
+                print >> sys.__stdout__, "All queues backed up: expanding."
+                callers.append(Caller())
+                callers[-1].start()
+                callers.remove(longestqueue)
+                longestqueue.terminate()
+            for c in callers[2:]:
+                ltime = c.last
+                if ltime and time.time() - ltime > 8:
+                    print >> sys.__stdout__, "Caller is taking too long: forking."
+                    callers.remove(c)
+                    callers.append(Caller(c.dump()))
+                    callers[-1].start()
+                    print >> sys.__stdout__, "Caller added."
+
+            for funct in inline["ALL"]:
+                funct(line_w_spaces)
+            for funct in flist["ALL"]:
+                caller.queue(i, (line_w_spaces,))
+
+            # Inline functions: execute immediately.
+            for funct in inline.get(msgType.lower(), []):
+                funct(line, line_w_spaces)
 
             if line[1] == "PRIVMSG" and Address(line[0]).mask in server.admins and (line[3][1:] in [">>>", '"""'] + map(lambda x: x+",", server.nicks) or codeReact):
                 if line[3][1:-1] in server.nicks and line[3][-1] == "," and line[4] == "undo":
@@ -486,35 +509,14 @@ try:
                         except BaseException, e:
                             print "\x02「\x02\x0305 oh wow\x0307 \x0315%s \x03\x02」\x02 "%(repr(e)[:repr(e).find("(")]) + str(e)
 
-            elif len(line) > 3 and line[1] == "PRIVMSG":
-                # Why the hell is this in an elif?
-                callertimeout = [_.last for _ in callers[2:]]
-                longestqueue = max(callers[2:], key=lambda x: x.work.qsize())
-                if all(callertimeout) and longestqueue.work.qsize() > 50:
-                    print >> sys.__stdout__, "All queues backed up: expanding."
-                    callers.append(Caller())
-                    callers[-1].start()
-                    callers.remove(longestqueue)
-                    longestqueue.terminate()
-                for c in callers[2:]:
-                    ltime = c.last
-                    if ltime and time.time() - ltime > 8:
-                        print >> sys.__stdout__, "Caller is taking too long: forking."
-                        callers.remove(c)
-                        callers.append(Caller(c.dump()))
-                        callers[-1].start()
-                        print >> sys.__stdout__, "Caller added."
+            for funct in flist.get(msgType.lower(), []):
+                if Callback.isBackground(funct):
+                    bg_caller.queue(funct, (line, line_w_spaces))
+                elif Callback.isThreadsafe(funct):
+                    min(callers, key=lambda x: x.work.qsize()).queue(funct, (line, line_w_spaces))
+                else:
+                    caller.queue(funct, (line, line_w_spaces))                    
 
-            if len(line) > 1 and line[1].lower() in [_.lower() for _ in flist.keys()]:
-                for funct in flist[line[1].lower()]:
-                    if Callback.isBackground(funct):
-                        bg_caller.queue(funct, (line, line_w_spaces))
-                    elif Callback.isThreadsafe(funct):
-                        min(callers, key=lambda x: x.work.qsize()).queue(funct, (line, line_w_spaces))
-                    else:
-                        caller.queue(funct, (line, line_w_spaces))
-            for i in flist["ALL"]:
-                caller.queue(i, (line_w_spaces,))
 
 finally:
     print >> sys.__stdout__, "Bot ended; terminating threads."
@@ -523,7 +525,7 @@ finally:
     connected = 0
     print >> sys.__stdout__, "Connection closed."
 
-    for funct in flist["DIE"]:
+    for funct in inline["DIE"]:
         funct()
     print >> sys.__stdout__, "Cleaned up."
 

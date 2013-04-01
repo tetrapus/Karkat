@@ -119,6 +119,9 @@ class Printer(WorkerThread):
         self.bot = connection.sock
         self.last = "#homestuck"
 
+    def setTarget(self, channel):
+        self.last = channel
+
     def send(self, message):
         """
         Send data through the underlying socket.
