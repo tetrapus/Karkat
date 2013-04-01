@@ -113,10 +113,10 @@ class PrinterBuffer(object):
 class Printer(WorkerThread):
     """ This queue-like thread controls the output to a socket."""
 
-    def __init__(self, sock):
+    def __init__(self, connection):
         WorkerThread.__init__(self)
         self.flush = False
-        self.bot = sock
+        self.bot = connection.sock
         self.last = "#homestuck"
 
     def send(self, message):

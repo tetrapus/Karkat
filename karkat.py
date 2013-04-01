@@ -162,7 +162,7 @@ server.connect()
 s = server.sock
 
 
-printer = ColourPrinter(s)
+printer = ColourPrinter(server)
 sys.stdout = printer
 callers   = [Caller() for _ in range(GP_CALLERS + 2)] # Make 4 general purpose callers.
 caller    = callers[1] # second caller is the general caller
@@ -1561,6 +1561,7 @@ def google(message, query):
     page = json.loads(urllib.urlopen("http://ajax.googleapis.com/ajax/services/search/web?v=1.0&q=%s" % urllib.quote(query) ).read())
     for i in page["responseData"]["results"]: 
         yield "「 07Google 」 03%s :: 12%s" % (i["titleNoFormatting"].encode("utf-8"), i["unescapedUrl"].encode("utf-8"))
+        if message.text[0] == "@": return
     if not page["responseData"]["results"]:
         yield "「 07Google 」 14No results found."
 
