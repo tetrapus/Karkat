@@ -189,15 +189,15 @@ def command(triggers, args=None, key=str.lower, help=None):
                                 with output as out:
                                     out += help
                             return
-                        if inspect.isgeneratorfunction(funct):
+                    if inspect.isgeneratorfunction(funct):
+                        with output as out:
+                            for line in funct(*fargs):
+                                out += line
+                    else:
+                        rval = funct(*fargs)
+                        if rval is not None:
                             with output as out:
-                                for line in funct(*fargs):
-                                    out += line
-                        else:
-                            rval = funct(*fargs)
-                            if rval is not None:
-                                with output as out:
-                                    out += rval
+                                out += rval
         return _
     return decorator
 
