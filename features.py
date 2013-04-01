@@ -1558,11 +1558,6 @@ flist.update({
                   ],
          "353" : [lambda x, y: [ipscan.trigger(i if i.startswith(":") else ":"+i[1:], "") for i in x[5:]],
                  ],
-         "352" : [server.joinedChannel],
-         "376" : [aj.join,
-                  lambda *x: printer.start(),
-                  lambda x, y: bot.mode(server.nick, "+B")
-                  ],
          "DIE" : [ai.close,
                   joinchecker
                  ]
