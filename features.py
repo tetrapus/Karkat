@@ -1533,7 +1533,7 @@ def die(data="QUIT"):
     bot.quit(":" + ai.getData(data))
     globals()["connected"] = False
 
-flist.update({
+callbacks = {
          "privmsg" : [
                       ipscan.trigger,
                       ai.ircTrigger,
@@ -1558,8 +1558,13 @@ flist.update({
                   ],
          "353" : [lambda x, y: [ipscan.trigger(i if i.startswith(":") else ":"+i[1:], "") for i in x[5:]],
                  ]}
-inline.update({
+inlines = {
          "DIE" : [ai.close,
                   joinchecker
                  ]
-        })
+        }
+
+for i in callbacks:
+    flist.setdefault(i, []).extend(callbacks[i])
+for i in inlines:
+    inline.setdefault(i, []).extend(inlines[i])

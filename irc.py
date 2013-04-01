@@ -24,6 +24,12 @@ class Message(object):
         self.message = raw_message
 
 
+class Command(Message):
+    def __init__(self, raw_message):
+        super(Command, self).__init__(raw_message)
+        command = self.text.split(" ", 1)[0]
+        self.prefix, self.command = command[0], command[1:]
+
 class Callback(object):
     @staticmethod
     def threadsafe(funct):

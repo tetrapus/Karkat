@@ -16,7 +16,7 @@ import time
 import yaml
 
 from threads import ColourPrinter, Caller
-from irc import Address, Callback, Message
+from irc import Address, Callback, Message, Command
 from text import Buffer
 
 socket.setdefaulttimeout(1800)
@@ -160,23 +160,21 @@ def command(triggers, args=None, key=str.lower, help=None):
     def decorator(funct):
         @functools.wraps(funct)
         def _(*argv):
-            message = Message(argv[-1])
-            user = message.address
-
-            if len(argv) == 3:
-                fargs = [argv[0], message]
-            else:
-                fargs = [message]
             try:
-                command = message.text.split(" ", 1)[0]
-                prefix, command = command[0], command[1:]
+                message = Command(argv[-1])
+                user = message.address
+
+                if len(argv) == 3:
+                    fargs = [argv[0], message]
+                else:
+                    fargs = [message]
             except IndexError:
                 return
             else:
-                if prefix in [private, public] and key(command) in triggers:
+                if message.prefix in [private, public] and key(message.command) in triggers:
                     # Triggered.
                     # Set up output
-                    if prefix == private:
+                    if message.prefix == private:
                         output = printer.buffer(user.nick, "NOTICE")
                     else:
                         output = printer.buffer(message.context, "PRIVMSG")
@@ -294,14 +292,19 @@ class Shell(threading.Thread):
 def authenticate(x, y):
     if "-i" in sys.argv:
         flag = sys.argv.index("-i")
-        password = 
+        try:
+            password = sys.argv[flag+1]
+        except IndexError:
+            return
+        else:
+            server.sendline("msg nickserv identify %s" % password)
        
 class CallbackSystem(object):
     def __init__(self, config="callbacks.yaml"):
         pass
 
 flist = {
-
+         "privmsg" : [aj.trigger],
          "kick" : [
                     lambda x, y: bot.join(x[2]) if x[3].lower() == server.nick.lower() else None,
                   ],
@@ -309,6 +312,7 @@ flist = {
                      aj.onInvite
                     ],
          "376" : [aj.join,
+                  authenticate,
                   lambda *x: printer.start(),
                   lambda x, y: bot.mode(server.nick, "+B")
                   ],
@@ -436,7 +440,7 @@ try:
             for funct in inline["ALL"]:
                 funct(line_w_spaces)
             for funct in flist["ALL"]:
-                caller.queue(i, (line_w_spaces,))
+                caller.queue(funct, (line_w_spaces,))
 
             # Inline functions: execute immediately.
             for funct in inline.get(msgType.lower(), []):
