@@ -34,19 +34,25 @@ The basic callback takes the arguments ``(words, line)`` where words is the line
 
 ### Decorators
 - ``@Callback.threadsafe`` 
-Marks a function as threadsafe, which allows it to utilise the extra callables.
+marks a function as threadsafe, which allows it to utilise the extra callables.
 - ``@Callback.background``
-Marks a function as a background function (i.e low priority) which sticks it in an alternate caller.
+marks a function as a background function (i.e low priority) which sticks it in an alternate caller.
 - ``@Callback.msghandler``
-Changes the function signature of the callback to ``(Address, context, Message)``
-* Only works for callbacks of the form ":Address TYPE target :message" 
+changes the function signature of the callback to ``(Address, context, Message)``
+
+Only works for callbacks of the form ":Address TYPE target :message" 
 - ``@command(trigger, args=None or regexp, key=str.lower, help=None or str)``
-Changes the function signature of the callback to ``(message, [arg1, arg2...])``
+changes the function signature of the callback to ``(message, [arg1, arg2...])``
+
 Triggers the function only when the data matches the form ``[!@]trigger regexp``.
+
 ``trigger`` may be a string or a list of triggers. The key kwarg can be used to specify the key for what triggers are considered equivelant.
+
 ``args`` is a regular expression, with each group representing a new argument to give to the function. If None, no argument is matched.
+
 ``help`` is a string sent in place of the function's output if trigger matches, but args do not.
-* Only works for NOTICEs and PRIVMSGs
+
+Only works for NOTICEs and PRIVMSGs
 
 ## Features:
 - A list of features is available at http://www.tetrap.us/karkat
