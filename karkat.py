@@ -1729,9 +1729,14 @@ class AutoJoin(object):
     except OSError:
         open("autojoin.txt", "w")
         chans = ""
+    @Callback.threadsafe
     def join(self, x, y):
         if self.chans:
             bot.join(self.chans)
+    @Callback.threadsafe
+    def onInvite(self, words, line):
+        if Address(words[0]).mask in server.admins or words[3][1:].lower() in self.chans.lower().split(","):
+            bot.join(words[3])
     def trigger(self, x, y):
         if x[3].lower() == "::autojoin" and x[2].startswith("#"):
             if x[2].lower() in self.chans.split(","):
@@ -1847,7 +1852,7 @@ flist = {
          "quit" : [server.userQuit],
          "part" : [server.userLeft],
          "invite" : [
-                     #ajoinoi,
+                     aj.onInvite
                     ],
          "353" : [lambda x, y: [ipscan.trigger(i if i.startswith(":") else ":"+i[1:], "") for i in x[5:]],
                  ],
