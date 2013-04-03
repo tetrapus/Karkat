@@ -140,7 +140,7 @@ class Printer(WorkerThread):
         """
         if not recipient:
             recipient = self.last
-        for message in [i for i in mesg.split("\n") if i]:
+        for message in [i for i in str(mesg).split("\n") if i]:
             self.work.put((method, recipient, message))
         return mesg # Debugging
 
@@ -225,8 +225,9 @@ class ColourPrinter(Printer):
 
     def message(self, msg, recipient=None, method="PRIVMSG"):
         if method.upper() in ["PRIVMSG", "NOTICE"] and self.hasink:
-            msg = self.defaultcolor(msg)
-        Printer.message(self, msg, recipient, method)
+            mesg = self.defaultcolor(str(msg))
+        super(ColourPrinter, self).message(mesg, recipient, method)
+        return msg
 
 
 class Caller(WorkerThread):

@@ -300,6 +300,7 @@ def authenticate(x, y):
        
 def average(x): return float(sum(x))/len(x) if x else 0.00
 
+
 class Interpretter(object):
     def __init__(self):
         self.curcmd = []
@@ -308,73 +309,55 @@ class Interpretter(object):
     def trigger(self, words, line):
         if Address(words[0]).mask in server.admins:
             # TODO: modify passed in namespace's stdout.
+            data = line.split(" ", 3)[-1]
+            msgdata = Message(line)
+            do = False
             if words[3][1:-1] == server.nick and words[3][-1] == "," and words[4] == "undo":
                 # Delete the last command off the buffer
                 self.curcmd.pop()
                 printer.message("oh, sure", Message(line).context)
             elif self.codeReact:
                 # Code is being added to the buffer.
-                do = False
-                if words[3] == ':"""':
-                    # We've finished a multiline input, evaluate.
+                # Keep building
+                if '"""' in data:
+                    # Is the end of the input somewhere in the text?
                     self.codeReact = 0
                     do = True
-                else:
-                    # Keep building
-                    act = line.split(" ", 3)[-1]
-                    if '"""' in act:
-                        # Is the end of the input somewhere in the text?
-                        act = act[:act.find('"""')]
-                        self.codeReact = 0
-                        do = True
-                    self.curcmd += [act[1:]]
-                if do:
-                    # Do we execute yet?
-                    try:
-                        printer.message(str(eval(chr(10).join(self.curcmd)), globals()))
-                    except:
-                        try:
-                            exec(chr(10).join(self.curcmd), globals())
-                        except BaseException, e:
-                            printer.message("\x02「\x02\x0305 hah error \x0307 \x0315%s\x03\x02」\x02 "%(repr(e)[:repr(e).find("(")]) + str(e))
-                    self.curcmd = []
-                return
+                self.curcmd.append(data[1:].split('"""', 1)[0])
                 
-            elif words[3] == ':"""':
+            elif ':"""' in data:
                 # Enable code building.
                 self.codeReact = 1
-                return
+                act = data.split(':"""', 1)[-1]
+                if act:
+                    self.curcmd = act
 
             elif words[3] == ":>>>":
-
-                act = line.split(" ", 3)[-1]
-                ret = ""
                 try:
-                    act = str(act[act.index(" ")+1:]) # What the fuck?
-                except ValueError:
+                    act = line.split(" ", 4)[4]
+                except IndexError:
                     act = ""
                 if act and (act[-1] in "\\:" or act[0] in " \t@"):
                     self.curcmd += [act[:-1]] if act[-1] == "\\" else [act] #NTS add pre-evaluation syntax checking
-                    return
-                elif act and (act[0] + act[-1] == "\x02\x02"):
-                    ret = str(act)[1:-1]
-                    act = chr(10).join(self.curcmd)
-                    self.curcmd = []
-                elif self.curcmd:
-                    act = chr(10).join(self.curcmd) + "\n" + act
-                    self.curcmd = []
+                else:
+                    self.curcmd.append(act)
+                    do = True
+            if do:
+                code = "\n".join([re.sub("\x02(.+?)(\x02|\x0f|$)", "printer.message(\\1, %r)" % msgdata.context, i) for i in self.curcmd])
+                print "-------- Executing code --------"
+                print code
+                print "--------------------------------"
                 try: 
-                    assert "\n" not in act and not ret
-                    output = eval(act, globals())
+                    assert "\n" not in code
+                    output = eval(code, globals())
                     if output != None: 
                         printer.message(str(output))
                 except:
                     try:
-                        exec(act, globals())
-                        if ret: 
-                            printer.message(str(eval(ret, globals())))
+                        exec(code, globals())
                     except BaseException, e:
-                        printer.message("\x02「\x02\x0305 oh wow\x0307 \x0315%s \x03\x02」\x02 "%(repr(e)[:repr(e).find("(")]) + str(e))      
+                        printer.message("\x02「\x02\x0305 oh wow\x0307 \x0315%s \x03\x02」\x02 "%(repr(e)[:repr(e).find("(")]) + str(e))
+                self.curcmd = []
 
 
 class CallbackSystem(object):

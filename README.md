@@ -59,6 +59,11 @@ Triggers the function only when the data matches the form ``[!@]trigger regexp``
 
 Only works for NOTICEs and PRIVMSGs
 
+## Debugging mode
+Debugging mode can be enabled with the ``-d [threshhold]`` option. This sends server input to stdout, as well as provides warnings when the dispatcher loop takes longer than 0.15 or ``threshhold`` seconds to complete.
+
+Karkat also provides two interpretters, a bash one which may be used by sending ``$ COMMAND`` to the bot, or a python interpretter with access to the global namespace via ``>>> command`` or ``"""command"""``. Note: bolded text will be messaged back to the sending context.
+
 ## Features:
 - A list of features is available at http://www.tetrap.us/karkat
 
