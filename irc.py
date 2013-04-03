@@ -50,6 +50,17 @@ class Callback(object):
         return hasattr(funct, "isBackground") and funct.isBackground
 
     @staticmethod
+    def xchat(funct):
+        """
+        Generates the xchat version of funct's args.
+        """
+        @functools.wraps(funct)
+        def _(words, line):
+            word_eol = [line.split(" ", n)[-1] for n in range(line.count(" ") + 1)]
+            return funct(words, word_eol)
+        return _
+
+    @staticmethod
     def msghandler(funct):
         """
         A message handler is a callback that responds to lines of the form

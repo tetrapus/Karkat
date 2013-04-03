@@ -150,14 +150,14 @@ class Printer(WorkerThread):
                     try:
                         self.send("%s %s :%s\r\n" % data)
                     except BaseException as err:
-                        print >> sys.__stdout__, "Shit, error: %r\n" % err
-                        print >> sys.__stdout__, data
+                        print "Shit, error: %r\n" % err
+                        print data
                     else:
-                        sys.__stdout__.write(">>> %s sent." % data[0])
+                        sys.stdout.write(">>> %s sent." % data[0])
                         if self.work.qsize():
-                            sys.__stdout__.write(" %d items queued." %
+                            sys.stdout.write(" %d items queued." %
                                                  self.work.qsize())
-                        sys.__stdout__.write("\n")
+                        sys.stdout.write("\n")
                 else:
                     self.flush = False
                     self.work = Work()
@@ -285,9 +285,7 @@ class Caller(WorkerThread):
             try:
                 funct(*args)
             except BaseException:
-                sys.__stdout__.write("Error in function %s%s\n" %
-                                                            (funct.func_name,
-                                                             args))
+                print "Error in function %s%s" % (funct.func_name, args)
                 sys.excepthook(*sys.exc_info())
             self.last = None
         assert self.work.qsize() == 0

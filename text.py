@@ -3,6 +3,7 @@ This module contains functions that format text.
 """
 
 import re
+import time
 from datetime import timedelta
 import htmlentitydefs
 
@@ -163,3 +164,29 @@ class Buffer(object):
     def append(self, data):
         self.buffer += data
         return data
+
+class TimerBuffer(Buffer):
+    """
+    Prints out the time between loop iterations.
+    """
+
+    def __init__(self, threshhold):
+        super(TimerBuffer, self).__init__()
+        self.start = None
+        self.threshhold = threshhold
+        self.log = []
+
+    def next(self):
+        if self.start is not None:
+            timeTook = time.time() - self.start
+            if timeTook > self.threshhold:
+                print "!!! Warning: Loop executed in %r seconds." % (time.time() - self.start)
+                self.log.append(timeTook)
+        try:
+            nextVal = super(TimerBuffer, self).next()
+        except StopIteration:
+            self.start = None
+            raise
+        else:
+            self.start = time.time()
+            return nextVal

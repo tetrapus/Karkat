@@ -74,7 +74,7 @@ class Connection(object):
 
 class ServerState(Connection):
     """ Beware of thread safety when manipulating server state. If a callback
-    interacts with this class, it must either not be marked threadsafe, or be
+    interacts with this class, it must either be inlined, or be
     okay with the fact the state can change under your feet. """
 
     # TODO: Store own state
@@ -380,6 +380,9 @@ class CallbackSystem(object):
     def __init__(self, config="callbacks.yaml"):
         pass
 
+def log(line):
+    print "[%s] %s" % (server.server[0], line)
+
 flist = {
          "privmsg" : [aj.trigger],
          "kick" : [
@@ -409,9 +412,6 @@ inline = {
          "DIE" : []
 }
 
-if "-f" in sys.argv:
-    execfile("features.py")
-    # Temporary.
 
 class Pipeline(object):
     def __init__(self, descriptor=None):
@@ -474,7 +474,21 @@ class PipeWrapper(object):
         
 run = PipeWrapper()
 
-buff = Buffer()
+
+if "-f" in sys.argv:
+    execfile("features.py")
+    # Temporary.
+if "-d" in sys.argv:
+    flag = sys.argv.index("-d")
+    try:
+        thresh = float(sys.argv[flag+1])
+    except (IndexError, ValueError):
+        thresh = 0
+    inline["ALL"].append(log)
+    buff = TimerBuffer(thresh)
+else:
+    buff = Buffer()
+
 
 try:
     while connected and buff.append(s.recv(1024)):
@@ -504,15 +518,23 @@ try:
                     callers[-1].start()
                     print "Caller added."
 
-            # TODO: add a guard on inline functions
             for funct in inline["ALL"]:
-                funct(line_w_spaces)
+                try:
+                    funct(line_w_spaces)
+                except BaseException as e:
+                    print "Error in inline function %s" % funct.func_name
+                    sys.excepthook(*sys.exc_info())
+
             for funct in flist["ALL"]:
                 caller.queue(funct, (line_w_spaces,))
 
             # Inline functions: execute immediately.
             for funct in inline.get(msgType.lower(), []):
-                funct(line, line_w_spaces)
+                try:
+                    funct(line, line_w_spaces)
+                except BaseException as e:
+                    print "Error in inline function %s" % funct.func_name
+                    sys.excepthook(*sys.exc_info())
 
             for funct in flist.get(msgType.lower(), []):
                 if Callback.isBackground(funct):
@@ -541,3 +563,6 @@ finally:
     printer.join()
     for c in callers: c.join()
     print "Threads terminated."
+
+    if "-d" in sys.argv:
+        print "%d high latency events recorded, max=%r, avg=%r" % (len(buff.log), max(buff.log), average(buff.log))
