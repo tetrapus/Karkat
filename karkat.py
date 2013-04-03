@@ -86,7 +86,7 @@ class ServerState(Connection):
         super(ServerState, self).__init__(conf)
         self.channels = {}
 
-    def userLeft(self, words, line):
+    def user_left(self, words, line):
         """ Handles PARTs """
         nick = Address(words[0]).nick
         channel = words[2].lower()
@@ -95,14 +95,14 @@ class ServerState(Connection):
         else:
             self.channels[channel].remove(nick)
 
-    def userQuit(self, words, line):
+    def user_quit(self, words, line):
         """ Handles QUITs"""
         nick = Address(words[0]).nick
         for i in self.channels:
             if nick in self.channels[i]:
                 self.channels[i].remove(nick)
 
-    def userJoin(self, words, line):
+    def user_join(self, words, line):
         """ Handles JOINs """
         nick = Address(words[0]).nick
         channel = words[2][1:].lower()
@@ -112,11 +112,11 @@ class ServerState(Connection):
         else:
             self.channels[channel].append(nick)
 
-    def joinedChannel(self, words, line):
+    def joined_channel(self, words, line):
         """ Handles 352s (WHOs) """
         self.channels[words[3].lower()].append(words[7])
 
-    def userNickchange(self, words, line):
+    def user_nickchange(self, words, line):
         """ Handles NICKs """
         nick = Address(words[0]).nick
         newnick = words[2][1:]
@@ -126,7 +126,7 @@ class ServerState(Connection):
         if nick.lower() == self.nick.lower():
             self.nick = newnick
 
-    def userKicked(self, words, line):
+    def user_kicked(self, words, line):
         """ Handles KICKs """
         nick = words[3]
         channel = words[2].lower()
@@ -142,11 +142,6 @@ s = server.sock
 
 
 printer   = ColourPrinter(server)
-callers   = [Caller() for _ in range(GP_CALLERS + 2)] # Make 4 general purpose callers.
-caller    = callers[1] # second caller is the general caller
-bg_caller = callers[0] # first caller is the background caller
-for c in callers: 
-    c.start()
                                 
 # Decorators!
 def command(triggers, args=None, key=str.lower, help=None):
@@ -288,11 +283,10 @@ class Shell(threading.Thread):
         if cls.activeShell:
             os.killpg(cls.shellThread.shell.pid, signal.SIGTERM)
 
-def authenticate(x, y):
+def authenticate(words, line):
     if "-i" in sys.argv:
-        flag = sys.argv.index("-i")
         try:
-            password = sys.argv[flag+1]
+            password = sys.argv[sys.argv.index("-i")+1]
         except IndexError:
             return
         else:
@@ -311,7 +305,7 @@ class Interpretter(object):
             # TODO: modify passed in namespace's stdout.
             data = line.split(" ", 3)[-1]
             msgdata = Message(line)
-            do = False
+            evaluate = False
             if words[3][1:-1] == server.nick and words[3][-1] == "," and words[4] == "undo":
                 # Delete the last command off the buffer
                 self.curcmd.pop()
@@ -322,7 +316,7 @@ class Interpretter(object):
                 if '"""' in data:
                     # Is the end of the input somewhere in the text?
                     self.codeReact = 0
-                    do = True
+                    evaluate = True
                 self.curcmd.append(data[1:].split('"""', 1)[0])
                 
             elif ':"""' in data:
@@ -341,8 +335,8 @@ class Interpretter(object):
                     self.curcmd += [act[:-1]] if act[-1] == "\\" else [act] #NTS add pre-evaluation syntax checking
                 else:
                     self.curcmd.append(act)
-                    do = True
-            if do:
+                    evaluate = True
+            if evaluate:
                 code = "\n".join([re.sub("\x02(.+?)(\x02|\x0f|$)", "printer.message(\\1, %r)" % msgdata.context, i) for i in self.curcmd])
                 print "-------- Executing code --------"
                 print code
@@ -386,12 +380,12 @@ flist = {
 inline = {
          "privmsg" : [Shell.trigger, lambda x, y: printer.setTarget(Message(y).context), Interpretter().trigger],
          "ping" : [lambda x, y: bot.PONG(x[1])], # refactor pls.
-         "quit" : [server.userQuit],
-         "part" : [server.userLeft],
-         "join" : [server.userJoin],
-         "nick" : [server.userNickchange],
-         "kick" : [server.userKicked],
-         "352" : [server.joinedChannel],
+         "quit" : [server.user_quit],
+         "part" : [server.user_left],
+         "join" : [server.user_join],
+         "nick" : [server.user_nickchange],
+         "kick" : [server.user_kicked],
+         "352" : [server.joined_channel],
          "ALL" : [],
          "DIE" : []
 }
@@ -474,6 +468,14 @@ else:
     buff = Buffer()
 
 class CallbackDispatcher(threading.Thread):
+    def __init__(self, callers=2):
+        super(CallbackDispatcher, self).__init__()
+        self.callers   = [Caller() for _ in range(callers + 2)] # Make 4 general purpose callers.
+        self.caller    = self.callers[1] # second caller is the general caller
+        self.bg_caller = self.callers[0] # first caller is the background caller
+        for c in self.callers: 
+            c.start()
+
     def run(self):
         self.connected = True
         try:
@@ -482,53 +484,53 @@ class CallbackDispatcher(threading.Thread):
                     line = line.rstrip()
                     words = line.split()
 
-                    if words[0] == "PING":
+                    if words[0] in ["PING", "ERROR"]:
                         msgType = words[0]
                     else:
                         msgType = words[1]
 
-                    callertimeout = [_.last for _ in callers[2:]]
-                    longestqueue = max(callers[2:], key=lambda x: x.work.qsize())
+                    callertimeout = [_.last for _ in self.callers[2:]]
+                    longestqueue = max(self.callers[2:], key=lambda x: x.work.qsize())
                     if all(callertimeout) and longestqueue.work.qsize() > 50:
                         print "All queues backed up: expanding."
-                        callers.append(Caller())
-                        callers[-1].start()
-                        callers.remove(longestqueue)
+                        self.callers.append(Caller())
+                        self.callers[-1].start()
+                        self.callers.remove(longestqueue)
                         longestqueue.terminate()
-                    for c in callers[2:]:
+                    for c in self.callers[2:]:
                         ltime = c.last
                         if ltime and time.time() - ltime > 8:
                             print "Caller is taking too long: forking."
-                            callers.remove(c)
-                            callers.append(Caller(c.dump()))
-                            callers[-1].start()
+                            self.callers.remove(c)
+                            self.callers.append(Caller(c.dump()))
+                            self.callers[-1].start()
                             print "Caller added."
 
                     for funct in inline["ALL"]:
                         try:
                             funct(line)
-                        except BaseException as e:
+                        except BaseException:
                             print "Error in inline function %s" % funct.func_name
                             sys.excepthook(*sys.exc_info())
 
                     for funct in flist["ALL"]:
-                        caller.queue(funct, (line,))
+                        self.caller.queue(funct, (line,))
 
                     # Inline functions: execute immediately.
                     for funct in inline.get(msgType.lower(), []):
                         try:
                             funct(words, line)
-                        except BaseException as e:
+                        except BaseException:
                             print "Error in inline function %s" % funct.func_name
                             sys.excepthook(*sys.exc_info())
 
                     for funct in flist.get(msgType.lower(), []):
                         if Callback.isBackground(funct):
-                            bg_caller.queue(funct, (words, line))
+                            self.bg_caller.queue(funct, (words, line))
                         elif Callback.isThreadsafe(funct):
-                            min(callers, key=lambda x: x.work.qsize()).queue(funct, (words, line))
+                            min(self.callers, key=lambda x: x.work.qsize()).queue(funct, (words, line))
                         else:
-                            caller.queue(funct, (words, line))                    
+                            self.caller.queue(funct, (words, line))                    
 
 
         finally:
@@ -542,12 +544,12 @@ class CallbackDispatcher(threading.Thread):
                 funct()
             print "Cleaned up."
 
-            for c in callers: c.terminate()
+            for c in self.callers: c.terminate()
             printer.terminate()
             print "Terminating threads..."
 
             printer.join()
-            for c in callers: c.join()
+            for c in self.callers: c.join()
             print "Threads terminated."
 
             if "-d" in sys.argv and buff.log:
@@ -559,4 +561,10 @@ print "Running..."
 dispatcher.start()
 
 while dispatcher.connected:
-    exec raw_input()
+    try:
+        exec raw_input()
+    except KeyboardInterrupt:
+        print "Terminating..."
+        dispatcher.connected = False
+    except BaseException:
+        sys.excepthook(*sys.exc_info())
