@@ -1178,8 +1178,6 @@ def complete_trigger(message, query):
     else:
         yield "「 03Google 12suggest 」 No results."
             
-def average(x): return float(sum(x))/len(x) if x else 0.00
-
 def benchmark(funct, args=(), kwargs={}, iterations=1000):
     values = []
     for i in xrange(iterations):
@@ -1422,7 +1420,7 @@ class Checker(threading.Thread):
             for _ in xrange(self.interval):
                 if self.checking:
                     time.sleep(1)
-        printer.message("Stopped checking.")
+        print "Stopped checking."
         
         
     def checkMSPA(self):

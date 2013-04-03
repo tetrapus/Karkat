@@ -142,6 +142,7 @@ class Printer(WorkerThread):
             recipient = self.last
         for message in [i for i in mesg.split("\n") if i]:
             self.work.put((method, recipient, message))
+        return mesg # Debugging
 
     def run(self):
         while True:

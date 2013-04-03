@@ -17,12 +17,11 @@ import yaml
 
 from threads import ColourPrinter, Caller
 from irc import Address, Callback, Message, Command
-from text import Buffer
+from text import Buffer, TimerBuffer
 
 socket.setdefaulttimeout(1800)
 
 GP_CALLERS = 2
-connected = True
 
 class Connection(object):
     def __init__(self, conf):
@@ -299,6 +298,8 @@ def authenticate(x, y):
         else:
             server.sendline("msg nickserv identify %s" % password)
        
+def average(x): return float(sum(x))/len(x) if x else 0.00
+
 class Interpretter(object):
     def __init__(self):
         self.curcmd = []
@@ -330,7 +331,7 @@ class Interpretter(object):
                 if do:
                     # Do we execute yet?
                     try:
-                        printer.message(eval(chr(10).join(self.curcmd), globals()))
+                        printer.message(str(eval(chr(10).join(self.curcmd)), globals()))
                     except:
                         try:
                             exec(chr(10).join(self.curcmd), globals())
@@ -366,12 +367,12 @@ class Interpretter(object):
                     assert "\n" not in act and not ret
                     output = eval(act, globals())
                     if output != None: 
-                        printer.message(repr(output))
+                        printer.message(str(output))
                 except:
                     try:
                         exec(act, globals())
                         if ret: 
-                            printer.message(repr(eval(ret, globals())))
+                            printer.message(str(eval(ret, globals())))
                     except BaseException, e:
                         printer.message("\x02「\x02\x0305 oh wow\x0307 \x0315%s \x03\x02」\x02 "%(repr(e)[:repr(e).find("(")]) + str(e))      
 
@@ -489,80 +490,90 @@ if "-d" in sys.argv:
 else:
     buff = Buffer()
 
+class CallbackDispatcher(threading.Thread):
+    def run(self):
+        self.connected = True
+        try:
+            while self.connected and buff.append(s.recv(1024)):
+                for line in buff:
+                    line = line.rstrip()
+                    words = line.split()
 
-try:
-    while connected and buff.append(s.recv(1024)):
-        for line_w_spaces in buff:
-            line_w_spaces = line_w_spaces.rstrip()
-            line = line_w_spaces.split()
+                    if words[0] == "PING":
+                        msgType = words[0]
+                    else:
+                        msgType = words[1]
 
-            if line[0] == "PING":
-                msgType = line[0]
-            else:
-                msgType = line[1]
+                    callertimeout = [_.last for _ in callers[2:]]
+                    longestqueue = max(callers[2:], key=lambda x: x.work.qsize())
+                    if all(callertimeout) and longestqueue.work.qsize() > 50:
+                        print "All queues backed up: expanding."
+                        callers.append(Caller())
+                        callers[-1].start()
+                        callers.remove(longestqueue)
+                        longestqueue.terminate()
+                    for c in callers[2:]:
+                        ltime = c.last
+                        if ltime and time.time() - ltime > 8:
+                            print "Caller is taking too long: forking."
+                            callers.remove(c)
+                            callers.append(Caller(c.dump()))
+                            callers[-1].start()
+                            print "Caller added."
 
-            callertimeout = [_.last for _ in callers[2:]]
-            longestqueue = max(callers[2:], key=lambda x: x.work.qsize())
-            if all(callertimeout) and longestqueue.work.qsize() > 50:
-                print "All queues backed up: expanding."
-                callers.append(Caller())
-                callers[-1].start()
-                callers.remove(longestqueue)
-                longestqueue.terminate()
-            for c in callers[2:]:
-                ltime = c.last
-                if ltime and time.time() - ltime > 8:
-                    print "Caller is taking too long: forking."
-                    callers.remove(c)
-                    callers.append(Caller(c.dump()))
-                    callers[-1].start()
-                    print "Caller added."
+                    for funct in inline["ALL"]:
+                        try:
+                            funct(line)
+                        except BaseException as e:
+                            print "Error in inline function %s" % funct.func_name
+                            sys.excepthook(*sys.exc_info())
 
-            for funct in inline["ALL"]:
-                try:
-                    funct(line_w_spaces)
-                except BaseException as e:
-                    print "Error in inline function %s" % funct.func_name
-                    sys.excepthook(*sys.exc_info())
+                    for funct in flist["ALL"]:
+                        caller.queue(funct, (line,))
 
-            for funct in flist["ALL"]:
-                caller.queue(funct, (line_w_spaces,))
+                    # Inline functions: execute immediately.
+                    for funct in inline.get(msgType.lower(), []):
+                        try:
+                            funct(words, line)
+                        except BaseException as e:
+                            print "Error in inline function %s" % funct.func_name
+                            sys.excepthook(*sys.exc_info())
 
-            # Inline functions: execute immediately.
-            for funct in inline.get(msgType.lower(), []):
-                try:
-                    funct(line, line_w_spaces)
-                except BaseException as e:
-                    print "Error in inline function %s" % funct.func_name
-                    sys.excepthook(*sys.exc_info())
-
-            for funct in flist.get(msgType.lower(), []):
-                if Callback.isBackground(funct):
-                    bg_caller.queue(funct, (line, line_w_spaces))
-                elif Callback.isThreadsafe(funct):
-                    min(callers, key=lambda x: x.work.qsize()).queue(funct, (line, line_w_spaces))
-                else:
-                    caller.queue(funct, (line, line_w_spaces))                    
+                    for funct in flist.get(msgType.lower(), []):
+                        if Callback.isBackground(funct):
+                            bg_caller.queue(funct, (words, line))
+                        elif Callback.isThreadsafe(funct):
+                            min(callers, key=lambda x: x.work.qsize()).queue(funct, (words, line))
+                        else:
+                            caller.queue(funct, (words, line))                    
 
 
-finally:
-    print "Bot ended; terminating threads."
+        finally:
+            print "Bot ended; terminating threads."
 
-    s.close()
-    connected = 0
-    print "Connection closed."
+            s.close()
+            connected = 0
+            print "Connection closed."
 
-    for funct in inline["DIE"]:
-        funct()
-    print "Cleaned up."
+            for funct in inline["DIE"]:
+                funct()
+            print "Cleaned up."
 
-    for c in callers: c.terminate()
-    printer.terminate()
-    print "Terminating threads..."
+            for c in callers: c.terminate()
+            printer.terminate()
+            print "Terminating threads..."
 
-    printer.join()
-    for c in callers: c.join()
-    print "Threads terminated."
+            printer.join()
+            for c in callers: c.join()
+            print "Threads terminated."
 
-    if "-d" in sys.argv:
-        print "%d high latency events recorded, max=%r, avg=%r" % (len(buff.log), max(buff.log), average(buff.log))
+            if "-d" in sys.argv and buff.log:
+                print "%d high latency events recorded, max=%r, avg=%r" % (len(buff.log), max(buff.log), average(buff.log))
+        self.connected = False
+
+dispatcher = CallbackDispatcher()
+print "Running..."
+dispatcher.start()
+
+while dispatcher.connected:
+    exec raw_input()
