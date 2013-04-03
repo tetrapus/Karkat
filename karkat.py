@@ -483,7 +483,7 @@ if "-d" in sys.argv:
     try:
         thresh = float(sys.argv[flag+1])
     except (IndexError, ValueError):
-        thresh = 0
+        thresh = 0.15
     inline["ALL"].append(log)
     buff = TimerBuffer(thresh)
 else:
