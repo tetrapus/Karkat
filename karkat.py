@@ -23,7 +23,7 @@ socket.setdefaulttimeout(1800)
 
 GP_CALLERS = 2
 
-class Connection(object):
+class Connection(threading.Thread):
     def __init__(self, conf):
         config = yaml.safe_load(open(conf))
         self.sock = None
@@ -37,6 +37,20 @@ class Connection(object):
 
         self.admins = config["Admins"]
 
+        self.connected = False
+
+        if "-d" in sys.argv:
+            flag = sys.argv.index("-d")
+            try:
+                thresh = float(sys.argv[flag+1])
+            except (IndexError, ValueError):
+                thresh = 0.15
+            self.buff = TimerBuffer(thresh)
+        else:
+            self.buff = Buffer()
+
+        super(Connection, self).__init__()
+
     def connect(self):
         self.sock = socket.socket()
         self.sock.connect(self.server)
@@ -45,10 +59,9 @@ class Connection(object):
         nicks = collections.deque(self.nicks)
         self.nick = nicks.popleft()
         self.sendline("NICK %s" % self.nick)
-        # Create a temporary buffer while we find a working nickname
-        buff = Buffer()
-        while buff.append(self.sock.recv(1)):
-            for line in buff:
+        # Find a working nickname
+        while self.buff.append(self.sock.recv(1)):
+            for line in self.buff:
                 if line.startswith("PING"):
                     # We're done here.
                     self.sendline("PONG %s" % line.split()[-1])
@@ -66,9 +79,100 @@ class Connection(object):
                 continue
             break
         self.sendline("USER %s %s * :%s\r\n" % (self.username, self.mode, self.realname))
+        self.connected = True
+        self.printer = ColourPrinter(self)
 
     def sendline(self, line):
         self.sock.send("%s\r\n" % line)
+
+    def makeCallers(self, callers=2):
+        self.callers   = [Caller() for _ in range(callers + 2)] # Make 4 general purpose callers.
+        self.caller    = self.callers[1] # second caller is the general caller
+        self.bg_caller = self.callers[0] # first caller is the background caller
+        for c in self.callers: 
+            c.start()
+
+    def run(self):
+        #self.connect()
+        self.makeCallers()
+
+        try:
+            while self.connected and self.buff.append(self.sock.recv(1024)):
+                for line in self.buff:
+                    line = line.rstrip()
+                    words = line.split()
+
+                    if words[0] in ["PING", "ERROR"]:
+                        msgType = words[0]
+                    else:
+                        msgType = words[1]
+
+                    callertimeout = [_.last for _ in self.callers[2:]]
+                    longestqueue = max(self.callers[2:], key=lambda x: x.work.qsize())
+                    if all(callertimeout) and longestqueue.work.qsize() > 50:
+                        print "All queues backed up: expanding."
+                        self.callers.append(Caller())
+                        self.callers[-1].start()
+                        self.callers.remove(longestqueue)
+                        longestqueue.terminate()
+                    for c in self.callers[2:]:
+                        ltime = c.last
+                        if ltime and time.time() - ltime > 8:
+                            print "Caller is taking too long: forking."
+                            self.callers.remove(c)
+                            self.callers.append(Caller(c.dump()))
+                            self.callers[-1].start()
+                            print "Caller added."
+
+                    for funct in inline["ALL"]:
+                        try:
+                            funct(line)
+                        except BaseException:
+                            print "Error in inline function %s" % funct.func_name
+                            sys.excepthook(*sys.exc_info())
+
+                    for funct in flist["ALL"]:
+                        self.caller.queue(funct, (line,))
+
+                    # Inline functions: execute immediately.
+                    for funct in inline.get(msgType.lower(), []):
+                        try:
+                            funct(words, line)
+                        except BaseException:
+                            print "Error in inline function %s" % funct.func_name
+                            sys.excepthook(*sys.exc_info())
+
+                    for funct in flist.get(msgType.lower(), []):
+                        if Callback.isBackground(funct):
+                            self.bg_caller.queue(funct, (words, line))
+                        elif Callback.isThreadsafe(funct):
+                            min(self.callers, key=lambda x: x.work.qsize()).queue(funct, (words, line))
+                        else:
+                            self.caller.queue(funct, (words, line))                    
+
+
+        finally:
+            print "Bot ended; terminating threads."
+
+            self.sock.close()
+            connected = 0
+            print "Connection closed."
+
+            for funct in inline["DIE"]:
+                funct()
+            print "Cleaned up."
+
+            for c in self.callers: c.terminate()
+            printer.terminate()
+            print "Terminating threads..."
+
+            printer.join()
+            for c in self.callers: c.join()
+            print "Threads terminated."
+
+            if "-d" in sys.argv and self.buff.log:
+                print "%d high latency events recorded, max=%r, avg=%r" % (len(self.buff.log), max(self.buff.log), average(self.buff.log))
+            self.connected = False
 
 
 class ServerState(Connection):
@@ -141,7 +245,7 @@ server.connect()
 s = server.sock
 
 
-printer   = ColourPrinter(server)
+printer   = server.printer
                                 
 # Decorators!
 def command(triggers, args=None, key=str.lower, help=None):
@@ -354,12 +458,9 @@ class Interpretter(object):
                 self.curcmd = []
 
 
-class CallbackSystem(object):
-    def __init__(self, config="callbacks.yaml"):
-        pass
-
 def log(line):
-    print "[%s] %s" % (server.server[0], line)
+    if "-d" in sys.argv:
+        print "[%s] %s" % (server.server[0], line)
 
 flist = {
          "privmsg" : [aj.trigger],
@@ -386,185 +487,23 @@ inline = {
          "nick" : [server.user_nickchange],
          "kick" : [server.user_kicked],
          "352" : [server.joined_channel],
-         "ALL" : [],
+         "ALL" : [log],
          "DIE" : []
 }
-
-
-class Pipeline(object):
-    def __init__(self, descriptor=None):
-        self.steps = []
-        if descriptor:
-            for step in descriptor.split("|"):
-                self.add(step.strip())
-
-    def __repr__(self):
-        return " | ".join(self.steps)
-
-    def add(self, step, pos=None):
-        if pos:
-            self.steps.insert(pos, step)
-        else:
-            self.steps.append(step)
-            pos = len(self.steps) - 1
-        return pos
-
-    # syntactic sugar
-    def __or__(self, step):
-        self.add(step)
-        return self
-
-    def remove(self, pos):
-        del self.steps[pos]
-
-    def run(self):
-        procs = {}
-        procs[0] = subprocess.Popen(shlex.split(self.steps[0]), stdout=subprocess.PIPE)
-        if len(self.steps) > 1:
-            i = 1
-            for p in self.steps[1:]:
-                procs[i] = subprocess.Popen(shlex.split(p), stdin=procs[i-1].stdout, stdout=subprocess.PIPE)
-                procs[i-1].stdout.close()
-        output = procs[len(procs) - 1].communicate()[0]
-        return output
-
-
-class PipelineWithSubstitutions(Pipeline):
-    def __init__(self, descriptor=None, substitutions=None):
-        Pipeline.__init__(self, descriptor)
-        self.substitutions = substitutions
-
-    def add(self, step, pos=None):
-        for sub in self.substitutions:
-            step = re.sub(sub, self.substitutions[sub], step)
-        Pipeline.add(self, step, pos)
-        
-
-class VolatilePipeline(Pipeline):
-    def __repr__(self):
-        return self.run()
-        
-class PipeWrapper(object):
-    def __sub__(self, thing):
-        pipe = VolatilePipeline()
-        pipe.add(thing)
-        return pipe
-        
-run = PipeWrapper()
-
 
 if "-f" in sys.argv:
     execfile("features.py")
     # Temporary.
-if "-d" in sys.argv:
-    flag = sys.argv.index("-d")
-    try:
-        thresh = float(sys.argv[flag+1])
-    except (IndexError, ValueError):
-        thresh = 0.15
-    inline["ALL"].append(log)
-    buff = TimerBuffer(thresh)
-else:
-    buff = Buffer()
-
-class CallbackDispatcher(threading.Thread):
-    def __init__(self, callers=2):
-        super(CallbackDispatcher, self).__init__()
-        self.callers   = [Caller() for _ in range(callers + 2)] # Make 4 general purpose callers.
-        self.caller    = self.callers[1] # second caller is the general caller
-        self.bg_caller = self.callers[0] # first caller is the background caller
-        for c in self.callers: 
-            c.start()
-
-    def run(self):
-        self.connected = True
-        try:
-            while self.connected and buff.append(s.recv(1024)):
-                for line in buff:
-                    line = line.rstrip()
-                    words = line.split()
-
-                    if words[0] in ["PING", "ERROR"]:
-                        msgType = words[0]
-                    else:
-                        msgType = words[1]
-
-                    callertimeout = [_.last for _ in self.callers[2:]]
-                    longestqueue = max(self.callers[2:], key=lambda x: x.work.qsize())
-                    if all(callertimeout) and longestqueue.work.qsize() > 50:
-                        print "All queues backed up: expanding."
-                        self.callers.append(Caller())
-                        self.callers[-1].start()
-                        self.callers.remove(longestqueue)
-                        longestqueue.terminate()
-                    for c in self.callers[2:]:
-                        ltime = c.last
-                        if ltime and time.time() - ltime > 8:
-                            print "Caller is taking too long: forking."
-                            self.callers.remove(c)
-                            self.callers.append(Caller(c.dump()))
-                            self.callers[-1].start()
-                            print "Caller added."
-
-                    for funct in inline["ALL"]:
-                        try:
-                            funct(line)
-                        except BaseException:
-                            print "Error in inline function %s" % funct.func_name
-                            sys.excepthook(*sys.exc_info())
-
-                    for funct in flist["ALL"]:
-                        self.caller.queue(funct, (line,))
-
-                    # Inline functions: execute immediately.
-                    for funct in inline.get(msgType.lower(), []):
-                        try:
-                            funct(words, line)
-                        except BaseException:
-                            print "Error in inline function %s" % funct.func_name
-                            sys.excepthook(*sys.exc_info())
-
-                    for funct in flist.get(msgType.lower(), []):
-                        if Callback.isBackground(funct):
-                            self.bg_caller.queue(funct, (words, line))
-                        elif Callback.isThreadsafe(funct):
-                            min(self.callers, key=lambda x: x.work.qsize()).queue(funct, (words, line))
-                        else:
-                            self.caller.queue(funct, (words, line))                    
 
 
-        finally:
-            print "Bot ended; terminating threads."
-
-            s.close()
-            connected = 0
-            print "Connection closed."
-
-            for funct in inline["DIE"]:
-                funct()
-            print "Cleaned up."
-
-            for c in self.callers: c.terminate()
-            printer.terminate()
-            print "Terminating threads..."
-
-            printer.join()
-            for c in self.callers: c.join()
-            print "Threads terminated."
-
-            if "-d" in sys.argv and buff.log:
-                print "%d high latency events recorded, max=%r, avg=%r" % (len(buff.log), max(buff.log), average(buff.log))
-        self.connected = False
-
-dispatcher = CallbackDispatcher()
 print "Running..."
-dispatcher.start()
+server.start()
 
-while dispatcher.connected:
+while server.connected:
     try:
         exec raw_input()
     except KeyboardInterrupt:
         print "Terminating..."
-        dispatcher.connected = False
+        server.connected = False
     except BaseException:
         sys.excepthook(*sys.exc_info())
