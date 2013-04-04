@@ -17,7 +17,7 @@ import yaml
 
 from threads import ColourPrinter, Caller
 from irc import Address, Callback, Message, Command
-from text import Buffer, TimerBuffer
+from text import Buffer, TimerBuffer, average
 
 socket.setdefaulttimeout(1800)
 
@@ -25,6 +25,7 @@ GP_CALLERS = 2
 
 class Connection(threading.Thread):
     def __init__(self, conf):
+        super(Connection, self).__init__()
         config = yaml.safe_load(open(conf))
         self.sock = None
         self.server = tuple(config["Server"])
@@ -49,8 +50,6 @@ class Connection(threading.Thread):
         else:
             self.buff = Buffer()
 
-        super(Connection, self).__init__()
-
     def connect(self):
         self.sock = socket.socket()
         self.sock.connect(self.server)
@@ -67,18 +66,23 @@ class Connection(threading.Thread):
                     self.sendline("PONG %s" % line.split()[-1])
                     break
                 words = line.split()
-                errdict = {"433": "Invalid nickname, retrying.", "436": "Nickname in use, retrying."}
+                errdict = {"433": "Invalid nickname, retrying.", 
+                           "436": "Nickname in use, retrying."}
                 if words[1] == "432":
-                    raise ValueError("Arguments sent to server are invalid; are you sure the configuration file is correct?")
+                    raise ValueError("Arguments sent to server are invalid; "\
+                            "are you sure the configuration file is correct?")
                 elif words[1] in errdict:
                     print >> sys.stderr, errdict[words[1]]
                     self.nick = nicks.popleft()
                     self.sendline("NICK %s" % self.nick)
             else:
-                # If we haven't broken out of the loop, our nickname is not valid.
+                # If we haven't broken out of the loop, our nickname is 
+                # not valid.
                 continue
             break
-        self.sendline("USER %s %s * :%s\r\n" % (self.username, self.mode, self.realname))
+        self.sendline("USER %s %s * :%s\r\n" % (self.username, 
+                                                self.mode, 
+                                                self.realname))
         self.connected = True
         self.printer = ColourPrinter(self)
 
@@ -86,11 +90,29 @@ class Connection(threading.Thread):
         self.sock.send("%s\r\n" % line)
 
     def makeCallers(self, callers=2):
-        self.callers   = [Caller() for _ in range(callers + 2)] # Make 4 general purpose callers.
+        # Make 4 general purpose callers.
+        self.callers   = [Caller() for _ in range(callers + 2)] 
         self.caller    = self.callers[1] # second caller is the general caller
         self.bg_caller = self.callers[0] # first caller is the background caller
         for c in self.callers: 
             c.start()
+
+    def rebalance(self):
+        longest = max(self.callers[2:], key=lambda x: x.work.qsize())
+        if all(_.last for _ in self.callers[2:]) and longest.work.qsize() > 50:
+            print "All queues backed up: expanding."
+            self.callers.append(Caller())
+            self.callers[-1].start()
+            self.callers.remove(longest)
+            longest.terminate()
+        for c in self.callers[2:]:
+            ltime = c.last
+            if ltime and time.time() - ltime > 8:
+                print "Caller is taking too long: forking."
+                self.callers.remove(c)
+                self.callers.append(Caller(c.dump()))
+                self.callers[-1].start()
+                print "Caller added."
 
     def run(self):
         #self.connect()
@@ -107,28 +129,13 @@ class Connection(threading.Thread):
                     else:
                         msgType = words[1]
 
-                    callertimeout = [_.last for _ in self.callers[2:]]
-                    longestqueue = max(self.callers[2:], key=lambda x: x.work.qsize())
-                    if all(callertimeout) and longestqueue.work.qsize() > 50:
-                        print "All queues backed up: expanding."
-                        self.callers.append(Caller())
-                        self.callers[-1].start()
-                        self.callers.remove(longestqueue)
-                        longestqueue.terminate()
-                    for c in self.callers[2:]:
-                        ltime = c.last
-                        if ltime and time.time() - ltime > 8:
-                            print "Caller is taking too long: forking."
-                            self.callers.remove(c)
-                            self.callers.append(Caller(c.dump()))
-                            self.callers[-1].start()
-                            print "Caller added."
+                    self.rebalance()
 
                     for funct in inline["ALL"]:
                         try:
                             funct(line)
                         except BaseException:
-                            print "Error in inline function %s" % funct.func_name
+                            print "Error in inline function " + funct.func_name
                             sys.excepthook(*sys.exc_info())
 
                     for funct in flist["ALL"]:
@@ -139,7 +146,7 @@ class Connection(threading.Thread):
                         try:
                             funct(words, line)
                         except BaseException:
-                            print "Error in inline function %s" % funct.func_name
+                            print "Error in inline function " + funct.func_name
                             sys.excepthook(*sys.exc_info())
 
                     for funct in flist.get(msgType.lower(), []):
@@ -372,7 +379,12 @@ class Shell(threading.Thread):
 
             if not cls.activeShell:
                 try:
-                    shell = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, preexec_fn=os.setsid)
+                    shell = subprocess.Popen(args, 
+                                             stdin=subprocess.PIPE, 
+                                             stdout=subprocess.PIPE, 
+                                             stderr=subprocess.STDOUT, 
+                                             shell=True, 
+                                             preexec_fn=os.setsid)
                 except OSError:
                     printer.message("「 Shell Error 」 Command failed.", cls.target)
                     return
@@ -396,8 +408,6 @@ def authenticate(words, line):
         else:
             server.sendline("msg nickserv identify %s" % password)
        
-def average(x): return float(sum(x))/len(x) if x else 0.00
-
 
 class Interpretter(object):
     def __init__(self):
@@ -410,7 +420,7 @@ class Interpretter(object):
             data = line.split(" ", 3)[-1]
             msgdata = Message(line)
             evaluate = False
-            if words[3][1:-1] == server.nick and words[3][-1] == "," and words[4] == "undo":
+            if data == (":%s, undo" % server.nick):
                 # Delete the last command off the buffer
                 self.curcmd.pop()
                 printer.message("oh, sure", Message(line).context)
@@ -436,7 +446,7 @@ class Interpretter(object):
                 except IndexError:
                     act = ""
                 if act and (act[-1] in "\\:" or act[0] in " \t@"):
-                    self.curcmd += [act[:-1]] if act[-1] == "\\" else [act] #NTS add pre-evaluation syntax checking
+                    self.curcmd += [act[:-1]] if act[-1] == "\\" else [act]
                 else:
                     self.curcmd.append(act)
                     evaluate = True
@@ -464,31 +474,28 @@ def log(line):
 
 flist = {
          "privmsg" : [aj.trigger],
-         "kick" : [
-                    lambda x, y: bot.join(x[2]) if x[3].lower() == server.nick.lower() else None,
-                  ],
-         "invite" : [
-                     aj.onInvite
-                    ],
+         "kick" : [lambda x, y: bot.join(x[2]) if x[3].lower() == server.nick.lower() else None],
+         "invite" : [aj.onInvite],
          "376" : [aj.join,
                   authenticate,
                   lambda *x: printer.start(),
-                  lambda x, y: bot.mode(server.nick, "+B")
-                  ],
+                  lambda x, y: bot.mode(server.nick, "+B")],
          "ALL" : [],
         }
 
 inline = {
-         "privmsg" : [Shell.trigger, lambda x, y: printer.setTarget(Message(y).context), Interpretter().trigger],
-         "ping" : [lambda x, y: bot.PONG(x[1])], # refactor pls.
-         "quit" : [server.user_quit],
-         "part" : [server.user_left],
-         "join" : [server.user_join],
-         "nick" : [server.user_nickchange],
-         "kick" : [server.user_kicked],
-         "352" : [server.joined_channel],
-         "ALL" : [log],
-         "DIE" : []
+         "privmsg" : [Shell.trigger, 
+                      lambda x, y: printer.set_target(Message(y).context), 
+                      Interpretter().trigger],
+         "ping"    : [lambda x, y: server.sendline("PONG " + x[1])],
+         "quit"    : [server.user_quit],
+         "part"    : [server.user_left],
+         "join"    : [server.user_join],
+         "nick"    : [server.user_nickchange],
+         "kick"    : [server.user_kicked],
+         "352"     : [server.joined_channel],
+         "ALL"     : [log],
+         "DIE"     : []
 }
 
 if "-f" in sys.argv:

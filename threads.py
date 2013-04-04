@@ -119,7 +119,8 @@ class Printer(WorkerThread):
         self.bot = connection.sock
         self.last = "#homestuck"
 
-    def setTarget(self, channel):
+    def set_target(self, channel):
+        """ Set the default output channel. """
         self.last = channel
 
     def send(self, message):

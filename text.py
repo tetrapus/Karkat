@@ -8,6 +8,9 @@ from datetime import timedelta
 import htmlentitydefs
 
 
+def average(x): return float(sum(x))/len(x) if x else 0.00
+
+
 def lineify(data, max_size=400):
     """
     Split text up into IRC-safe lines.
