@@ -218,14 +218,14 @@ class ServerState(Connection):
         nick = Address(words[0]).nick
         channel = words[2][1:].lower()
         if nick.lower() == self.nick.lower():
-            self.channels[channel] = []
-            bot.who(words[2]) # TODO: replace with connection object shit.
+            self.channels[channel] = set()
+            self.sendline("WHO %s" % words[2]) # TODO: replace with connection object shit.
         else:
-            self.channels[channel].append(nick)
+            self.channels[channel].add(nick)
 
     def joined_channel(self, words, line):
         """ Handles 352s (WHOs) """
-        self.channels[words[3].lower()].append(words[7])
+        self.channels[words[3].lower()].add(words[7])
 
     def user_nickchange(self, words, line):
         """ Handles NICKs """
@@ -233,7 +233,8 @@ class ServerState(Connection):
         newnick = words[2][1:]
         for i in self.channels:
             if nick in self.channels[i]:
-                self.channels[i][self.channels[i].index(nick)] = newnick
+                self.channels[i].remove(nick)
+                self.channels[i].add(newnick)
         if nick.lower() == self.nick.lower():
             self.nick = newnick
 
