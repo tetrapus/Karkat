@@ -157,8 +157,8 @@ class Buffer(object):
         if "\n" not in self.buffer:
             raise StopIteration
         else:
-            data, self.buffer = tuple(self.buffer.split("\r\n", 1))
-            return data
+            data, self.buffer = tuple(self.buffer.split("\n", 1))
+            return data.rstrip()
         
     def append(self, data):
         self.buffer += data
