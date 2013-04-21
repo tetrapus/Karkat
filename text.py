@@ -162,7 +162,7 @@ class Buffer(object):
             raise StopIteration
         else:
             data, self.buffer = tuple(self.buffer.split("\n", 1))
-            return data
+            return data.rstrip()
         
     def append(self, data):
         self.buffer += data
