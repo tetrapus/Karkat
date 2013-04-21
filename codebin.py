@@ -311,3 +311,117 @@ def tabulate(items, maxlen=80, spacer="   ", outliers=0.4, dynamic=True, border=
         
     return [spacer.join(items)] # Placeholder
     # TODO: Loop to determine outliers and have variable columns if only one row exists.
+
+@Callback.threadsafe
+def ajoinoi(l, sl):
+    if Address(l[0]).nick in ["Lyucit","Lukion","Hexadecimal", "Lion"] or l[3][1:].lower() in server.channels:
+        bot.join(":%s" % l[3][1:])
+
+
+
+class Weather(object):
+
+    locationdata = shelve.open("weather/defaults", writeback=True)
+    locationhistory = shelve.open("weather/history", writeback=True)
+    countryformats = ["%(city)s, %(region_name)s", "%(city)s, %(country_name)s"]
+
+    api_key = apikeys["wunderground"]["key"]
+
+    @classmethod
+    def guess_location(cls, user):
+        if user in cls.locationdata:
+            return cls.locationdata["user"]
+        elif user in cls.locationhistory:
+            return max(cls.locationhistory[user], key=list.count) + ".json"
+        elif user in ipscan.known:
+            return "autoip.json?geo_ip=" + ipscan.known[user]
+
+    def get_weatherdata(self, user):
+        location = self.guess_location(user)
+        if location:
+            data = "http://api.wunderground.com/api/%s/conditions/q/%s" % (self.api_key, location)
+            data = json.loads(urllib.urlopen(data).read())
+            data = data["current_observation"]
+            station = data["station_id"]
+            # Store history.
+            self.locationhistory.setdefault("user", []).append(station)
+            conditions = {"location"     : data["display_location"]["full"],
+                          "time"         : pretty_date(int(data["local_epoch"]) - int(data["observation_epoch"])),
+                          "weather"      : data["weather"],
+                          "temperature"  : data["temperature_string"],
+                          "feels_like"   : data["feelslike_string"],
+                          "wind"         : data["wind_string"],
+                          "windchill"    : data["windchill_string"],
+                          "humidity"     : data["relative_humidity"],
+                          "visibility"   : data["visibility_km"],
+                          "precipitation": data["precip_today_metric"],
+                          "UV"           : data["UV"]
+                          }
+            format = u"""12%(location)s (%(time)s)                  Wunderground
+⎜%(weather)s, %(temperature)s                   Feels like %(feels_like)s⎟
+⎜%(wind)s                                       Wind chill %(windchill)s⎟
+⎜%(humidity)s humidity, visibility %(visibility)skm, %(precipitation)smm of precipitation. UV Index %(UV)s⎟
+⎜Monday:       ⎟""" % conditions
+        printer.message(format.encode("utf-8"))
+
+
+class Pipeline(object):
+    def __init__(self, descriptor=None):
+        self.steps = []
+        if descriptor:
+            for step in descriptor.split("|"):
+                self.add(step.strip())
+
+    def __repr__(self):
+        return " | ".join(self.steps)
+
+    def add(self, step, pos=None):
+        if pos:
+            self.steps.insert(pos, step)
+        else:
+            self.steps.append(step)
+            pos = len(self.steps) - 1
+        return pos
+
+    # syntactic sugar
+    def __or__(self, step):
+        self.add(step)
+        return self
+
+    def remove(self, pos):
+        del self.steps[pos]
+
+    def run(self):
+        procs = {}
+        procs[0] = subprocess.Popen(shlex.split(self.steps[0]), stdout=subprocess.PIPE)
+        if len(self.steps) > 1:
+            i = 1
+            for p in self.steps[1:]:
+                procs[i] = subprocess.Popen(shlex.split(p), stdin=procs[i-1].stdout, stdout=subprocess.PIPE)
+                procs[i-1].stdout.close()
+        output = procs[len(procs) - 1].communicate()[0]
+        return output
+
+
+class PipelineWithSubstitutions(Pipeline):
+    def __init__(self, descriptor=None, substitutions=None):
+        Pipeline.__init__(self, descriptor)
+        self.substitutions = substitutions
+
+    def add(self, step, pos=None):
+        for sub in self.substitutions:
+            step = re.sub(sub, self.substitutions[sub], step)
+        Pipeline.add(self, step, pos)
+        
+
+class VolatilePipeline(Pipeline):
+    def __repr__(self):
+        return self.run()
+        
+class PipeWrapper(object):
+    def __sub__(self, thing):
+        pipe = VolatilePipeline()
+        pipe.add(thing)
+        return pipe
+        
+run = PipeWrapper()

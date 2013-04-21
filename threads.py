@@ -113,11 +113,15 @@ class PrinterBuffer(object):
 class Printer(WorkerThread):
     """ This queue-like thread controls the output to a socket."""
 
-    def __init__(self, sock):
+    def __init__(self, connection):
         WorkerThread.__init__(self)
         self.flush = False
-        self.bot = sock
+        self.bot = connection.sock
         self.last = "#homestuck"
+
+    def set_target(self, channel):
+        """ Set the default output channel. """
+        self.last = channel
 
     def send(self, message):
         """
@@ -137,8 +141,9 @@ class Printer(WorkerThread):
         """
         if not recipient:
             recipient = self.last
-        for message in [i for i in mesg.split("\n") if i]:
+        for message in [i for i in str(mesg).split("\n") if i]:
             self.work.put((method, recipient, message))
+        return mesg # Debugging
 
     def run(self):
         while True:
@@ -147,13 +152,14 @@ class Printer(WorkerThread):
                     try:
                         self.send("%s %s :%s\r\n" % data)
                     except BaseException as err:
-                        print >> sys.__stdout__, "Shit, error: %r\n" % err
+                        print "Shit, error: %r\n" % err
+                        print data
                     else:
-                        sys.__stdout__.write(">>> %s sent." % data[0])
+                        sys.stdout.write(">>> %s sent." % data[0])
                         if self.work.qsize():
-                            sys.__stdout__.write(" %d items queued." %
+                            sys.stdout.write(" %d items queued." %
                                                  self.work.qsize())
-                        sys.__stdout__.write("\n")
+                        sys.stdout.write("\n")
                 else:
                     self.flush = False
                     self.work = Work()
@@ -220,8 +226,9 @@ class ColourPrinter(Printer):
 
     def message(self, msg, recipient=None, method="PRIVMSG"):
         if method.upper() in ["PRIVMSG", "NOTICE"] and self.hasink:
-            msg = self.defaultcolor(msg)
-        Printer.message(self, msg, recipient, method)
+            mesg = self.defaultcolor(str(msg))
+        super(ColourPrinter, self).message(mesg, recipient, method)
+        return msg
 
 
 class Caller(WorkerThread):
@@ -281,9 +288,7 @@ class Caller(WorkerThread):
             try:
                 funct(*args)
             except BaseException:
-                sys.__stdout__.write("Error in function %s%s\n" %
-                                                            (funct.func_name,
-                                                             args))
+                print "Error in function %s%s" % (funct.func_name, args)
                 sys.excepthook(*sys.exc_info())
             self.last = None
         assert self.work.qsize() == 0
