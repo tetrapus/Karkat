@@ -208,7 +208,7 @@ class Youtube(object):
 
     def trigger(self, words, line):
         message = Message(line)
-        videos = re.findall("(?:youtube\.com/watch\?(?:.+&)?v=|youtu\.be/)([^&]+)", message.message)
+        videos = re.findall("(?:youtube\.com/watch\?(?:.+&)?v=|youtu\.be/)([a-zA-Z0-9-_]+)", message.message)
         if videos:
             playlist = self.get_playlist_id(message.context) or self.create_playlist(message.context)
             for video in videos:
