@@ -6,7 +6,6 @@ import functools
 import inspect
 import os
 import re
-import shlex
 import signal
 import socket
 import subprocess
@@ -439,7 +438,7 @@ class Interpretter(object):
                 self.codeReact = 1
                 act = data.split(':"""', 1)[-1]
                 if act:
-                    self.curcmd = act
+                    self.curcmd = [act]
 
             elif words[3] == ":>>>":
                 try:
@@ -513,5 +512,6 @@ while server.connected:
     except KeyboardInterrupt:
         print "Terminating..."
         server.connected = False
+        server.sock.send("QUIT\r\n")
     except BaseException:
         sys.excepthook(*sys.exc_info())

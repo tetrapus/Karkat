@@ -1,6 +1,4 @@
-"""
-This module contains the worker threads for Karkat's system.
-"""
+""" This module contains the worker threads for Karkat's system. """
 
 import sys
 import threading
