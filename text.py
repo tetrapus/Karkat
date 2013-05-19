@@ -10,22 +10,17 @@ import htmlentitydefs
 
 def average(x): return float(sum(x))/len(x) if x else 0.00
 
-
 def lineify(data, max_size=400):
-    """
-    Split text up into IRC-safe lines.
-    """
-    lines = []
-    for i in data.split("\n"):
-        line = [[]]
-        words = i.split(" ")
-        for word in words:
-            if len(" ".join(line[-1])) < max_size:
-                line[-1].append(word)
-            else:
-                line.append([word])
-        lines.extend(" ".join(x) for x in line)
+    """ Split text up into IRC-safe lines. """
+    
+    lines = [item.rstrip() for item in data.split('\n')]
+    for item in lines:
+        if len(item) > max_size:
+            index = lines.index(item)
+            lines[index] = item[:item.rfind(' ',0,400)]
+            lines.insert(index+1, item[item.rfind(' ',0,400)+1:])
     return lines
+
 
 def pretty_date(delta):
     """
@@ -163,6 +158,9 @@ class Buffer(object):
         else:
             data, self.buffer = tuple(self.buffer.split("\r\n", 1))
             return data
+
+    def __next__(self):
+        return self.next()
         
     def append(self, data):
         self.buffer += data
