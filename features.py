@@ -7,7 +7,6 @@ import sqlite3
 import time
 import urllib
 import shelve
-import urllib2
 import yaml
 import json
 import difflib
@@ -35,7 +34,7 @@ class URL(object):
         page = json.decoder.JSONDecoder().decode(urllib.urlopen("http://ajax.googleapis.com/ajax/services/search/web?v=1.0&q=%s" % urllib.quote(url)).read())
         urls = [i["unescapedUrl"].encode("utf-8") for i in page["responseData"]["results"]]
         urls = [(difflib.SequenceMatcher(None, url.upper(), x.upper()).ratio(), x) for x in urls]
-        urls = filter(lambda x: x[0] > 0.8, urls)
+        urls = [x for x in urls if x[0] > 0.8]
         if urls: return max(urls, key=lambda x:x[0])[1]
         else: return url.lower()
         
@@ -214,7 +213,7 @@ class Youtube(object):
             for video in videos:
                 self.playlist_insert(playlist, video)
 
-yt = Youtube()
+#yt = Youtube()
 
 class Translator(object):
     dict_us = enchant.Dict("en_US")
@@ -283,7 +282,7 @@ class SpellChecker(object):
                 return False
 
         # excessively non-alpha strings are not words.
-        if len(filter(lambda x: not (x.isalpha() or x in "'"), word)) >= cls.threshhold:
+        if len([i for i in word if not (x.isalpha() or x in "'")]) >= cls.threshhold:
             return False
 
         # words prefixed with the following are not real words
@@ -303,11 +302,11 @@ class SpellChecker(object):
         errors = [i for i in sentence if not (cls.dictionary.check(i) or cls.alternate.check(i))]
         suggestions = [set(cls.alternate.suggest(i)) | set(cls.dictionary.suggest(i)) for i in errors]
         # reduce the suggestions
-        suggestions = [{filter(lambda x: x.isalpha() or x in "'", i).lower() for i in x} for x in suggestions]
+        suggestions = [{"".join(z for z in i if z.isalpha() or x in "'").lower() for i in x} for x in suggestions]
         wrong = []
         append = {}
         for i, word in enumerate(errors):
-            if filter(str.isalpha, word).lower() not in suggestions[i]:
+            if "".join(i for i in word if i.isalpha()).lower() not in suggestions[i]:
             
                 token = set(word) & set(cls.wordsep)
                 if token:
@@ -478,7 +477,7 @@ def getexpr(expr, mapping):
     try:
         assert expr[0] + expr[count-1] == "()" or not expr
     except: 
-        print >> sys.stderr, "%s | %s | %s" % (expr, expr[0] + expr[count-1], expr[:count])
+        print("%s | %s | %s" % (expr, expr[0] + expr[count-1], expr[:count]), file=sys.stderr)
     return expr[:count]
 
 def substitute(regex, sub, raw_subset):
@@ -549,10 +548,10 @@ class CAHDeck(object):
         pass
 
 class CardsAgainstHumanity(object):
-    black = filter(str.strip, open("cah/black.txt").read().split("\n"))
-    white = filter(str.strip, open("cah/white.txt").read().split("\n"))
-    expansionqs = filter(str.strip, open("cah/questions.txt").read().split("\n"))
-    expansionas = filter(str.strip, open("cah/answers.txt").read().split("\n"))
+    black = [i.strip() for i in open("cah/black.txt").read().split("\n")]
+    white = [i.strip() for i in open("cah/white.txt").read().split("\n")]
+    expansionqs = [i.strip() for i in open("cah/questions.txt").read().split("\n")]
+    expansionas = [i.strip() for i in open("cah/answers.txt").read().split("\n")]
     
     def __init__(self, channel, rounds=None, black=[], white=[], rando=False, numcards=10, minplayers=3, bets=True, firstto=None, ranked=False):
         self.lock = threading.Lock()
@@ -585,10 +584,10 @@ class CardsAgainstHumanity(object):
         else: self.rando = None
         
     def addPlayer(self, player):
-        if player in map(lambda x: x.nick, self.players):
+        if player in [x.nick for x in self.players]:
             return False
-        elif player in map(lambda x: x.nick, self.allplayers):
-            p = filter(lambda x: x.nick == player, self.allplayers)[0]
+        elif player in [x.nick for x in self.allplayers]:
+            p = [i for i in self.allplayers if i.nick == player][0]
         else:
             p = CAHPlayer(player)
             self.allplayers.append(p)
@@ -603,7 +602,7 @@ class CardsAgainstHumanity(object):
         try:
             self.rando = self.getPlayer("Rando Cardrissian")
         except IndexError:
-            randos = filter(lambda x: x.nick == "Rando Cardrissian", self.allplayers)
+            randos = [x for x in self.allplayers if x.nick == "Rando Cardrissian"]
             if randos:
                 self.rando = randos[0]
             else:
@@ -673,7 +672,7 @@ class CardsAgainstHumanity(object):
     def printplayers(self):
         printer.message("00,01 15,14 01,15  Scores: " + (", ".join("%s - %s"%(i.nick if i != self.czar else "%s"%i.nick, i.score()) for i in sorted(self.players, key=CAHPlayer.score)[::-1])), self.channel)
         
-    def chooseprompt(self, rnum, forcenext=False):
+    def chooseprompt(self, rnum, forcenext=False): 
         if self.state == "collect" and self.round == rnum:
             printer.message("00,01 15,14 01,15  Waiting for: %s" % (", ".join(i.nick for i in self.players if not (i.responses or i == self.czar))), self.channel)
             if forcenext: threading.Timer(45, self.removeall, args=(rnum,)).start()
@@ -826,8 +825,8 @@ def savecards():
     with open("cah/answers.txt", "w") as f: f.write("\n".join(CardsAgainstHumanity.expansionas))
 
 def loadcards():
-    CardsAgainstHumanity.expansionqs = filter(str.strip, open("cah/questions.txt").read().split("\n"))
-    CardsAgainstHumanity.expansionas = filter(str.strip, open("cah/answers.txt").read().split("\n"))
+    CardsAgainstHumanity.expansionqs = [i.strip() for i in open("cah/questions.txt").read().split("\n")]
+    CardsAgainstHumanity.expansionas = [i.strip() for i in open("cah/answers.txt").read().split("\n")]
     
 class CAHBot(object):
     games = {}
@@ -874,16 +873,16 @@ class CAHBot(object):
                         printer.message("00,01 15,14 01,15  Rando Cardrissian is now playing.", channel)
                         game.addRando()
                 elif game.state == "signups" and x[3][1:].lower() in ["!start", "!go", "!begin"]:
-                    if len(game.players) > 2 and nick in map(lambda x:x.nick, game.players):
+                    if len(game.players) > 2 and nick in [x.nick for x in game.players]:
                         game.start()
                     else:
                         printer.message("00,01 15,14 01,15  The game can't begin without at least 3 players.", channel)
-                elif nick in map(lambda x:x.nick, game.players):
+                elif nick in [x.nick for x in game.players]:
                     player = game.getPlayer(nick)
                     if x[3].lower() == ":!discard" and player.points:
                         args = " ".join(x[4:])
                         args = args.replace(",", " ")
-                        cards = sorted(list(set(map(int, filter(lambda x: x.isdigit() and 1 <= int(x) <= len(player.hand), args.split())))))[::-1]
+                        cards = sorted(list(set(map(int, filter(str.isdigit and 1 <= int(x) <= len(player.hand), args.split())))))[::-1]
                         if len(cards) > game.maxcards / 2:
                             printer.message("00,01 15,14 01,15  You can't discard more than half your hand at once.", nick, "NOTICE")
                         else:
@@ -902,12 +901,12 @@ class CAHBot(object):
                             if "," in args and game.bets:
                                 if player.points:
                                     args, bet = args.split(",")
-                                    bet = map(int, bet.strip().split())
+                                    bet = [int(i) for i in bet.strip().split()]
                                 else:
                                     printer.message("00,01 15,14 01,15  Not enough points to bet, sorry.", nick, "NOTICE")
                             else:
                                 bet = []
-                            args = map(int, args.split())
+                            args = [int(i) for i in args.split()]
                             if all((bet + args).count(i) == 1 and 1 <= i <= len(player.hand) for i in bet + args) and (len(args) == game.numcards() and len(bet) in [game.numcards(), 0]):
                                 player.setResponses(args)
                                 player.setBet(bet)
@@ -921,8 +920,8 @@ class CAHBot(object):
                         elif player == game.czar and game.state == "judge":
                             if x[4].isdigit() and 1 <= int(x[4]) <= len(game.order) and game.ranked == False:
                                 game.pick(int(x[4]))
-                            elif len(x[4:]) == min(len(game.players) - 2, 3) and all(map(lambda n: n.isdigit() and 1 <= int(n) <= len(game.order) and x[4:].count(n) == 1, x[4:])) and game.ranked == True:
-                                game.pick(map(int, x[4:]))
+                            elif len(x[4:]) == min(len(game.players) - 2, 3) and all(map(str.isdigit and 1 <= int(n) <= len(game.order) and x[4:].count(n) == 1, x[4:])) and game.ranked == True:
+                                game.pick([int(i) for i in x[4:])])
                             else:
                                 printer.message("00,01 15,14 01,15  Invalid arguments.", nick, "NOTICE")
                                 
@@ -1061,7 +1060,7 @@ class WolframAlpha(object):
         return data
         
     def wolfram(self, query):
-        response = urllib2.urlopen("http://api.wolframalpha.com/v2/query?"+urllib.urlencode({"appid":self.appid, "input":query, "scantimeout":str(self.timeout)}), timeout=self.timeout)
+        response = urllib.urlopen("http://api.wolframalpha.com/v2/query?"+urllib.urlencode({"appid":self.appid, "input":query, "scantimeout":str(self.timeout)}), timeout=self.timeout)
         response = etree.parse(response)
         data = collections.OrderedDict()
         for pod in response.findall("pod"):
@@ -1100,14 +1099,14 @@ class WolframAlpha(object):
                         query = " ".join(x[4:])
                 else:
                     query = Message(y).text
-                    category = query[3:query.find({"(":")", "{":"}", "[":"]", "<":">"}[query[2]])]
-                    query = str.rstrip(query[len(category)+4:])
+                    category = query[2:query.find({"(":")", "{":"}", "[":"]", "<":">"}[query[1]])]
+                    query = str.rstrip(query[len(category)+3:])
             else:
                 query = " ".join(x[4:])
             
             try:
                 answer = self.wolfram(query)
-            except urllib2.URLError:
+            except urllib.error.URLError:
                 printer.message("05Wolfram08Alpha failed to respond. Try again soon or go to 12http://www.wolframalpha.com/input/?i=%s" % urllib.quote_plus(query), nick, msgtype)
                 return
                 
@@ -1256,7 +1255,7 @@ def completetable(query, results, size=100, rowmax=None):
 @Callback.threadsafe
 @command(triggers = ["complete", "suggest"], 
          args     = "(.+)", 
-         help    = "「 03Google 12suggest 」 Syntax is [!@](complete|suggest) QUERY. @ will truncate the output to 3 lines, and send to the channel.")
+         help     = "「 03Google 12suggest 」 Syntax is [!@](complete|suggest) QUERY. @ will truncate the output to 3 lines, and send to the channel.")
 def complete_trigger(message, query):
     """
     - Syntax: [!@](complete|suggest) 03query
@@ -1264,7 +1263,7 @@ def complete_trigger(message, query):
     """
     result = complete(query)
     if result:
-        table = completetable(query, result, 100, 3 if message.text.startswith("@") else None)
+        table = completetable(query, result, 72, 3 if message.text.startswith("@") else None)
         for line in table:
             yield line
     else:
@@ -1272,7 +1271,7 @@ def complete_trigger(message, query):
             
 def benchmark(funct, args=(), kwargs={}, iterations=1000):
     values = []
-    for i in xrange(iterations):
+    for i in range(iterations):
         values.append(time.time())
         funct(*args, **kwargs)
         values[-1] = time.time()-values[-1]
@@ -1289,8 +1288,13 @@ class AI(object):
             shelf. """
         #import shelve
         #self.shelf = shelve.open(filename=db, writeback=writeback)
-        self.files = [open("%s/%s"%(db, i), "r") for i in ["binary", "data", "rate", "blacklist"]]
-        self.shelf = dict(zip(["DATA", "data", "rate", "blacklist"], [set([x.rstrip('\r') for x in i.read().split("\n")]) for i in self.files]))
+        self.files = [open("%s/%s"%(db, i), "r", errors='ignore') for i in ["binary", "data", "rate", "blacklist"]]
+        self.shelf = {}
+        self.shelf["blacklist"] = set([x.rstrip('\r') for x in self.files[3].read().split("\n")])
+        self.shelf["rate"] = set([x.rstrip('\r') for x in self.files[2].read().split("\n")])
+        self.shelf["data"] = set([x.rstrip('\r') for x in self.files[1].read().split("\n")])
+        self.shelf["DATA"] = set([x.rstrip('\r') for x in self.files[0].read().split("\n")])
+        #self.shelf = dict(zip(["DATA", "data", "rate", "blacklist"], [set([x.rstrip('\r') for x in i.read().split("\n")]) for i in self.files]))
         self.shelf["rate"] = float(list(self.shelf["rate"])[0])
         self.last = ["Nothing.", "Nothing.", "Nothing."]
         self.recent = []
@@ -1316,7 +1320,7 @@ class AI(object):
         if data not in self.shelf[shelf]: self.last[0] = '"%s\x0f"'%data
         stored_string = [] #haha get it, because it's a list
         for i in data.split():
-            textonly = filter(str.isalpha, i).lower()
+            textonly = "".join(x for x in i if x.isalpha()).lower()
             if (nick.lower() in server.channels and textonly in [filter(str.isalpha, k).lower() for k in server.channels[nick.lower()] if filter(str.isalpha, k)]) or textonly in map(str.lower, server.nicks):
                 stored_string += [i.lower().replace(textonly, "Binary")]
             else:
@@ -1334,7 +1338,7 @@ class AI(object):
         choices = [i for i in pool if random.choice(sdata).lower() in i.lower() and i.lower().strip() != data.lower().strip()]
         if len(choices) < random.choice([2,3]):
             choices = []
-            for i in xrange(random.randrange(3,9)):
+            for i in range(random.randrange(3,9)):
                 choices.append(random.choice(tuple(pool)))
         answer = random.choice(choices)
         self.recent.append(answer)
@@ -1352,14 +1356,14 @@ class AI(object):
                 word = list(common)[0]
                 other = random.choice([i for i in stuff if word in i.lower().split()])
                 self.recent.append(other)
-                print "Value constructed. Baseword: %r :: Seeds: %r & %r" % (word, answer, other)
+                print("Value constructed. Baseword: %r :: Seeds: %r & %r" % (word, answer, other))
                 answer = " ".join(answer.split()[:answer.lower().split().index(word)] + other.split()[other.lower().split().index(word):])
         
         if random.random() < self.wadsworthrate and answer[0] != "\x01":
             truncate = int(self.wadsworthconst * len(answer))
             truncate, keep = answer[:truncate], answer[truncate:]
             answer = keep.lstrip() if keep.startswith(" ") else (truncate.split(" ")[-1] + keep).lstrip()
-            print "Wadsworthing. Throwing away %r, product is %r" % (truncate, answer)
+            print("Wadsworthing. Throwing away %r, product is %r" % (truncate, answer))
         
         answer = answer.split(" ")
         
@@ -1369,11 +1373,11 @@ class AI(object):
                 correction = spellchecker.spellcheck(i.lower())
                 fixed.append(i if not correction else correction[i.lower()][0])
             if " ".join(answer) != " ".join(fixed):
-                print "Spellchecked. Original phrase: %r ==> %r" % (" ".join(answer), " ".join(fixed))
+                print("Spellchecked. Original phrase: %r ==> %r" % (" ".join(answer), " ".join(fixed)))
                 answer = fixed
             
         if random.random() < self.tangentrate:
-            print "Reprocessing data. Current state: %r" % (" ".join(answer))
+            print("Reprocessing data. Current state: %r" % (" ".join(answer)))
             answer = self.getData(" ".join(answer), nick).split(" ")
         
         rval = [nick if filter(str.isalnum, i).lower() in map(str.lower, server.nicks) + ["binary", "linux"] else (i.lower().replace("bot", random.choice(["human","person"])) if i.lower().find("bot") == 0 and (i.lower() == "bot" or i[3].lower() not in "ht") else i) for i in answer]
@@ -1403,7 +1407,7 @@ class AI(object):
             return
         if not re.match(r"^[\w\01]", data[0]) or (Address(l[0]).nick == "Binary" and not data.isupper()) or ("script" in Address(l[0]).nick.lower()) or ("bot" in l[0][:l[0].find("@")].lower()) or Address(l[0]).nick in self.bots: return
         if l[2].lower() not in self.shelf["blacklist"] | set(map(str.lower, server.nicks)) and Address(l[0]).nick not in self.shelf["blacklist"] and (data.isupper() or [i for i in data.split() if filter(str.isalpha, i).lower().rstrip('s') in map(str.lower, server.nicks)]):
-            for i in xrange(int(self.shelf["rate"]//1 + (random.random() < self.shelf["rate"]%1))):
+            for i in range(int(self.shelf["rate"]//1 + (random.random() < self.shelf["rate"]%1))):
                 response = self.getData(data, Address(l[0]).nick)
                 response = re.sub(URL.regex, lambda x: URL.format(URL.shorten(URL.uncaps(x.group(0)))), response)
                 if response:
@@ -1447,16 +1451,6 @@ class AI(object):
             f.close()
 ai = AI()
 
-@Callback.threadsafe
-@command("google", "(.+)")
-def google(message, query):
-    page = json.loads(urllib.urlopen("http://ajax.googleapis.com/ajax/services/search/web?v=1.0&q=%s" % urllib.quote(query) ).read())
-    for i in page["responseData"]["results"]: 
-        yield "「 07Google 」 03%s :: 12%s" % (i["titleNoFormatting"].encode("utf-8"), i["unescapedUrl"].encode("utf-8"))
-        if message.text[0] == "@": return
-    if not page["responseData"]["results"]:
-        yield "「 07Google 」 14No results found."
-
 
 class FilthRatio(object):
     def filthratio(self, query, user=None):
@@ -1464,14 +1458,14 @@ class FilthRatio(object):
             ip = random.choice(ipscan.known.values())
         else:
             ip = ipscan.known[user]
-        safeRequest = urllib2.Request("http://ajax.googleapis.com/ajax/services/search/web?v=1.0&q=%s&safe=active&userip=%s" % (query, ip), None, {"Referer" : "http://www.tetrap.us/"})
-        unsafeRequest = urllib2.Request("http://ajax.googleapis.com/ajax/services/search/web?v=1.0&q=%s&userip=%s" % (query, ip), None, {"Referer" : "http://www.tetrap.us/"})
+        safeRequest = urllib.request.Request("http://ajax.googleapis.com/ajax/services/search/web?v=1.0&q=%s&safe=active&userip=%s" % (query, ip), None, {"Referer" : "http://www.tetrap.us/"})
+        unsafeRequest = urllib.request.Request("http://ajax.googleapis.com/ajax/services/search/web?v=1.0&q=%s&userip=%s" % (query, ip), None, {"Referer" : "http://www.tetrap.us/"})
         try:
-            ratio = float(json.decoder.JSONDecoder().decode(urllib2.urlopen(safeRequest).read())["responseData"]["cursor"]["estimatedResultCount"])
+            ratio = float(json.decoder.JSONDecoder().decode(urllib.request.urlopen(safeRequest).read())["responseData"]["cursor"]["estimatedResultCount"])
         except KeyError:
             ratio = 0
         
-        ratio /= float(json.decoder.JSONDecoder().decode(urllib2.urlopen(unsafeRequest).read())["responseData"]["cursor"]["estimatedResultCount"])
+        ratio /= float(json.decoder.JSONDecoder().decode(urllib.request.urlopen(unsafeRequest).read())["responseData"]["cursor"]["estimatedResultCount"])
         
         return 1-ratio
 
@@ -1480,11 +1474,11 @@ class FilthRatio(object):
     def trigger(self, message, query):
         try:
             data = self.filthratio(urllib.quote(query), message.address.nick)
-            return "「 05Filth ratio for %r 」 %.2f%%" % (query, data*100)
+            return "05Filth ratio for %r ⎟ %.2f%%" % (query, data*100)
         except TypeError:
-            return "「 05Filth ratio 」 Error: Google is an asshole."
+            return "05Filth ratio⎟ Error: Google is an asshole."
         except KeyError:
-            return "「 05Filth ratio for %r 」 The fuck is that?" % query
+            return "05Filth ratio for %r ⎟ The fuck is that?" % query
 
 class Checker(threading.Thread):
 
@@ -1509,10 +1503,10 @@ class Checker(threading.Thread):
     def run(self):
         while self.checking:
             self.ircFormat()
-            for _ in xrange(self.interval):
+            for _ in range(self.interval):
                 if self.checking:
                     time.sleep(1)
-        print "Stopped checking."
+        print("Stopped checking.")
         
         
     def checkMSPA(self):
@@ -1564,7 +1558,7 @@ class AddGame(object):
             else:
                 self.history[nick] = [(time.time(), 0)]
             
-            if sum(i[0] for i in self.history[nick]) / len(self.history[nick]) < 1.5 or (len(self.history[nick]) - 1 and sum(abs(self.history[nick][i][-1] - self.history[nick][i-1][-1]) for i in xrange(1, len(self.history[nick]))) / len(self.history[nick]) < 2):
+            if sum(i[0] for i in self.history[nick]) / len(self.history[nick]) < 1.5 or (len(self.history[nick]) - 1 and sum(abs(self.history[nick][i][-1] - self.history[nick][i-1][-1]) for i in range(1, len(self.history[nick]))) / len(self.history[nick]) < 2):
                 printer.message("fuck you bitch i ain't no adding machine", nick, "NOTICE")
             else:
                 self.num += 1
@@ -1595,7 +1589,7 @@ callbacks = {
                       cah.trigger,
                       HelpFiles().trigger,
                       translator.math_trigger,
-                      yt.trigger
+                      #yt.trigger
                      ],
          "join" : [ipscan.trigger,
                    #lambda x: spellchecker.dictionary.add(Address(x[0]).nick) if not spellchecker.dictionary.check(Address(x[0]).nick) else None,

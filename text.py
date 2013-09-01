@@ -5,7 +5,7 @@ This module contains functions that format text.
 import re
 import time
 from datetime import timedelta
-import htmlentitydefs
+import html.entities
 
 
 def average(x): return float(sum(x))/len(x) if x else 0.00
@@ -88,7 +88,7 @@ def unescape(text):
         else:
             # named entity
             try:
-                text = unichr(htmlentitydefs.name2codepoint[text[1:-1]]).encode("utf-8")
+                text = chr(html.entities.name2codepoint[text[1:-1]]).encode("utf-8")
             except KeyError:
                 if text == "&apos;":
                     text = "'"
@@ -166,6 +166,34 @@ class Buffer(object):
         self.buffer += data
         return data
 
+class LineReader(object):
+    """
+    Iterates over lines from a socket.
+    """
+
+    def __init__(self, sock, recv=1024):
+        self.recv = recv
+        self.sock = sock
+        self.buffer = ""
+
+    def __iter__(self):
+        return self
+
+    def refill(self):
+        """ Refill the buffer. Return False on closed connection. """
+        while "\n" not in self.buffer:
+            data = self.sock.recv(self.recv)
+            if not data: 
+                return False
+            self.buffer += data
+
+    def next(self):
+        if not self.refill():
+            raise StopIteration
+        data, self.buffer = tuple(self.buffer.split("\r\n", 1))
+        return data
+
+
 class TimerBuffer(Buffer):
     """
     Prints out the time between loop iterations.
@@ -181,7 +209,7 @@ class TimerBuffer(Buffer):
         if self.start is not None:
             timeTook = time.time() - self.start
             if timeTook > self.threshhold:
-                print "!!! Warning: Loop executed in %r seconds." % (time.time() - self.start)
+                print("!!! Warning: Loop executed in %r seconds." % (time.time() - self.start))
                 self.log.append(timeTook)
         try:
             nextVal = super(TimerBuffer, self).next()

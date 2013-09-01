@@ -3,14 +3,14 @@
 import sys
 import threading
 import time
-import Queue
+import queue
 import re
 
 from irc import Address, Callback
 from text import lineify
 
 
-class Work(Queue.Queue):
+class Work(queue.Queue):
     """
     This object is an iterable work queue.
     """
@@ -31,7 +31,7 @@ class Work(Queue.Queue):
 
         self._lock = threading.Lock()
         self.last = None
-        Queue.Queue.__init__(self)
+        queue.Queue.__init__(self)
 
     def __iter__(self):
         """
@@ -39,7 +39,7 @@ class Work(Queue.Queue):
         """
         return self
 
-    def next(self):
+    def __next__(self):
         """
         Tells the queue a task is done and deques a new one.
         """
@@ -114,7 +114,7 @@ class Printer(WorkerThread):
     def __init__(self, connection):
         WorkerThread.__init__(self)
         self.flush = False
-        self.bot = connection.sock
+        self.bot = connection
         self.last = "#homestuck"
 
     def set_target(self, channel):
@@ -125,7 +125,7 @@ class Printer(WorkerThread):
         """
         Send data through the underlying socket.
         """
-        self.bot.send(message)
+        self.bot.sendline(message)
 
     def clear(self):
         """
@@ -148,11 +148,14 @@ class Printer(WorkerThread):
             for data in self.work:
                 if not self.flush:
                     try:
-                        self.send("%s %s :%s\r\n" % data)
+                        self.send("%s %s :%s" % data)
                     except BaseException as err:
-                        print "Shit, error: %r\n" % err
-                        print data
+                        print("Shit, error: %r\n" % err)
+                        print(data)
                     else:
+                        
+                        if self.work.qsize() > 20:
+                            sys.exit() # panic
                         sys.stdout.write(">>> %s sent." % data[0])
                         if self.work.qsize():
                             sys.stdout.write(" %d items queued." %
@@ -286,7 +289,7 @@ class Caller(WorkerThread):
             try:
                 funct(*args)
             except BaseException:
-                print "Error in function %s%s" % (funct.func_name, args)
+                print("Error in function %s%s" % (funct.__name__, args))
                 sys.excepthook(*sys.exc_info())
             self.last = None
         assert self.work.qsize() == 0
