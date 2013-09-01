@@ -249,7 +249,8 @@ class Caller(WorkerThread):
         """
         # TODO: Integrate forking
         # NOT THREADSAFE OH GOD FIX THIS
-        self.work.put((funct, args))
+        funct(*args)
+        #self.work.put((funct, args))
 
     def dump(self):
         """

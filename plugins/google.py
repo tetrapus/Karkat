@@ -30,4 +30,4 @@ google = cb.command("google", "(.+)")(google)
 
 
 __initialise__ = cb.initialise
-__callbacks__  = cb.callbacks
+__callbacks__  = {"privmsg": [google]}

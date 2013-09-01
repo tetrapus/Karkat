@@ -93,11 +93,8 @@ class Callback(object):
         triggers = "".join([key(i) for i in triggers])
         def decorator(funct):
             if autoregister: self.callbacks.setdefault("privmsg", []).append(funct)
-            print("Registration decorator triggered.")
             @functools.wraps(funct)
             def _(*argv):
-                print(locals())
-                self.stream.message("Wrapper triggered.")
                 try:
                     message = Command(argv[-1])
                     user = message.address

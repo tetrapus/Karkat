@@ -15,4 +15,4 @@ def shortgo(message, url):
         return "「 ShortGo 」 That didn't work somehow."
 
 __initialise__ = cb.initialise
-__callbacks__ = cb.callbacks
+__callbacks__ = {"privmsg": [shortgo]}
