@@ -7,12 +7,12 @@ apikeys = yaml.safe_load(open("apikeys.conf"))
 cb = Callback()
 
 @cb.threadsafe
-@cb.command("shorten shortgo bl bitly bit.ly".split(), "(.+)")
+@cb.command("shorten shortgo bl bitly bit.ly".split(), "(.+)", help="12bit.ly⎟ Usage: !shorten <url>")
 def shortgo(message, url):
     try:
-        return "「 ShortGo 」 %s" % URL.format(URL.shorten(url))
+        return "12bit.ly⎟ %s" % URL.format(URL.shorten(url))
     except:
-        return "「 ShortGo 」 That didn't work somehow."
+        return "12bit.ly⎟ That didn't work somehow."
 
 __initialise__ = cb.initialise
 __callbacks__ = {"privmsg": [shortgo]}
