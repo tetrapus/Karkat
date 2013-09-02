@@ -85,7 +85,6 @@ def log(line):
         print("[%s] %s" % (server.server[0], line))
 
 flist = {
-         #"kick" : [lambda x, y: bot.join(x[2]) if x[3].lower() == server.nick.lower() else None], # plugin
          "376" : [#authenticate, # plugin
                   lambda *x: printer.start(), # Bot
                   ], # plugin
