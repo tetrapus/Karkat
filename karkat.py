@@ -1,13 +1,15 @@
 #! /usr/bin/python3
 # -*- coding: utf-8 -*-
 """
-Usage: %(name)s [options] --config=FILE [plugin]...
+Usage: %(name)s [options] <config>
 
 Options:
-    -h --help               Show this screen.
-    --version               Show version.
-    -v N, --verbosity=N     Set verbosity [default: 1]
-    -c FILE, --config=FILE  Set server config [default: default.yaml]
+    -h --help                       Show this screen.
+    --version                       Show version.
+    -v N, --verbosity=N             Set verbosity [default: 1]
+    -c FILE, --config=FILE          Set server config [default: default.yaml]
+    -p PACKAGE, --plugins=PACKAGE   Set plugin package [default: plugins]
+    -e MODULES, --exclude=MODULES   Comma separated list of modules to exlcude
 """
 
 """
@@ -17,27 +19,17 @@ The following can optionally be defined to hook into karkat:
 __callbacks__: A mapping of callbacks.
 __icallbacks__:  A mapping of inline callbacks.
 __initialise__(name, botobj, printer) : A function to initialise the module.
+__destroy__(): A function triggered on bot death.
 """
 
-
-import collections
-import functools
-import inspect
-import os
-import re
-import signal
 import socket
-import subprocess
 import sys
-import threading
-import time
 
 import yaml
 import docopt
 
-from threads import ColourPrinter, Caller, StatefulBot
-from irc import Address, Callback, Message, Command
-from text import Buffer, TimerBuffer, average
+from threads import StatefulBot, loadplugin
+from irc import Message
 
 __version__ = 2.0
 
@@ -56,20 +48,6 @@ except (OSError, IndexError):
 server.connect()
 printer = server.printer
 
-class Allbots:
-    def __init__(self, bots, args = ""):
-        self.bots = bots
-        self.args = args
-    def __call__(self, *data):
-        pref = self.args + (" " * bool(self.args))
-        for i in self.bots:
-            i.sendline(pref + (" ".join(data)))
-    def __getattr__(self, d):
-        return Allbots(self.bots, self.args + " " + d)
-bot = Allbots([server])
-
-# 1010100100100010001011000001000011100000110010111000101100000100100110100111000001000001100000100110010010011000101
-
 def authenticate(words, line):
     if "-i" in sys.argv:
         try:
@@ -87,7 +65,7 @@ def log(line):
 flist = {
          "376" : [#authenticate, # plugin
                   lambda *x: printer.start(), # Bot
-                  ], # plugin
+                  ], 
          "ALL" : [],
         }
 
@@ -101,10 +79,11 @@ inline = {
 
 
 if __name__ == "__main__":
-    #args = docopt.docopt()
-    if "-f" in sys.argv:
-        exec(open("features.py").read())
-        # Temporary.
+    args = docopt.docopt(__doc__ % {"name": sys.argv[0]})
+    print (args)
+    #if "-f" in sys.argv:
+    #    exec(open("features.py").read())
+    #    # Temporary.
 
     servername = sys.argv[1].split(".")[0]
 
@@ -118,20 +97,7 @@ if __name__ == "__main__":
             modules.extend(mod.__all__)
             continue
 
-        if "__initialise__" in dir(mod):
-            mod.__initialise__(servername, server, printer)
-            print("Initialising %s" % mod.__name__)
-        else:
-            print("Warning: No initialiser for %s" % mod.__name__)
-        if "__callbacks__" in dir(mod):
-            for trigger in mod.__callbacks__:
-                flist.setdefault(trigger, []).extend(mod.__callbacks__[trigger])
-                print("    Registered callbacks: %s" % ", ".join(i.__name__ for i in mod.__callbacks__[trigger]))
-        if "__icallbacks__" in dir(mod):
-            for trigger in mod.__icallbacks__:
-                flist.setdefault(trigger, []).extend(mod.__icallbacks__[trigger])
-                print("    Registered inlines: %s" % ", ".join(i.__name__ for i in mod.__icallbacks__[trigger]))
-
+        loadplugin(mod, servername, server, server.printer)
         print("Loaded %s" % mod.__name__)
 
     server.register_all(flist)

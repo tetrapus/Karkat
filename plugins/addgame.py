@@ -1,6 +1,6 @@
 import os
 import time
-from irc import Address, Message
+from irc import Message
 
 
 class AddGame(object):
@@ -33,11 +33,11 @@ class AddGame(object):
                 self.history[nick] = [(time.time(), 0)]
             
             if sum(i[0] for i in self.history[nick]) / len(self.history[nick]) < 1.5 or (len(self.history[nick]) - 1 and sum(abs(self.history[nick][i][-1] - self.history[nick][i-1][-1]) for i in range(1, len(self.history[nick]))) / len(self.history[nick]) < 2):
-                self.printer.message("fuck you bitch i ain't no adding machine", nick, "NOTICE")
+                self.stream.message("fuck you bitch i ain't no adding machine", nick, "NOTICE")
             else:
                 self.num += 1
                 open(self.addfile, 'w').write(str(self.num))
 
-                self.printer.message("02Thanks for that %s, 03%s"%(nick, "The number has been increased to %s."%self.num))
+                self.stream.message("02Thanks for that %s, 03%s"%(nick, "The number has been increased to %s."%self.num))
 
 __initialise__ = AddGame

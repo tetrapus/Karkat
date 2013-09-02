@@ -3,8 +3,6 @@ import requests
 import re
 import urllib.parse as urllib
 
-import url
-
 from irc import Callback
 from text import unescape
 

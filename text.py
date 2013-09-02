@@ -4,6 +4,7 @@ This module contains functions that format text.
 
 import re
 import time
+import math
 from datetime import timedelta
 import html.entities
 
@@ -99,7 +100,47 @@ def unescape(text):
     
 
 def striplen(data):
-    return len(ircstrip(data).decode("utf-8"))
+    return len(ircstrip(data))
+
+
+def namedtable(results, size=100, rowmax=None, header="", rheader=""):
+    # Calculate the biggest column size
+    biggest = len(max(results, key=len))
+    # Calculate the maximum number of possible columns
+    columns = int((size-2) / (biggest+3))
+    # If there are less results than columns, truncate to results
+    columns = min(len(results), columns)
+    # Calculate how many rows exist
+    rows = int(math.ceil(len(results)/float(columns)))
+    rownum = ""
+    # Try to optimise number of elements within the row limit
+    if rowmax and rows > rowmax:
+        while rows > rowmax:
+            results.remove(max(results, key=len))
+            biggest = len(max(results, key=len))
+            columns = int((size-2) / (biggest+3))
+            columns = min(len(results), columns)
+            rows = int(math.ceil(len(results)/float(columns)))
+        rownum = "(first %d rows) " % rows
+    # Create the header
+    data = ["%s\x0312%s%s%s" % (header, 
+                                   rownum, 
+                                   " "*((columns * (biggest+3)) -1 - striplen(header) - striplen(rheader) - len(rownum)), 
+                                   rheader)]
+    # If the header is too big, expand the table. TODO: verify this.
+    cellsize = int((striplen(data[0])-1) / columns) - 1 if columns*(biggest+3) - 1 < striplen(data[0]) else biggest
+    #cellsize = biggest
+    for i in range(rows):
+        line = results[i*columns:(i+1)*columns if len(results) > (i+1)*columns else len(results)]
+        line = ["%s%s"%((x, " "*(cellsize-striplen(x))) if y == 0 or y + 1 < columns else (" "*(cellsize-striplen(x)), x)) for y, x in enumerate(line)]
+        data.append("%s%s%s" %("\x0312⎢\x03", " \x0312⎪\x03 ".join(line), "\x0312⎥\x03"))
+    if len(data) > 2 and len(data[-1]) < len(data[1]):
+        replacement = list(data[-2])
+        replacement.insert(len(data[-1])-1, "\x1f")
+        data[-2] = "".join(replacement)
+        data[-1] = data[-1][:-2] + " ⎪\x03"
+    data[-1] = ""+data[-1]
+    return data     
 
 def justifiedtable(array, width, minsep=3):
     """
@@ -124,19 +165,33 @@ def justifiedtable(array, width, minsep=3):
         elif row:
             table.append(row[0])
     return table
-    
-def aligntable(rows, separator=" 08| "):
+
+# TODO: space-saving version
+
+def aligntable(rows, separator=" 08⎪ "):
     """
     Column-align a table of rows.
     """
-    assert len({len(x) for x in rows}) == 1
-    columns = zip(*rows)
+    # Pad the rows
+    maxwidth = len(max(rows, key=len))
+    for i in rows:
+        if len(i) != maxwidth:
+            i.extend([""] * maxwidth-len(i))
+
+    # Invert
+    columns = list(zip(*rows))
     for i, col in enumerate(columns):
-        width = max(len(x.decode("utf-8")) for x in col)
+        width = max(len(x) for x in col)
         for j, cell in enumerate(col):
-            rows[j][i] = cell + (" "*(width - len(cell.decode("utf-8"))))
+            rows[j][i] = cell + (" "*(width - len(cell)))
     rows = [separator.join(x) for x in rows]
     return rows
+
+def treetable(tree, separator=" 08⎪ "):
+    tree = sorted(tree)
+    # Determine the maximum depth and the width for each column
+    # TODO
+
 
 class Buffer(object):
     """

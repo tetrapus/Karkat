@@ -1,3 +1,3 @@
-from . import google, addgame, shorten, shell, base
+from . import google, addgame, shorten, shell, base, suggest
 
-__all__ = [google, addgame, shorten, shell, base]
+__all__ = [google, addgame, shorten, shell, base, suggest]

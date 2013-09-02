@@ -32,10 +32,6 @@ class Command(Message):
         self.prefix, self.command = command[0], command[1:]
 
 class Callback(object):
-
-    def __init__(self):
-        self.callbacks = {}
-
     @staticmethod
     def threadsafe(funct):
         funct.isThreadsafe = True
@@ -60,9 +56,9 @@ class Callback(object):
         Generates the xchat version of funct's args.
         """
         @functools.wraps(funct)
-        def _(words, line):
+        def _(line):
             word_eol = [line.split(" ", n)[-1] for n in range(line.count(" ") + 1)]
-            return funct(words, word_eol)
+            return funct(line.split(), word_eol)
         return _
 
     @staticmethod
@@ -84,14 +80,13 @@ class Callback(object):
         self.bot = bot
         self.id = name
 
-    def command(self, triggers, args=None, key=str.lower, help=None, autoregister=True):
+    def command(self, triggers, args=None, key=str.lower, help=None, admin=False):
         private = "!"
         public = "@"
         if type(triggers) == str:
             triggers = [triggers]
-        triggers = "".join([key(i) for i in triggers])
+        triggers = [key(i) for i in triggers]
         def decorator(funct):
-            if autoregister: self.callbacks.setdefault("privmsg", []).append(funct)
             @functools.wraps(funct)
             def _(*argv):
                 try:
@@ -105,7 +100,7 @@ class Callback(object):
                 except IndexError:
                     return
                 else:
-                    if message.prefix in [private, public] and key(message.command) in triggers:
+                    if message.prefix in [private, public] and key(message.command) in triggers and (not admin or user.mask in self.bot.admins):
                         # Triggered.
                         # Set up output
                         if message.prefix == private:
@@ -116,21 +111,31 @@ class Callback(object):
                         # Check arguments
                         if args is not None:
                             try:
-                                argument = message.text.split(" ", 1)[1]
+                                argument = message.text.split(" ", 1)
+                                if len(argument) == 1:
+                                    argument = ""
+                                else:
+                                    argument = argument[1]
                                 fargs.extend(list(re.match(args, argument).groups()))
                             except (AttributeError, IndexError):
                                 if help is not None:
                                     with output as out:
                                         out += help
                                 return
-                        if inspect.isgeneratorfunction(funct):
-                            with output as out:
-                                for line in funct(*fargs):
-                                    out += line
-                        else:
-                            rval = funct(*fargs)
-                            if rval is not None:
+                        try:
+                            if inspect.isgeneratorfunction(funct):
                                 with output as out:
-                                    out += rval
+                                    for line in funct(*fargs):
+                                        out += line
+                            else:
+                                rval = funct(*fargs)
+                                if rval is not None:
+                                    with output as out:
+                                        out += rval
+                        except:
+                            if help is not None:
+                                with output as out:
+                                    out += help
+                            raise
             return _
         return decorator

@@ -2,8 +2,9 @@ import os
 import time
 import threading
 import subprocess
+import signal
 
-from irc import Address, Message, Callback
+from irc import Message
 
 class Process(threading.Thread):
     def __init__(self, shell, target, invocator):
