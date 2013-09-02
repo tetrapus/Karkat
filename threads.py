@@ -5,9 +5,13 @@ import threading
 import time
 import queue
 import re
+import collections
+import socket
+
+import yaml
 
 from irc import Address, Callback
-from text import lineify
+from text import lineify, TimerBuffer, average, Buffer
 
 
 class Work(queue.Queue):
@@ -140,23 +144,23 @@ class Printer(WorkerThread):
         if not recipient:
             recipient = self.last
         for message in [i for i in str(mesg).split("\n") if i]:
-            self.work.put((method, recipient, message))
+            self.work.put("%s %s :%s" % (method, recipient, message))
         return mesg # Debugging
+
+    def raw_message(self, mesg):
+        self.work.put(mesg)
 
     def run(self):
         while True:
             for data in self.work:
                 if not self.flush:
                     try:
-                        self.send("%s %s :%s" % data)
+                        self.send(data)
                     except BaseException as err:
-                        print("Shit, error: %r\n" % err)
-                        print(data)
+                        print("Shit, printer error: %r\n" % err)
+                        sys.excepthook(*sys.exc_info())
                     else:
-                        
-                        if self.work.qsize() > 20:
-                            sys.exit() # panic
-                        sys.stdout.write(">>> %s sent." % data[0])
+                        sys.stdout.write(">>> %s" % data.split()[0]) #TODO: Replace with informative debug info
                         if self.work.qsize():
                             sys.stdout.write(" %d items queued." %
                                                  self.work.qsize())
@@ -284,12 +288,338 @@ class Caller(WorkerThread):
         self.work.put(Work.TERM)
 
     def run(self):
-        for funct, args in self.work:
+        for funct, arg in self.work:
             self.last = time.time()
             try:
-                funct(*args)
+                funct(arg)
             except BaseException:
-                print("Error in function %s%s" % (funct.__name__, args))
+                print("Error in function %s%s" % (funct.__name__, arg))
                 sys.excepthook(*sys.exc_info())
             self.last = None
         assert self.work.qsize() == 0
+
+class Connection(threading.Thread):
+    def __init__(self, conf):
+        super(Connection, self).__init__()
+        config = yaml.safe_load(open(conf))
+        self.sock = None
+        self.server = tuple(config["Server"])
+        self.username = config["Username"]
+        self.realname = config["Real Name"]
+        self.mode = config.get("Mode", 0)
+        
+        self.nick = None
+        self.nicks = config["Nick"]
+
+        self.admins = config["Admins"]
+
+        self.connected = False
+
+        # TODO: replace with options
+        if "-d" in sys.argv:
+            flag = sys.argv.index("-d")
+            try:
+                thresh = float(sys.argv[flag+1])
+            except (IndexError, ValueError):
+                thresh = 0.15
+            self.buff = TimerBuffer(thresh)
+        else:
+            self.buff = Buffer()
+
+    def connect(self):
+        self.sock = socket.socket()
+        self.sock.connect(self.server)
+
+        # Try our first nickname.
+        nicks = collections.deque(self.nicks)
+        self.nick = nicks.popleft()
+        self.sendline("NICK %s" % self.nick)
+        # Find a working nickname
+        while self.buff.append(self.sock.recv(1).decode("utf-8")):
+            for line in self.buff:
+                if line.startswith("PING"):
+                    # We're done here.
+                    self.sendline("PONG %s" % line.split()[-1])
+                    break
+                words = line.split()
+                errdict = {"433": "Invalid nickname, retrying.", 
+                           "436": "Nickname in use, retrying."}
+                if words[1] == "432":
+                    raise ValueError("Arguments sent to server are invalid; "\
+                            "are you sure the configuration file is correct?")
+                elif words[1] in errdict:
+                    print(errdict[words[1]], file=sys.stderr)
+                    self.nick = nicks.popleft()
+                    self.sendline("NICK %s" % self.nick)
+            else:
+                # If we haven't broken out of the loop, our nickname is 
+                # not valid.
+                continue
+            break
+        self.sendline("USER %s %s * :%s\r\n" % (self.username, 
+                                                self.mode, 
+                                                self.realname))
+        self.connected = True
+        self.printer = ColourPrinter(self)
+
+    def sendline(self, line):
+        self.sock.send(("%s\r\n" % line).encode("utf-8"))
+
+    def dispatch(self, line):
+        """
+        Dispatch and process a line of IRC.
+        """
+        return
+
+    def cleanup(self):
+            # TODO: decouple printer and connection.
+            self.printer.terminate()
+            print("Terminating threads...")
+
+            self.printer.join()
+            if "-d" in sys.argv and self.buff.log:
+                print("%d high latency events recorded, max=%r, avg=%r" % (len(self.buff.log), max(self.buff.log), average(self.buff.log)))
+
+    def run(self):
+        try:
+            while self.connected and self.buff.append(self.sock.recv(1024).decode("utf-8")):
+                for line in self.buff:
+                    self.dispatch(line)               
+
+        finally:
+            self.sock.close()
+            print("Connection closed.")
+            self.cleanup()            
+
+            self.connected = False
+
+
+class Bot(Connection):
+    def __init__(self, conf, cbs=None, icbs=None):
+        super(Bot, self).__init__(conf)
+        self.callbacks = cbs or {"ALL":[]}
+        self.inline_cbs = icbs or {"ALL":[], "DIE":[]}
+
+    def makeCallers(self, callers=2):
+        # Make 4 general purpose callers.
+        self.callers   = [Caller() for _ in range(callers + 2)] 
+        self.caller    = self.callers[1] # second caller is the general caller
+        self.bg_caller = self.callers[0] # first caller is the background caller
+        for c in self.callers: 
+            c.start()
+
+    def rebalance(self):
+        longest = max(self.callers[2:], key=lambda x: x.work.qsize())
+        if all(_.last for _ in self.callers[2:]) and longest.work.qsize() > 50:
+            print("All queues backed up: expanding.")
+            self.callers.append(Caller())
+            self.callers[-1].start()
+            self.callers.remove(longest)
+            longest.terminate()
+        for c in self.callers[2:]:
+            ltime = c.last
+            if ltime and time.time() - ltime > 8:
+                print("Caller is taking too long: forking.")
+                self.callers.remove(c)
+                self.callers.append(Caller(c.dump()))
+                self.callers[-1].start()
+                print("Caller added.")
+
+    def cleanup(self):
+        super(Bot, self).cleanup()
+        for funct in self.inline_cbs["DIE"]:
+            funct()
+        print("Cleaned up.")
+
+        for c in self.callers: c.terminate()
+        for c in self.callers: c.join()
+        print("Threads terminated.")
+
+    def run(self):
+        self.makeCallers()
+        super(Bot, self).run()
+
+    def register_all(self, callbacks):
+        for trigger in callbacks:
+            for f in callbacks[trigger]:
+                self.register(trigger, f)
+
+    def register(self, trigger, funct):
+        self.callbacks.setdefault(trigger, []).append(funct)
+
+    def register_alli(self, callbacks):
+        for trigger in callbacks:
+            for f in callbacks[trigger]:
+                self.register_i(trigger, f)
+
+    def register_i(self, trigger, funct):
+        self.inline_cbs.setdefault(trigger, []).append(funct)
+
+    def unregister_funct(self, callback, trigger=None):
+        removed = []
+        if trigger is not None:
+            triggers = [trigger]
+        else: 
+            triggers = self.callbacks.keys()
+
+        for i in triggers:
+            while callback in self.callbacks[i]:
+                self.callbacks[i].remove(callback)
+                removed.append(i)
+
+        return removed
+
+    def unregister_ifunct(self, callback, trigger=None):
+        removed = []
+        if trigger is not None:
+            triggers = [trigger]
+        else: 
+            triggers = self.inline_cbs.keys()
+
+        for i in triggers:
+            while callback in self.inline_cbs[i]:
+                self.inline_cbs[i].remove(callback)       
+                removed.append(i)
+        return removed
+
+    def unregister_name(self, funct, trigger=None):
+        removed = []
+        if trigger is not None:
+            triggers = [trigger]
+        else: 
+            triggers = self.callbacks.keys()
+
+        for i in triggers:
+            remove = [i for i in self.callbacks[i] if i.__name__ == funct]
+            for f in remove:
+                self.callbacks[i].remove(f)       
+                removed.append(i)
+        return removed
+
+    def unregister_iname(self, funct, trigger=None):
+        removed = []
+        if trigger is not None:
+            triggers = [trigger]
+        else: 
+            triggers = self.inline_cbs.keys()
+
+        for i in triggers:
+            remove = [i for i in self.inline_cbs[i] if i.__name__ == funct]
+            for f in remove:
+                self.inline_cbs[i].remove(f)       
+                removed.append(i)
+        return removed
+
+    def dispatch(self, line):
+        """
+        Self-balancing threaded dispatch
+        """
+        line = line.rstrip()
+        words = line.split()
+
+        if words[0] in ["PING", "ERROR"]:
+            msgType = words[0]
+        else:
+            msgType = words[1]
+        
+        for funct in self.inline_cbs["ALL"]:
+            try:
+                funct(line)
+            except BaseException:
+                print("Error in inline function " + funct.__name__)
+                sys.excepthook(*sys.exc_info())
+
+        self.rebalance()
+
+        for funct in self.callbacks["ALL"]:
+            self.caller.queue(funct, line)
+
+        # Inline functions: execute immediately.
+        for funct in self.inline_cbs.get(msgType.lower(), []):
+            try:
+                funct(line)
+            except BaseException:
+                print("Error in inline function " + funct.__name__)
+                sys.excepthook(*sys.exc_info())
+
+        for funct in self.callbacks.get(msgType.lower(), []):
+            if Callback.isBackground(funct):
+                self.bg_caller.queue(funct, line)
+            elif Callback.isThreadsafe(funct):
+                min(self.callers, key=lambda x: x.work.qsize()).queue(funct, line)
+            else:
+                self.caller.queue(funct, line)
+
+class StatefulBot(Bot):
+    """ Beware of thread safety when manipulating server state. If a callback
+    interacts with this class, it must either be inlined, or be
+    okay with the fact the state can change under your feet. """
+
+    # TODO: Store own state
+    # TODO: Interact with connection threads
+    # TODO: Extend interface to search for users and return lists and things.
+    #       See xchat docs for interface ideas.
+    # TODO: Fix nickname case rules and do sanity checking
+
+    def __init__(self, conf, cbs=None, icbs=None):
+        super(StatefulBot, self).__init__(conf, cbs, icbs)
+        self.channels = {}
+        self.register_alli({"quit"    : [self.user_quit],
+         "part"    : [self.user_left],
+         "join"    : [self.user_join],
+         "nick"    : [self.user_nickchange],
+         "kick"    : [self.user_kicked],
+         "352"     : [self.joined_channel]})
+
+    def user_left(self, line):
+        """ Handles PARTs """
+        words = line.split()
+        nick = Address(words[0]).nick
+        channel = words[2].lower()
+        if nick.lower() == self.nick.lower():
+            del self.channels[channel]
+        else:
+            self.channels[channel].remove(nick)
+
+    def user_quit(self, line):
+        """ Handles QUITs"""
+        words = line.split()
+        nick = Address(words[0]).nick
+        for i in self.channels:
+            if nick in self.channels[i]:
+                self.channels[i].remove(nick)
+
+    def user_join(self, line):
+        """ Handles JOINs """
+        words = line.split()
+        nick = Address(words[0]).nick
+        channel = words[2][1:].lower()
+        if nick.lower() == self.nick.lower():
+            self.channels[channel] = set()
+            self.sendline("WHO %s" % words[2]) # TODO: replace with connection object shit.
+        else:
+            self.channels[channel].add(nick)
+
+    def joined_channel(self, line):
+        """ Handles 352s (WHOs) """
+        words = line.split()
+        self.channels[words[3].lower()].add(words[7])
+
+    def user_nickchange(self, line):
+        """ Handles NICKs """
+        words = line.split()
+        nick = Address(words[0]).nick
+        newnick = words[2][1:]
+        for i in self.channels:
+            if nick in self.channels[i]:
+                self.channels[i].remove(nick)
+                self.channels[i].add(newnick)
+        if nick.lower() == self.nick.lower():
+            self.nick = newnick
+
+    def user_kicked(self, line):
+        """ Handles KICKs """
+        words = line.split()
+        nick = words[3]
+        channel = words[2].lower()
+        self.channels[channel].remove(nick)

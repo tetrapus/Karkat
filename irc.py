@@ -74,10 +74,9 @@ class Callback(object):
             User, Context, Message
         """
         @functools.wraps(funct)
-        def _(words, line):
-            user = Address(words[0])
+        def _(line):
             message = Message(line)
-            return funct(user, words[2], message) # TODO: actually make these fucking classes
+            return funct(message.address, message.context, message) # TODO: actually make these fucking classes
         return _
 
     def initialise(self, name, bot, printer):
@@ -99,7 +98,7 @@ class Callback(object):
                     message = Command(argv[-1])
                     user = message.address
 
-                    if len(argv) == 3:
+                    if len(argv) == 2:
                         fargs = [argv[0], message]
                     else:
                         fargs = [message]

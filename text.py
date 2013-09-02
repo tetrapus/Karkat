@@ -77,10 +77,9 @@ def unescape(text):
             # character reference
             try:
                 if text[:3] == "&#x":
-                    result = unichr(int(text[3:-1], 16))
+                    result = chr(int(text[3:-1], 16))
                 else:
-                    result = unichr(int(text[2:-1]))
-                result = result.encode("utf-8")
+                    result = chr(int(text[2:-1]))
             except ValueError:
                 pass
             else:
@@ -88,7 +87,7 @@ def unescape(text):
         else:
             # named entity
             try:
-                text = chr(html.entities.name2codepoint[text[1:-1]]).encode("utf-8")
+                text = chr(html.entities.name2codepoint[text[1:-1]])
             except KeyError:
                 if text == "&apos;":
                     text = "'"
