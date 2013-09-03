@@ -3,7 +3,6 @@ import url as URL
 
 import yaml
 
-apikeys = yaml.safe_load(open("apikeys.conf"))
 cb = Callback()
 
 @cb.threadsafe
