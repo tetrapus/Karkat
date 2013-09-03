@@ -20,10 +20,11 @@ def google(message, query):
         colour = [12, 5, 8, 3][i % 4]
         yield "%.2d⎟ 02%s" % (colour, unescape(result["title"].replace("<b>", "").replace("</b>", "")))
         yield "%.2d⎟ 03▸ %s" % (colour, result["unescapedUrl"])
-        yield "%.2d⎟ %s" % (colour, 
-                                   re.sub(r"\s+", 
-                                          " ", 
-                                          unescape(result["content"].replace("<b>", "").replace("</b>", ""))))
+        if message.prefix == "@":
+            yield "%.2d⎟ %s" % (colour, 
+                                       re.sub(r"\s+", 
+                                              " ", 
+                                              unescape(result["content"].replace("<b>", "").replace("</b>", ""))))
         if first: 
         	first = False
         if message.text[0] == "@":

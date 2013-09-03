@@ -65,7 +65,7 @@ class ModManager(object):
                 removed.append(cb)
                 self.bot.inline_cbs[i].remove(cb)
 
-        if removed:
+        if removed: # TODO: FIX.
             for i in removed:
                 mod = inspect.getmodule(i)
                 if mod in reloaded: 
