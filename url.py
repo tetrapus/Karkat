@@ -16,6 +16,7 @@ try:
 except:
     print("Warning: invalid or nonexistant api key.", file=sys.stderr)
     print("Defining url.shorten as identity function", file=sys.stderr)
+    apikeys = None
 
 regex = re.compile(r"\b(\w+://)?\w+(\.\w+)+/[^\s]*\b")
     
