@@ -57,27 +57,26 @@ class ModManager(object):
         removed = []
         reloaded = []
         for i in self.bot.callbacks:
-            for cb in [x for x in self.bot.callbacks[i] if fname(i).startswith(module)]:
+            for cb in [x for x in self.bot.callbacks[i] if inspect.getmodule(x).__name__ == module]:
                 removed.append(cb)
                 self.bot.callbacks[i].remove(cb)
         for i in self.bot.inline_cbs:
-            for cb in [x for x in self.bot.inline_cbs[i] if fname(i).startswith(module)]:
+            for cb in [x for x in self.bot.inline_cbs[i] if inspect.getmodule(x).__name__ == module]:
                 removed.append(cb)
                 self.bot.inline_cbs[i].remove(cb)
 
-        if removed: # TODO: FIX.
+        if removed:
             for i in removed:
-                mod = inspect.getmodule(i)
-                if mod in reloaded: 
+                if i in reloaded: 
                     continue
+                mod = inspect.getmodule(i)
                 if "__destroy__" in dir(mod):
                     mod.__destroy__()
                 imp.reload(mod)
                 loadplugin(mod, self.name, self.bot, self.stream)
-                reloaded.append(mod)
-                yield "12Module System⎟ Reloaded %s." % mod.__name__
+            return "12Module System⎟ Reloaded %s." % mod.__name__
         else:
-            yield "12Module System⎟ Module not found."
+            return "12Module System⎟ Module not found."
 
 
     @cb.command("load", "(.+)", admin=True, help="12Module System⎟ Usage: [!@]load <module>")
