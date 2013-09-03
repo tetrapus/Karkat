@@ -77,7 +77,7 @@ class ModManager(object):
                 reloaded.append(mod)
                 yield "12Module System⎟ Reloaded %s." % mod.__name__
         else:
-            return "12Module System⎟ Module not found."
+            yield "12Module System⎟ Module not found."
 
 
     @cb.command("load", "(.+)", admin=True, help="12Module System⎟ Usage: [!@]load <module>")
