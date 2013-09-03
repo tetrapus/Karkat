@@ -34,7 +34,7 @@ class ModManager(object):
     def fname(funct):
         return inspect.getmodule(funct).__name__ + "." + funct.__name__
 
-    @cb.command("unregister", "(.+)", admin=True, help="12Module System⎟ Usage: [!@]unregister <modulename>")
+    @cb.command("unregister", "(.+)", admin=True, help="12Module System⎟ Usage: [!@]unregister <module>")
     def unregister_modules(self, message, module):
         removed = []
         for i in self.bot.callbacks:
@@ -55,22 +55,27 @@ class ModManager(object):
     def reload_modules(self, message, module):
         # Find and remove all callbacks
         removed = []
+        reloaded = []
         for i in self.bot.callbacks:
-            for cb in [x for x in self.bot.callbacks[i] if inspect.getmodule(x).__name__ == module]:
+            for cb in [x for x in self.bot.callbacks[i] if fname(i).startswith(module)]:
                 removed.append(cb)
                 self.bot.callbacks[i].remove(cb)
         for i in self.bot.inline_cbs:
-            for cb in [x for x in self.bot.inline_cbs[i] if inspect.getmodule(x).__name__ == module]:
+            for cb in [x for x in self.bot.inline_cbs[i] if fname(i).startswith(module)]:
                 removed.append(cb)
                 self.bot.inline_cbs[i].remove(cb)
 
         if removed:
-            mod = inspect.getmodule(removed[0])
-            if "__destroy__" in dir(mod):
-                module.__destroy__()
-            imp.reload(mod)
-            loadplugin(mod, self.name, self.bot, self.stream)
-            return "12Module System⎟ Reloaded %s." % mod.__name__
+            for i in removed:
+                mod = inspect.getmodule(i)
+                if mod in reloaded: 
+                    continue
+                if "__destroy__" in dir(mod):
+                    mod.__destroy__()
+                imp.reload(mod)
+                loadplugin(mod, self.name, self.bot, self.stream)
+                reloaded.append(mod)
+                yield "12Module System⎟ Reloaded %s." % mod.__name__
         else:
             return "12Module System⎟ Module not found."
 
