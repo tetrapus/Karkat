@@ -81,7 +81,7 @@ class ModManager(object):
             for i in table:
                 yield i
         else:
-            return "12Module System⎟ Module not found."
+            yield "12Module System⎟ Module not found."
 
 
     @cb.command("load", "(.+)", admin=True, help="12Module System⎟ Usage: [!@]load <module>")
