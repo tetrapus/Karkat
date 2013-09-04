@@ -22,7 +22,8 @@ class Process(threading.Thread):
             self.parent.stream.message(line, self.target)
         self.parent.activeShell = False
         if time.time() - started > 2:
-            self.parent.stream.message("12bash05⎟ Program exited with code %s"%(self.shell.poll()), self.target)
+            exitcode = self.shell.poll()
+            self.parent.stream.message("%.2dbash⎟ Program exited with code %s"%(5 if exitcode else 12, exitcode), self.target)
 
 class Shell(object):
 
@@ -49,7 +50,7 @@ class Shell(object):
                                              shell=True, 
                                              preexec_fn=os.setsid)
                 except OSError:
-                    self.stream.message("12bash05⎟ Command failed.", target)
+                    self.stream.message("05bash⎟ Command failed.", target)
                     return
                 self.activeShell = True
                 self.shellThread = Process(shell, target, self)

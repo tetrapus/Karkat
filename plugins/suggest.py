@@ -14,7 +14,7 @@ def suggest(query):
 @cb.threadsafe
 @cb.command(triggers = ["complete", "suggest"], 
             args     = "(.+)", 
-            help     = "03Google 12suggest⎟  Usage: [!@](complete|suggest) QUERY.")
+            help     = "12Google suggest⎟  Usage: [!@](complete|suggest) QUERY.")
 def complete_trigger(message, query):
     """
     - Syntax: [!@](complete|suggest) 03query
@@ -30,7 +30,7 @@ def complete_trigger(message, query):
         for line in table:
             yield line
     else:
-        yield "03Google 12suggest⎟  No results."
+        yield "05Google suggest⎟  No results."
 
 __initialise__ = cb.initialise
 __callbacks__ = {"privmsg": [complete_trigger]}
