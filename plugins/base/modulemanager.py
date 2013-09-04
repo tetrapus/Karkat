@@ -38,11 +38,11 @@ class ModManager(object):
     def unregister_modules(self, message, module):
         removed = []
         for i in self.bot.callbacks:
-            for cb in [x for x in self.bot.callbacks[i] if fname(i).startswith(module)]:
+            for cb in [x for x in self.bot.callbacks[i] if fname(x).startswith(module)]:
                 removed.append(fname(cb))
                 self.bot.callbacks[i].remove(cb)
         for i in self.bot.inline_cbs:
-            for cb in [x for x in self.bot.inline_cbs[i] if fname(i).startswith(module)]:
+            for cb in [x for x in self.bot.inline_cbs[i] if fname(x).startswith(module)]:
                 removed.append(fname(cb))
                 self.bot.inline_cbs[i].remove(cb)
         table = namedtable(removed or ["No matches."],
@@ -57,24 +57,29 @@ class ModManager(object):
         removed = []
         reloaded = []
         for i in self.bot.callbacks:
-            for cb in [x for x in self.bot.callbacks[i] if inspect.getmodule(x).__name__ == module]:
+            for cb in [x for x in self.bot.callbacks[i] if self.fname(x).startswith(module)]:
                 removed.append(cb)
                 self.bot.callbacks[i].remove(cb)
         for i in self.bot.inline_cbs:
-            for cb in [x for x in self.bot.inline_cbs[i] if inspect.getmodule(x).__name__ == module]:
+            for cb in [x for x in self.bot.inline_cbs[i] if self.fname(x).startswith(module)]:
                 removed.append(cb)
                 self.bot.inline_cbs[i].remove(cb)
 
         if removed:
             for i in removed:
-                if i in reloaded: 
-                    continue
                 mod = inspect.getmodule(i)
+                if mod in reloaded: 
+                    continue
                 if "__destroy__" in dir(mod):
                     mod.__destroy__()
                 imp.reload(mod)
                 loadplugin(mod, self.name, self.bot, self.stream)
-            return "12Module System⎟ Reloaded %s." % mod.__name__
+                reloaded.append(mod)
+            table = namedtable([i.__name__ for i in reloaded],
+                               size=72,
+                               header="Reloaded modules ")
+            for i in table:
+                yield i
         else:
             return "12Module System⎟ Module not found."
 
