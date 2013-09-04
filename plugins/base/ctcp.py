@@ -21,6 +21,6 @@ def __initialise__(name, bot, stream):
 			text = text[1:-1].split(" ")
 			command = text[0].upper()
 			if command in replies:
-				stream.message("\x01%s %s\x01" % (command, replies[command].format(text.split())), msg.context, "NOTICE")
+				stream.message("\x01%s %s\x01" % (command, replies[command].format(text)), msg.context, "NOTICE")
 
 	bot.register("privmsg", ctcpreply)
