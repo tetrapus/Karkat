@@ -19,7 +19,8 @@ class ModManager(object):
         bot.register("privmsg", self.reload_modules)
         bot.register("privmsg", self.load_modules)
 
-    @cb.command("modules", "(.*)", admin=True) # NTS: Figure out how this function signature works
+    @cb.command("modules", "(.*)", 
+                admin=True) # NTS: Figure out how this function signature works
     def list_modules(self, message, filter):
         modules = set()
         for key, ls in list(self.bot.callbacks.items()) + list(self.bot.inline_cbs.items()):
@@ -46,7 +47,9 @@ class ModManager(object):
                 self.bot.inline_cbs[i].remove(cb)
         return removed
 
-    @cb.command("unload", "(.+)", admin=True, help="12Module System⎟ Usage: [!@]unload <module>")
+    @cb.command("unload", "(.+)", 
+                admin=True, 
+                help="12Module System⎟ Usage: [!@]unload <module>")
     def unregister_modules(self, message, module):
         removed = {inspect.getmodule(x).__name__ for x in self.remove_modules(module)}
         table = namedtable(removed or ["No matches."],
@@ -55,7 +58,9 @@ class ModManager(object):
         for i in table:
             yield i
 
-    @cb.command("reload", "(.+)", admin=True, help="12Module System⎟ Usage: [!@]reload <module>")
+    @cb.command("reload", "(.+)", 
+                admin=True, 
+                help="12Module System⎟ Usage: [!@]reload <module>")
     def reload_modules(self, message, module):
         # Find and remove all callbacks
         removed = self.remove_modules(module)
@@ -80,10 +85,15 @@ class ModManager(object):
             yield "12Module System⎟ Module not found."
 
 
-    @cb.command("load", "(.+)", admin=True, help="12Module System⎟ Usage: [!@]load <module>")
+    @cb.command("load", "(.+)", 
+                admin=True, 
+                help="12Module System⎟ Usage: [!@]load <module>")
     def load_modules(self, message, module):
+        path = module.split(".")
         try:
-            module = __import__(module)
+            module = __import__(module[0])
+            for i in path[1:]:
+                module = module.__dict__[i]
         except:
             return "12Module System⎟ Module failed to load."
         else:
