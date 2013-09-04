@@ -25,7 +25,6 @@ __destroy__(): A function triggered on bot death.
 import socket
 import sys
 
-import yaml
 import docopt
 
 from threads import StatefulBot, loadplugin

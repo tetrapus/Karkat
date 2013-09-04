@@ -38,17 +38,17 @@ class ModManager(object):
         removed = []
         for i in self.bot.callbacks:
             for cb in [x for x in self.bot.callbacks[i] if self.fname(x).startswith(module)]:
-                removed.append(fname(cb))
+                removed.append(cb)
                 self.bot.callbacks[i].remove(cb)
         for i in self.bot.inline_cbs:
             for cb in [x for x in self.bot.inline_cbs[i] if self.fname(x).startswith(module)]:
-                removed.append(fname(cb))
+                removed.append(cb)
                 self.bot.inline_cbs[i].remove(cb)
         return removed
 
     @cb.command("unregister", "(.+)", admin=True, help="12Module System⎟ Usage: [!@]unregister <module>")
     def unregister_modules(self, message, module):
-        removed = self.remove_modules(module)
+        removed = {inspect.getmodule(x).__name__ for x in self.remove_modules(module)}
         table = namedtable(removed or ["No matches."],
                            size=72,
                            header="Unregistered modules ")

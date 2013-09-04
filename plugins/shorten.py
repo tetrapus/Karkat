@@ -1,8 +1,6 @@
 from irc import Callback
 import url as URL
 
-import yaml
-
 cb = Callback()
 
 @cb.threadsafe
