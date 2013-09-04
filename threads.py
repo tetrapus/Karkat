@@ -553,16 +553,20 @@ class Bot(Connection):
 def loadplugin(mod, name, bot, stream):
     if "__initialise__" in dir(mod):
         mod.__initialise__(name, bot, stream)
+        print("    Initialised %s." % mod.__name__)
     if "__callbacks__" in dir(mod):
         for trigger in mod.__callbacks__:
             for callback in mod.__callbacks__[trigger]:
                 bot.register(trigger, callback)
+                print("        Registered callback: %s" % callback.__name__)
     if "__icallbacks__" in dir(mod):
         for trigger in mod.__icallbacks__:
             for callback in mod.__icallbacks__[trigger]:
                 bot.register_i(trigger, callback)
+                print("        Registered inline callback: %s" % callback.__name__)
     if "__destroy__" in dir(mod):
         bot.register_i("DIE", mod.__destroy__)
+        print("        Registered destructor: %s" % mod.__destroy__.__name__)
 
 class StatefulBot(Bot):
     """ Beware of thread safety when manipulating server state. If a callback
