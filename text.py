@@ -104,6 +104,7 @@ def striplen(data):
 
 
 def namedtable(results, size=100, rowmax=None, header="", rheader=""):
+    results = list(results)
     # Calculate the biggest column size
     biggest = len(max(results, key=len))
     # Calculate the maximum number of possible columns
