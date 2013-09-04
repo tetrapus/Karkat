@@ -361,6 +361,7 @@ class Connection(threading.Thread):
                                                 self.realname))
         self.connected = True
         self.printer = ColourPrinter(self)
+        self.printer.start()
 
     def sendline(self, line):
         self.sock.send(("%s\r\n" % line).encode("utf-8"))

@@ -63,7 +63,6 @@ def log(line):
 
 flist = {
          "376" : [#authenticate, # plugin
-                  lambda *x: printer.start(), # Bot
                   ], 
          "ALL" : [],
         }

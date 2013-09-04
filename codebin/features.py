@@ -25,48 +25,6 @@ from irc import *
 
 apikeys = yaml.safe_load(open("apikeys.conf"))
 
-class URL(object):
-
-    regex = re.compile(r"\b(\w+://)?\w+(\.\w+)+/[^\s]*\b")
-        
-    @staticmethod
-    def uncaps(url):
-        page = json.decoder.JSONDecoder().decode(urllib.urlopen("http://ajax.googleapis.com/ajax/services/search/web?v=1.0&q=%s" % urllib.quote(url)).read())
-        urls = [i["unescapedUrl"].encode("utf-8") for i in page["responseData"]["results"]]
-        urls = [(difflib.SequenceMatcher(None, url.upper(), x.upper()).ratio(), x) for x in urls]
-        urls = [x for x in urls if x[0] > 0.8]
-        if urls: return max(urls, key=lambda x:x[0])[1]
-        else: return url.lower()
-        
-    @staticmethod
-    def format(url):
-        return "\x0312\x1f%s\x1f\x03" % url
-    
-    @staticmethod
-    def shorten(url):
-        args = {'login': apikeys["bit.ly"]["user"], 'apiKey':apikeys["bit.ly"]["key"], 'format': "json"}
-        if not url.lower().startswith("http://"):
-            url = "http://" + url
-        data = urllib.urlopen("http://api.bitly.com/v3/shorten?" + urllib.urlencode(args) + "&longUrl=" + urllib.quote(url)).read()
-        data = json.decoder.JSONDecoder().decode(data)
-        return data["data"]["url"].encode("utf-8")        
-
-@command("shorten shortgo bl bitly bit.ly".split(), "(.+)")
-def shortgo(message, url):
-    try:
-        return "「 ShortGo 」 %s" % URL.format(URL.shorten(url))
-    except:
-        return "「 ShortGo 」 That didn't work somehow."
-
-@Callback.msghandler
-def shortgo2(user, context, message):
-    if re.match("[!@](short(en|go)|bl|bit\.?ly) .+", message.text):
-        try:
-            data = URL.shorten(message.text.split(" ", 1)[-1])
-        except:
-            printer.message("「 ShortGo 」 That didn't work somehow.", message.context)
-        else:
-            printer.message("「 ShortGo 」 %s" % URL.format(data), message.context)
 
 class PiApproximator(object):
     precision = 75
@@ -1216,59 +1174,6 @@ class HelpFiles(object):
         if x[3].lower() == "::help": printer.message("See http://www.tetrap.us/karkat%s for documentation." % section, x[2])
     
     
-def complete(query):
-    import json
-    data = urllib.urlopen("http://suggestqueries.google.com/complete/search?output=firefox&client=firefox&hl=en&q=%(searchTerms)s"%{"searchTerms":query}).read()
-    data = json.JSONDecoder(encoding="ISO-8859-1").decode(data)[1]
-    data = [i.encode("utf-8") for i in data]
-    return data
-    
- 
-def completetable(query, results, size=100, rowmax=None):
-    biggest = len(max(results, key=len))
-    columns = int((size-2) / (float(biggest)+3))
-    if len(results) < columns:
-        columns = len(results)
-    rows = int(math.ceil(len(results)/float(columns)))
-    rownum = ""
-    if rowmax and rowmax < rows:
-        while rows > rowmax:
-            rows -= 1
-            results = results[:rows*columns]
-            biggest = len(max(results, key=len))
-            columns = int((size-2) / (float(biggest)+3))
-            rows = int(math.ceil(len(results)/float(columns)))
-        rownum = "(first %d rows) " % rows
-    data = ["12G04o08o12g03l04e12 suggest  %s%s%s'%s'"%(rownum, " "*(((columns if len(results) > columns else len(results)) * (biggest+3)) - 17 - len(query) - len(rownum)), " "*((15 + len(query) + len(rownum)) % columns) if len(results) < columns else "", query)]
-    cellsize = (len(data[0]) - 26) / columns if columns*(biggest+3) < len(data[0]) - 25 else biggest
-    for i in range(rows):
-        line = results[i*columns:(i+1)*columns if len(results) > (i+1)*columns else len(results)]
-        line = ["%s%s"%((x, " "*(cellsize-len(x))) if y == 0 or y + 1 < columns else (" "*(cellsize-len(x)), x)) for y, x in enumerate(line)]
-        data.append("%s%s%s" %("\x0312|\x03 ", " \x0312|\x03 ".join(line), " \x0312|\x03"))
-    if len(data) > 2 and len(data[-1]) < len(data[1]):
-        replacement = list(data[-2])
-        replacement.insert(len(data[-1])-5, "\x1f")
-        data[-2] = "".join(replacement)
-    data[-1] = ""+data[-1]
-    return data     
-
-@Callback.threadsafe
-@command(triggers = ["complete", "suggest"], 
-         args     = "(.+)", 
-         help     = "「 03Google 12suggest 」 Syntax is [!@](complete|suggest) QUERY. @ will truncate the output to 3 lines, and send to the channel.")
-def complete_trigger(message, query):
-    """
-    - Syntax: [!@](complete|suggest) 03query
-    - Description: Ask Google for similar search queries.
-    """
-    result = complete(query)
-    if result:
-        table = completetable(query, result, 72, 3 if message.text.startswith("@") else None)
-        for line in table:
-            yield line
-    else:
-        yield "「 03Google 12suggest 」 No results."
-            
 def benchmark(funct, args=(), kwargs={}, iterations=1000):
     values = []
     for i in range(iterations):
@@ -1541,32 +1446,7 @@ def joinchecker():
     checker.checking = False
     checker.join()
 
-        
-class AddGame(object):
-    def __init__(self, path):
-        self.path = path
-        self.num = int(open(path).read().strip())
-        self.history = {}
-
-    def trigger(self, x, y):
-        nick = Address(x[0]).nick
-        if Message(y).text.lower() == ".add":
-            if nick in self.history:
-                self.history[nick] = [(t, d) for t, d in self.history[nick] if time.time() - t < 150]
-                self.history[nick].append((time.time(), time.time() - self.history[nick][-1][0] if self.history[nick] else 0))
-                self.history[nick] = self.history[nick][-4:]
-            else:
-                self.history[nick] = [(time.time(), 0)]
-            
-            if sum(i[0] for i in self.history[nick]) / len(self.history[nick]) < 1.5 or (len(self.history[nick]) - 1 and sum(abs(self.history[nick][i][-1] - self.history[nick][i-1][-1]) for i in range(1, len(self.history[nick]))) / len(self.history[nick]) < 2):
-                printer.message("fuck you bitch i ain't no adding machine", nick, "NOTICE")
-            else:
-                self.num += 1
-                open(self.path, 'w').write(str(self.num))
-
-                printer.message("02Thanks for that %s, 03%s"%(nick, "The number has been increased to %s."%self.num))
-addg = AddGame("./addgame")
-
+    
 def die(data="QUIT"):
     bot.quit(":" + ai.getData(data))
     globals()["connected"] = False
