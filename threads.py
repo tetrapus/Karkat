@@ -399,7 +399,10 @@ class Bot(Connection):
     def __init__(self, conf, cbs=None, icbs=None):
         super(Bot, self).__init__(conf)
         self.callbacks = cbs or {"ALL":[]}
-        self.inline_cbs = icbs or {"ALL":[], "DIE":[]}
+        self.inline_cbs = icbs or {"ALL":[], "DIE":[], "ping": [self.pong]}
+
+    def pong(self, line):
+        self.sendline("PONG " + line.split(" ", 1)[1])
 
     def makeCallers(self, callers=2):
         # Make 4 general purpose callers.
