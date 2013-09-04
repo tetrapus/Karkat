@@ -85,7 +85,7 @@ class ModManager(object):
             if len(reloaded) == 1:
                 yield "12Module Manager⎟ %s reloaded." % (list(reloaded)[0])
             else:
-                table = namedtable([i.__name__ for i in reloaded],
+                table = namedtable(reloaded,
                                    size=72,
                                    header="Reloaded modules ")
                 for i in table:
