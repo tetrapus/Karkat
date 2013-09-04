@@ -8,10 +8,10 @@ REPLYFILE = "ctcp.yaml"
 def __initialise__(name, bot, stream):
 	replies = {}
 	if os.path.exists(REPLYFILE):
-		replies.update(yaml.safe_load(REPLYFILE))
+		replies.update(yaml.safe_load(open(REPLYFILE)))
 	conf = os.path.join("config", name, REPLYFILE)
 	if os.path.exists(conf):
-		replies.update(yaml.safe_load(conf))
+		replies.update(yaml.safe_load(open(conf)))
 	replies = {key.upper(): value for key, value in replies.items()}
 
 	def ctcpreply(line):
