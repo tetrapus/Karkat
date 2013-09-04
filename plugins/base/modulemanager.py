@@ -91,7 +91,7 @@ class ModManager(object):
     def load_modules(self, message, module):
         path = module.split(".")
         try:
-            module = __import__(module[0])
+            module = __import__(path[0])
             for i in path[1:]:
                 module = module.__dict__[i]
         except:
