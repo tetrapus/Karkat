@@ -46,7 +46,7 @@ class ModManager(object):
                 self.bot.inline_cbs[i].remove(cb)
         return removed
 
-    @cb.command("unregister", "(.+)", admin=True, help="12Module System⎟ Usage: [!@]unregister <module>")
+    @cb.command("unload", "(.+)", admin=True, help="12Module System⎟ Usage: [!@]unload <module>")
     def unregister_modules(self, message, module):
         removed = {inspect.getmodule(x).__name__ for x in self.remove_modules(module)}
         table = namedtable(removed or ["No matches."],
@@ -86,8 +86,9 @@ class ModManager(object):
             module = __import__(module)
         except ImportError:
             return "12Module System⎟ Module failed to load."
-        loadplugin(module, self.name, self.bot, self.stream)
-        return "12Module System⎟ Loaded %s." % module.__name__
+        else:
+            loadplugin(module, self.name, self.bot, self.stream)
+            return "12Module System⎟ Loaded %s." % module.__name__
 
 
 __initialise__ = ModManager
