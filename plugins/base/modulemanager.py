@@ -34,17 +34,21 @@ class ModManager(object):
     def fname(funct):
         return inspect.getmodule(funct).__name__ + "." + funct.__name__
 
-    @cb.command("unregister", "(.+)", admin=True, help="12Module System⎟ Usage: [!@]unregister <module>")
-    def unregister_modules(self, message, module):
+    def remove_modules(self, module):
         removed = []
         for i in self.bot.callbacks:
-            for cb in [x for x in self.bot.callbacks[i] if fname(x).startswith(module)]:
+            for cb in [x for x in self.bot.callbacks[i] if self.fname(x).startswith(module)]:
                 removed.append(fname(cb))
                 self.bot.callbacks[i].remove(cb)
         for i in self.bot.inline_cbs:
-            for cb in [x for x in self.bot.inline_cbs[i] if fname(x).startswith(module)]:
+            for cb in [x for x in self.bot.inline_cbs[i] if self.fname(x).startswith(module)]:
                 removed.append(fname(cb))
                 self.bot.inline_cbs[i].remove(cb)
+        return removed
+
+    @cb.command("unregister", "(.+)", admin=True, help="12Module System⎟ Usage: [!@]unregister <module>")
+    def unregister_modules(self, message, module):
+        removed = self.remove_modules(module)
         table = namedtable(removed or ["No matches."],
                            size=72,
                            header="Unregistered modules ")
@@ -54,16 +58,8 @@ class ModManager(object):
     @cb.command("reload", "(.+)", admin=True, help="12Module System⎟ Usage: [!@]reload <module>")
     def reload_modules(self, message, module):
         # Find and remove all callbacks
-        removed = []
+        removed = self.remove_modules(module)
         reloaded = []
-        for i in self.bot.callbacks:
-            for cb in [x for x in self.bot.callbacks[i] if self.fname(x).startswith(module)]:
-                removed.append(cb)
-                self.bot.callbacks[i].remove(cb)
-        for i in self.bot.inline_cbs:
-            for cb in [x for x in self.bot.inline_cbs[i] if self.fname(x).startswith(module)]:
-                removed.append(cb)
-                self.bot.inline_cbs[i].remove(cb)
 
         if removed:
             for i in removed:
