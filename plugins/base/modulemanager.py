@@ -84,7 +84,7 @@ class ModManager(object):
     def load_modules(self, message, module):
         try:
             module = __import__(module)
-        except ImportError:
+        except:
             return "12Module System⎟ Module failed to load."
         else:
             loadplugin(module, self.name, self.bot, self.stream)
