@@ -1,13 +1,18 @@
 # Karkat
 
 Multithreaded python IRC socket bot.
+Warning: This readme may be out of date. Karkat is undergoing thorough modifications to his plugin structure. The majority of former features are currently not ported to the new interface- this is reasonably easy to do, but I have not done so as I am cleaning them all up before re-adding them. Please be patient, and feel free to do it yourself.
 
 ## How to use Karkat
 Create a config file. A sample file (Sample.yaml) is provided. Run Karkat as follows: ``python karkat.py <config>``
-Some data files are not provided. Delete classes and entries in the callback registry (flist) as necessary until it works.
+Some data files are not provided. Karkat will show warnings if any necessary apikeys are not present. Some dependancies are not included and may be required (anyone want to write a setup.py?)
+These are:
+- Docopt
+- Requests
+- PyYaml
 
 ## Files
-The main file is ``karkat.py``. Currently, this file sets up all the threads and callbacks, but the aim is to modularise this and replace it with a config.
+The main file is ``karkat.py``. 
 
 ### threads.py 
 
