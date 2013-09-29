@@ -120,7 +120,7 @@ else:
             difftime = collections.OrderedDict()
             difftime["start"] = time.time()
             colors = [1, 14, 15]
-            nick = self.cb.bot.lower(message.address.nick)
+            nick = cb.bot.lower(message.address.nick)
             if save:
                 self.users[nick] = username
                 self.savefile()
@@ -128,7 +128,7 @@ else:
             if not username:
                 username = message.address.nick
 
-            lowername = self.cb.bot.lower(username)
+            lowername = cb.bot.lower(username)
             if lowername in self.users:
                 username = self.users[lowername]
 
@@ -178,7 +178,7 @@ else:
                 users = (message.address.nick, user1)
             else:
                 users = (user1, user2)
-            users = [self.users[self.cb.bot.lower(i)] if self.cb.bot.lower(i) in self.users else i for i in users]
+            users = [self.users[cb.bot.lower(i)] if cb.bot.lower(i) in self.users else i for i in users]
             first = self.network.get_user(users[0])
             tasteometer, artists = first.compare_with_user(users[1])
             tasteometer = float(tasteometer)
