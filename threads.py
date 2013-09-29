@@ -225,6 +225,9 @@ class ColourPrinter(Printer):
                       lambda x: (("\x03%s" % (color)) + (x.group(1) or "")),
                       data)
         data = data.replace("\x0f", "\x0f\x03%s" % (color))
+        if "\n" in data:
+            data = data.split("\n", 1)
+            data = "%s\n%s" % (data[0], self.defaultcolor(data[1]))
         return "\x03%s%s" % (color, data)
 
     def message(self, msg, recipient=None, method="PRIVMSG"):
