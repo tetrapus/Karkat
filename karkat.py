@@ -4,12 +4,13 @@
 Usage: %(name)s [options] <config>
 
 Options:
-    -h --help                       Show this screen.
-    --version                       Show version.
-    -v N, --verbosity=N             Set verbosity [default: 1]
-    -c FILE, --config=FILE          Set server config [default: default.yaml]
-    -p PACKAGE, --plugins=PACKAGE   Set plugin package [default: plugins]
-    -e MODULES, --exclude=MODULES   Comma separated list of modules to exlcude
+    -h --help                           Show this message.
+    --version                           Show version.
+    -v N, --verbosity=N                 Set verbosity [default: 1]
+    -p PACKAGE, --plugins=PACKAGE       Set plugin package [default: plugins]
+    -e MODULES, --exclude=MODULES       Comma separated list of modules to exlcude
+    -d --debug                          Turn on debugging
+    -i PASSWORD, --identify=PASSWORD    Identify with the given password
 """
 
 """
@@ -38,49 +39,15 @@ GP_CALLERS = 2
 
 #TODO: Move connection object and subclasses
 # TODO: Turn subclasses into objects owned by the connection thread.
-
-try:
-    server = StatefulBot(sys.argv[1])
-except (OSError, IndexError):
-    print("Usage: %s <config>" % sys.argv[0])
-    sys.exit(1)
-server.connect()
-printer = server.printer
-
-def authenticate(words, line):
-    if "-i" in sys.argv:
-        try:
-            password = sys.argv[sys.argv.index("-i")+1]
-        except IndexError:
-            return
-        else:
-            server.sendline("msg nickserv identify %s" % password)
-
-@Callback.inline
-def log(line):
-    if "-d" in sys.argv:
-        print("[%s] %s" % (server.server[0], line))
-
-flist = {
-         "376" : [#authenticate, # plugin
-                  ], 
-        }
-
-inline = {
-         "privmsg" : [#Callback.inline(lambda y: printer.set_target(Message(y).context)),  # Bot ???
-                    ],
-         "ALL"     : [Callback.inline(log)], # plugin
-}
-
-
 if __name__ == "__main__":
     args = docopt.docopt(__doc__ % {"name": sys.argv[0]})
-    print (args)
-    #if "-f" in sys.argv:
-    #    exec(open("features.py").read())
-    #    # Temporary.
 
-    servername = sys.argv[1].split(".")[0]
+    server = StatefulBot(args["<config>"])
+
+    server.connect()
+    printer = server.printer
+
+    servername = args["<config>"].split(".")[0]
 
     plugins = __import__("plugins") # temporary
     modules = plugins.__all__
@@ -95,7 +62,15 @@ if __name__ == "__main__":
         loadplugin(mod, servername, server, server.printer)
         print("Loaded %s" % mod.__name__)
 
-    server.register_all(inline)
+    if args["--identify"]:
+        def authenticate(line):
+            server.sendline("msg nickserv :identify %s" % args["--identify"])
+        server.register("376", authenticate)
+    if args["--debug"]:
+        @Callback.inline
+        def log(line):
+            print("[%s] %s" % (server.server[0], line))
+        server.register("ALL", log)
 
     print("Running...")
     server.start()
