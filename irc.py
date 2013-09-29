@@ -108,7 +108,7 @@ class Callback(object):
                     user = message.address
 
                     # Check admin permissions
-                    if admin and not self.bot.isAdmin(user.hostmask):
+                    if admin and not self.bot.is_admin(user.hostmask):
                         return
 
                     if len(argv) == 2:
@@ -247,7 +247,7 @@ class Callback(object):
                     user = message.address
 
                     # Check admin permissions
-                    if admin and not self.bot.isAdmin(user.hostmask):
+                    if admin and not self.bot.is_admin(user.hostmask):
                         print(user.hostmask)
                         return
 

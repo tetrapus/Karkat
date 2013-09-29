@@ -33,7 +33,7 @@ class AutoJoin(object):
     @cb.threadsafe
     def onInvite(self, line):
         words = line.split()
-        if self.server.isAdmin(words[0]) or words[3][1:].lower() in self.chans.lower().split(","):
+        if self.server.is_admin(words[0]) or words[3][1:].lower() in self.chans.lower().split(","):
             self.stream.raw_message("JOIN %s" % words[3])
 
     @cb.command("autojoin", public=":", private="")

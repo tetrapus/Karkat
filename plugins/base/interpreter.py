@@ -25,7 +25,7 @@ class Interpreter(object):
     def trigger(self, line):
         msg = Message(line)
         args = msg.text.split(" ", 1)
-        if self.bot.isAdmin(msg.address.hostmask):
+        if self.bot.is_admin(msg.address.hostmask):
             # TODO: modify passed in namespace's stdout.
             evaluate = False
             if msg.text == ("%s, undo" % self.bot.nick):
