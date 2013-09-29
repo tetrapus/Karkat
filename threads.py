@@ -651,7 +651,7 @@ class StatefulBot(SelectiveBot):
     def joined_channel(self, line):
         """ Handles 352s (WHOs) """
         words = line.split()
-        self.channels[words[3].lower()].add(words[7])
+        self.channels.setdefault(words[3].lower(), []).add(words[7])
 
     def user_nickchange(self, line):
         """ Handles NICKs """
