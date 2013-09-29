@@ -9,13 +9,13 @@ class AddGame(object):
 
     def __init__(self, name, bot, printer):
         self.stream = printer
-        self.addfile = os.path.join("config", name, self.ADDFILE)
-        os.makedirs(os.path.join("config", name), exist_ok=True)
+        self.addfile = bot.get_config_dir(self.ADDFILE)
 
         try:
             self.num = int(open(self.addfile, "r").read().strip())
         except:
             # File doesn't exist
+            os.makedirs(bot.get_config_dir(), exist_ok=True)
             self.num = 0
             open(self.addfile, "w").write(str(self.num))
         self.history = {}
@@ -38,6 +38,6 @@ class AddGame(object):
                 self.num += 1
                 open(self.addfile, 'w').write(str(self.num))
 
-                self.stream.message("02Thanks for that %s, 03%s"%(nick, "The number has been increased to %s."%self.num))
+                self.stream.message("02Thanks for that %s, 03%s"%(nick, "The Number has been increased to %s."%self.num))
 
 __initialise__ = AddGame

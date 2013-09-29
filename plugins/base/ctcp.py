@@ -9,7 +9,7 @@ def __initialise__(name, bot, stream):
 	replies = {}
 	if os.path.exists(REPLYFILE):
 		replies.update(yaml.safe_load(open(REPLYFILE)))
-	conf = os.path.join("config", name, REPLYFILE)
+	conf = bot.get_config_dir(REPLYFILE)
 	if os.path.exists(conf):
 		replies.update(yaml.safe_load(open(conf)))
 

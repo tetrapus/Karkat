@@ -36,7 +36,7 @@ class ModManager(object):
         return removed
 
 
-    @cb.command("modules", "(.*)", 
+    @cb.command(["modules", "plugins"], "(.*)", 
                 admin=True) # NTS: Figure out how this function signature works
     def list_modules(self, message, filter):
         modules = set()
@@ -50,7 +50,7 @@ class ModManager(object):
 
     @cb.command("unload", "(.+)", 
                 admin=True, 
-                help="12Module Manager⎟ Usage: [!@]unload <module>")
+                usage="12Module Manager⎟ Usage: [!@]unload <module>")
     def unregister_modules(self, message, module):
         removed = {inspect.getmodule(x).__name__ for x in self.remove_modules(module)}
         if not removed:
@@ -66,7 +66,8 @@ class ModManager(object):
 
     @cb.command("reload", "(.+)", 
                 admin=True, 
-                help="12Module Manager⎟ Usage: [!@]reload <module>")
+                usage="12Module Manager⎟ Usage: [!@]reload <module>",
+                error="12Module Manager⎟ Module failed to load.")
     def reload_modules(self, message, module):
         # Find and remove all callbacks
         removed = self.remove_modules(module)
@@ -96,7 +97,8 @@ class ModManager(object):
 
     @cb.command("load", "(.+)", 
                 admin=True, 
-                help="12Module Manager⎟ Usage: [!@]load <module>")
+                usage="12Module Manager⎟ Usage: [!@]load <module>",
+                error="12Module Manager⎟ Module failed to load.")
     def load_modules(self, message, module):
         path = module.split(".")
         try:

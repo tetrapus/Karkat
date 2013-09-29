@@ -1173,15 +1173,6 @@ class HelpFiles(object):
             section = ""
         if x[3].lower() == "::help": printer.message("See http://www.tetrap.us/karkat%s for documentation." % section, x[2])
     
-    
-def benchmark(funct, args=(), kwargs={}, iterations=1000):
-    values = []
-    for i in range(iterations):
-        values.append(time.time())
-        funct(*args, **kwargs)
-        values[-1] = time.time()-values[-1]
-    return average(values)
-    
 
 class AI(object):
     rickroll = open("./rickroll.txt").readlines()

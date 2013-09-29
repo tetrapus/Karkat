@@ -1,4 +1,3 @@
-import json
 import requests
 import re
 import urllib.parse as urllib
@@ -9,10 +8,9 @@ from text import unescape
 cb = Callback()
 
 @cb.threadsafe
-@cb.command("google", "(.+)", help="12Google⎟ Usage: !google <query>")
+@cb.command("google", "(.+)", usage="12Google⎟ Usage: !google <query>")
 def google(message, query):
-    request = requests.get("http://ajax.googleapis.com/ajax/services/search/web?v=1.0&q=%s" % urllib.quote(query))
-    page = json.loads(request.text)
+    page = requests.get("http://ajax.googleapis.com/ajax/services/search/web?v=1.0&q=%s" % urllib.quote(query)).json()
     # TODO: Error handling
 
     first = True

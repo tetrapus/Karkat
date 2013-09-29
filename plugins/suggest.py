@@ -1,4 +1,3 @@
-import json
 import requests
 from text import namedtable
 
@@ -7,14 +6,11 @@ from irc import Callback
 cb = Callback()
 
 def suggest(query):
-    data = requests.get("http://suggestqueries.google.com/complete/search?output=firefox&client=firefox&hl=en&q=%(searchTerms)s"%{"searchTerms":query}).text
-    data = json.loads(data)[1]
-    return data
+    return requests.get("http://suggestqueries.google.com/complete/search?output=firefox&client=firefox&hl=en&q=%(searchTerms)s"%{"searchTerms":query}).json()[1]
 
 @cb.threadsafe
-@cb.command(triggers = ["complete", "suggest"], 
-            args     = "(.+)", 
-            help     = "12Google suggest⎟  Usage: [!@](complete|suggest) QUERY.")
+@cb.command(["complete", "suggest"], "(.+)", 
+            usage = "12Google suggest⎟  Usage: [!@](complete|suggest) <query>")
 def complete_trigger(message, query):
     """
     - Syntax: [!@](complete|suggest) 03query

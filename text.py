@@ -40,24 +40,24 @@ def pretty_date(delta):
         if second_diff < 10:
             return "just now"
         if second_diff < 60:
-            return str(second_diff) + " seconds ago"
+            return str(int(second_diff)) + " seconds ago"
         if second_diff < 120:
             return  "a minute ago"
         if second_diff < 3600:
-            return str( second_diff / 60 ) + " minutes ago"
+            return str(int(second_diff / 60)) + " minutes ago"
         if second_diff < 7200:
             return "an hour ago"
         if second_diff < 86400:
-            return str( second_diff / 3600 ) + " hours ago"
+            return str(int(second_diff / 3600)) + " hours ago"
     if day_diff == 1:
         return "Yesterday"
     if day_diff < 7:
         return str(day_diff) + " days ago"
     if day_diff < 31:
-        return str(day_diff/7) + " weeks ago"
+        return str(int(day_diff/7)) + " weeks ago"
     if day_diff < 365:
-        return str(day_diff/30) + " months ago"
-    return str(day_diff/365) + " years ago"
+        return str(int(day_diff/30)) + " months ago"
+    return str(int(day_diff/365)) + " years ago"
 
 def ordinal(value):
     suffixes = {1:"st", 2:"nd", 3:"rd"}
@@ -177,7 +177,7 @@ def aligntable(rows, separator=" 08⎪ "):
     maxwidth = len(max(rows, key=len))
     for i in rows:
         if len(i) != maxwidth:
-            i.extend([""] * maxwidth-len(i))
+            i.extend([""] * (maxwidth-len(i)))
 
     # Invert
     columns = list(zip(*rows))
@@ -188,10 +188,13 @@ def aligntable(rows, separator=" 08⎪ "):
     rows = [separator.join(x) for x in rows]
     return rows
 
-def treetable(tree, separator=" 08⎪ "):
+def tree(tree, separator=" 08⎪ "):
+    "│  ├───" # treechars
     tree = sorted(tree)
     # Determine the maximum depth and the width for each column
     # TODO
+
+def generate_tree(ls): pass
 
 
 class Buffer(object):
@@ -202,17 +205,17 @@ class Buffer(object):
     """
 
     def __init__(self):
-        self.buffer = ""
+        self.buffer = b''
 
     def __iter__(self):
         return self
 
     def next(self):
-        if "\n" not in self.buffer:
+        if b"\n" not in self.buffer:
             raise StopIteration
         else:
-            data, self.buffer = tuple(self.buffer.split("\r\n", 1))
-            return data
+            data, self.buffer = tuple(self.buffer.split(b"\r\n", 1))
+            return data.decode("utf-8", "replace")
 
     def __next__(self):
         return self.next()

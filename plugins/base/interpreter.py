@@ -1,4 +1,5 @@
 from irc import Message
+import sys
 
 class Allbots:
     def __init__(self, bots, args = ""):
@@ -17,13 +18,14 @@ class Interpreter(object):
         self.codeReact = 0
         self.stream = stream
         self.bot = bot
-        self.namespace = {"server": bot, "printer": stream, "print": stream.message, "bot": Allbots([bot])}
+        self.namespace = {"server": bot, "printer": stream, "print": stream.message, "bot": Allbots([bot]), "main":__import__("__main__")}
+        self.namespace.update(sys.modules)
         bot.register("privmsg", self.trigger)
 
     def trigger(self, line):
         msg = Message(line)
         args = msg.text.split(" ", 1)
-        if msg.address.mask in self.bot.admins:
+        if self.bot.isAdmin(msg.address.hostmask):
             # TODO: modify passed in namespace's stdout.
             evaluate = False
             if msg.text == ("%s, undo" % self.bot.nick):

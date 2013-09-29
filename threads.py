@@ -1,5 +1,6 @@
 """ This module contains the worker threads for Karkat's system. """
 
+import os
 import sys
 import threading
 import time
@@ -7,6 +8,7 @@ import queue
 import re
 import collections
 import socket
+import fnmatch
 
 import yaml
 
@@ -312,6 +314,8 @@ class Connection(threading.Thread):
         self.nicks = config["Nick"]
 
         self.admins = config["Admins"]
+        self.config = config 
+        self.name = conf.split(".")[0]
 
         self.connected = False
 
@@ -335,7 +339,7 @@ class Connection(threading.Thread):
         self.nick = nicks.popleft()
         self.sendline("NICK %s" % self.nick)
         # Find a working nickname
-        while self.buff.append(self.sock.recv(1).decode("utf-8")):
+        while self.buff.append(self.sock.recv(1)):
             for line in self.buff:
                 if line.startswith("PING"):
                     # We're done here.
@@ -369,6 +373,7 @@ class Connection(threading.Thread):
     def dispatch(self, line):
         """
         Dispatch and process a line of IRC.
+        Override me.
         """
         return
 
@@ -383,7 +388,7 @@ class Connection(threading.Thread):
 
     def run(self):
         try:
-            while self.connected and self.buff.append(self.sock.recv(1024).decode("utf-8")):
+            while self.connected and self.buff.append(self.sock.recv(1024)):
                 for line in self.buff:
                     self.dispatch(line)               
 
@@ -400,6 +405,13 @@ class Bot(Connection):
         super(Bot, self).__init__(conf)
         self.callbacks = cbs or {"ALL":[]}
         self.inline_cbs = icbs or {"ALL":[], "DIE":[], "ping": [self.pong]}
+
+    def get_config_dir(self, *subdirs):
+        if "Data" in self.config:
+            directory = self.config["Data"]
+        else:
+            directory = os.path.join("config", self.name)
+        return os.path.join(directory, *subdirs)
 
     def pong(self, line):
         self.sendline("PONG " + line.split(" ", 1)[1])
@@ -592,6 +604,9 @@ class StatefulBot(Bot):
          "nick"    : [self.user_nickchange],
          "kick"    : [self.user_kicked],
          "352"     : [self.joined_channel]})
+
+    def isAdmin(self, address):
+        return any(fnmatch.fnmatch(address, i) for i in self.admins) or any(address.endswith("@" + i) for i in self.admins)
 
     def user_left(self, line):
         """ Handles PARTs """

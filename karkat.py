@@ -64,15 +64,12 @@ def log(line):
 flist = {
          "376" : [#authenticate, # plugin
                   ], 
-         "ALL" : [],
         }
 
 inline = {
          "privmsg" : [lambda y: printer.set_target(Message(y).context),  # Bot ???
                     ],
-         "ping"    : [lambda y: server.sendline("PONG " + y.split()[1])], # Bot
          "ALL"     : [log], # plugin
-         "DIE"     : []
 }
 
 
