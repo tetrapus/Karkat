@@ -46,10 +46,20 @@ class Command(Message):
             self.arg, self.argv = None, None
 
 class Callback(object):
+    # TODO: shuffle methods with EventHandler
     @staticmethod
     def threadsafe(funct):
         funct.isThreadsafe = True
         return funct
+
+    @staticmethod
+    def inline(funct):
+        funct.isInline = True
+        return funct
+
+    @staticmethod
+    def isInline(funct):
+        return hasattr(funct, "isInline") and funct.isInline 
     
     @staticmethod
     def isThreadsafe(funct):
@@ -89,6 +99,9 @@ class Callback(object):
             fargs = args[:-1] + (message.address, message.context, message)
             return funct(*fargs)
         return _
+
+    def __init__(self):
+        self.callbacks = {}
 
     def initialise(self, name, bot, printer):
         self.stream = printer

@@ -28,7 +28,7 @@ import sys
 import docopt
 
 from threads import StatefulBot, loadplugin
-from irc import Message
+from irc import Callback
 
 __version__ = 2.0
 
@@ -56,7 +56,7 @@ def authenticate(words, line):
         else:
             server.sendline("msg nickserv identify %s" % password)
 
-
+@Callback.inline
 def log(line):
     if "-d" in sys.argv:
         print("[%s] %s" % (server.server[0], line))
@@ -67,9 +67,9 @@ flist = {
         }
 
 inline = {
-         "privmsg" : [lambda y: printer.set_target(Message(y).context),  # Bot ???
+         "privmsg" : [#Callback.inline(lambda y: printer.set_target(Message(y).context)),  # Bot ???
                     ],
-         "ALL"     : [log], # plugin
+         "ALL"     : [Callback.inline(log)], # plugin
 }
 
 
@@ -96,7 +96,7 @@ if __name__ == "__main__":
         print("Loaded %s" % mod.__name__)
 
     server.register_all(flist)
-    server.register_alli(inline)
+    server.register_all(inline)
 
     print("Running...")
     server.start()

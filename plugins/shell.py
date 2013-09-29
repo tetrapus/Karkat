@@ -3,6 +3,7 @@ import time
 import threading
 import subprocess
 import signal
+from irc import Callback
 
 from irc import Message
 
@@ -33,8 +34,9 @@ class Shell(object):
         self.stream = printer
         self.bot = bot
 
-        bot.register_i("privmsg", self.trigger)
+        bot.register("privmsg", self.trigger)
 
+    @Callback.inline
     def trigger(self, line):
         message = Message(line)
         user, target, text = message.address, message.context, message.text

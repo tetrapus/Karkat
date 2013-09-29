@@ -1,4 +1,3 @@
-import inspect
 import imp
 
 from irc import Callback
@@ -19,20 +18,12 @@ class ModManager(object):
         bot.register("privmsg", self.reload_modules)
         bot.register("privmsg", self.load_modules)
 
-    @staticmethod
-    def fname(funct):
-        return inspect.getmodule(funct).__name__ + "." + funct.__name__
-
     def remove_modules(self, module):
         removed = []
         for i in self.bot.callbacks:
-            for cb in [x for x in self.bot.callbacks[i] if self.fname(x).startswith(module)]:
+            for cb in [x for x in self.bot.callbacks[i] if x.name.startswith(module)]:
                 removed.append(cb)
                 self.bot.callbacks[i].remove(cb)
-        for i in self.bot.inline_cbs:
-            for cb in [x for x in self.bot.inline_cbs[i] if self.fname(x).startswith(module)]:
-                removed.append(cb)
-                self.bot.inline_cbs[i].remove(cb)
         return removed
 
 
@@ -40,8 +31,8 @@ class ModManager(object):
                 admin=True) # NTS: Figure out how this function signature works
     def list_modules(self, message, filter):
         modules = set()
-        for key, ls in list(self.bot.callbacks.items()) + list(self.bot.inline_cbs.items()):
-            modules |= {inspect.getmodule(i).__name__ for i in ls}
+        for key, ls in list(self.bot.callbacks.items()):
+            modules |= {i.module.__name__ for i in ls}
         table = namedtable([i for i in modules if i.startswith(filter)] or ["No matches."],
                            size=72,
                            header="Loaded modules ")
@@ -52,7 +43,7 @@ class ModManager(object):
                 admin=True, 
                 usage="12Module Manager⎟ Usage: [!@]unload <module>")
     def unregister_modules(self, message, module):
-        removed = {inspect.getmodule(x).__name__ for x in self.remove_modules(module)}
+        removed = {x.module for x in self.remove_modules(module)}
         if not removed:
             yield "05Module Manager⎟ Module not found."
         elif len(removed) == 1:
@@ -75,7 +66,7 @@ class ModManager(object):
 
         if removed:
             for i in removed:
-                mod = inspect.getmodule(i)
+                mod = i.module
                 if mod.__name__ in reloaded: 
                     continue
                 if "__destroy__" in dir(mod):

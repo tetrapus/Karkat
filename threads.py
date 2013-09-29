@@ -8,6 +8,7 @@ import queue
 import re
 import collections
 import socket
+import inspect
 import fnmatch
 
 import yaml
@@ -109,9 +110,10 @@ class PrinterBuffer(object):
         return self
 
     def __exit__(self, cls, value, traceback):
-        self.sender.message("\n".join(self.buffer),
-                            self.recipient,
-                            self.method)
+        if self.buffer:
+            self.sender.message("\n".join(self.buffer),
+                                self.recipient,
+                                self.method)
 
 
 class Printer(WorkerThread):
@@ -121,11 +123,6 @@ class Printer(WorkerThread):
         WorkerThread.__init__(self)
         self.flush = False
         self.bot = connection
-        self.last = "#homestuck"
-
-    def set_target(self, channel):
-        """ Set the default output channel. """
-        self.last = channel
 
     def send(self, message):
         """
@@ -139,12 +136,10 @@ class Printer(WorkerThread):
         """
         self.flush = True
 
-    def message(self, mesg, recipient=None, method="PRIVMSG"):
+    def message(self, mesg, recipient, method="PRIVMSG"):
         """
         Send a message.
         """
-        if not recipient:
-            recipient = self.last
         for message in [i for i in str(mesg).split("\n") if i]:
             self.work.put("%s %s :%s" % (method, recipient, message))
         return mesg # Debugging
@@ -238,6 +233,16 @@ class ColourPrinter(Printer):
         return msg
 
 
+class InlineQueue(object):
+    @staticmethod
+    def queue(handler, line):
+        try:
+            handler(line)
+        except BaseException:
+            print("Error in inline function " + handler.name, file=sys.stderr)
+            sys.excepthook(*sys.exc_info())
+
+
 class Caller(WorkerThread):
     """
     A worker thread for executing jobs asynchronously.
@@ -295,7 +300,7 @@ class Caller(WorkerThread):
             try:
                 funct(arg)
             except BaseException:
-                print("Error in function %s%s" % (funct.__name__, arg))
+                print("Error in function %s%s" % (funct.name, arg))
                 sys.excepthook(*sys.exc_info())
             self.last = None
         assert self.work.qsize() == 0
@@ -399,12 +404,53 @@ class Connection(threading.Thread):
 
             self.connected = False
 
+class EventHandler(object):
+    GENERAL = 0
+    INLINE = 1
+    THREADSAFE = 2
+    BACKGROUND = 4
+
+    @property
+    def isInline(self):
+        return self.cbtype == self.INLINE
+
+    @property
+    def isThreadsafe(self):
+        return self.cbtype == self.THREADSAFE
+
+    @property
+    def isBackground(self):
+        return self.cbtype == self.BACKGROUND
+
+    @property
+    def isGeneral(self):
+        return self.cbtype == self.GENERAL
+    
+
+    def __init__(self, trigger, function):
+        self.trigger = trigger
+        self.module = inspect.getmodule(function)
+        self.name = self.module.__name__ + "." + function.__qualname__
+        self.funct = function
+        if Callback.isInline(function):
+            self.cbtype = self.INLINE
+        elif Callback.isThreadsafe(function):
+            self.cbtype = self.THREADSAFE
+        elif Callback.isBackground(function):
+            self.cbtype = self.BACKGROUND
+        else:
+            self.cbtype = self.GENERAL
+
+    def __call__(self, line):
+        return self.funct(line)
+
 
 class Bot(Connection):
-    def __init__(self, conf, cbs=None, icbs=None):
+
+    def __init__(self, conf):
         super(Bot, self).__init__(conf)
-        self.callbacks = cbs or {"ALL":[]}
-        self.inline_cbs = icbs or {"ALL":[], "DIE":[], "ping": [self.pong]}
+        self.callbacks = {"ALL": [], "DIE":[]}
+        self.register("ping", self.pong)
 
     def get_config_dir(self, *subdirs):
         if "Data" in self.config:
@@ -413,14 +459,17 @@ class Bot(Connection):
             directory = os.path.join("config", self.name)
         return os.path.join(directory, *subdirs)
 
+    @Callback.inline
     def pong(self, line):
         self.sendline("PONG " + line.split(" ", 1)[1])
 
     def makeCallers(self, callers=2):
-        # Make 4 general purpose callers.
-        self.callers   = [Caller() for _ in range(callers + 2)] 
-        self.caller    = self.callers[1] # second caller is the general caller
-        self.bg_caller = self.callers[0] # first caller is the background caller
+        # Make `callers` general purpose callers.
+        self.callers = [Caller() for _ in range(callers + 2)]
+        self.caller = {EventHandler.BACKGROUND: self.callers[0],
+                        EventHandler.GENERAL: self.callers[1],
+                        EventHandler.INLINE: InlineQueue,
+                        }
         for c in self.callers: 
             c.start()
 
@@ -443,7 +492,7 @@ class Bot(Connection):
 
     def cleanup(self):
         super(Bot, self).cleanup()
-        for funct in self.inline_cbs["DIE"]:
+        for funct in self.callbacks["DIE"]:
             funct()
         print("Cleaned up.")
 
@@ -461,15 +510,8 @@ class Bot(Connection):
                 self.register(trigger, f)
 
     def register(self, trigger, funct):
-        self.callbacks.setdefault(trigger, []).append(funct)
-
-    def register_alli(self, callbacks):
-        for trigger in callbacks:
-            for f in callbacks[trigger]:
-                self.register_i(trigger, f)
-
-    def register_i(self, trigger, funct):
-        self.inline_cbs.setdefault(trigger, []).append(funct)
+        callback = EventHandler(trigger, funct)
+        self.callbacks.setdefault(trigger, []).append(callback)
 
     def unregister_funct(self, callback, trigger=None):
         removed = []
@@ -485,19 +527,6 @@ class Bot(Connection):
 
         return removed
 
-    def unregister_ifunct(self, callback, trigger=None):
-        removed = []
-        if trigger is not None:
-            triggers = [trigger]
-        else: 
-            triggers = self.inline_cbs.keys()
-
-        for i in triggers:
-            while callback in self.inline_cbs[i]:
-                self.inline_cbs[i].remove(callback)       
-                removed.append(i)
-        return removed
-
     def unregister_name(self, funct, trigger=None):
         removed = []
         if trigger is not None:
@@ -506,25 +535,21 @@ class Bot(Connection):
             triggers = self.callbacks.keys()
 
         for i in triggers:
-            remove = [i for i in self.callbacks[i] if i.__name__ == funct]
+            remove = [i for i in self.callbacks[i] if i.name == funct]
             for f in remove:
                 self.callbacks[i].remove(f)       
                 removed.append(i)
         return removed
 
-    def unregister_iname(self, funct, trigger=None):
-        removed = []
-        if trigger is not None:
-            triggers = [trigger]
-        else: 
-            triggers = self.inline_cbs.keys()
+    def execute(self, handler, line):
+        """ Executes a callback. """
+        # TODO: replace queues with something more generic.
+        if handler.isThreadsafe:
+            handlerq = min(self.callers, key=lambda x: x.work.qsize())
+        else:
+            handlerq = self.caller[handler.cbtype]
 
-        for i in triggers:
-            remove = [i for i in self.inline_cbs[i] if i.__name__ == funct]
-            for f in remove:
-                self.inline_cbs[i].remove(f)       
-                removed.append(i)
-        return removed
+        handlerq.queue(handler, line)
 
     def dispatch(self, line):
         """
@@ -532,39 +557,13 @@ class Bot(Connection):
         """
         line = line.rstrip()
         words = line.split()
-
-        if words[0] in ["PING", "ERROR"]:
-            msgType = words[0]
-        else:
-            msgType = words[1]
-        
-        for funct in self.inline_cbs["ALL"]:
-            try:
-                funct(line)
-            except BaseException:
-                print("Error in inline function " + funct.__name__)
-                sys.excepthook(*sys.exc_info())
+        msgType = words[words[0] not in ["PING", "ERROR"]]
 
         self.rebalance()
 
-        for funct in self.callbacks["ALL"]:
-            self.caller.queue(funct, line)
+        for funct in self.callbacks["ALL"] + self.callbacks.get(msgType.lower(), []):
+            self.execute(funct, line)
 
-        # Inline functions: execute immediately.
-        for funct in self.inline_cbs.get(msgType.lower(), []):
-            try:
-                funct(line)
-            except BaseException:
-                print("Error in inline function " + funct.__name__)
-                sys.excepthook(*sys.exc_info())
-
-        for funct in self.callbacks.get(msgType.lower(), []):
-            if Callback.isBackground(funct):
-                self.bg_caller.queue(funct, line)
-            elif Callback.isThreadsafe(funct):
-                min(self.callers, key=lambda x: x.work.qsize()).queue(funct, line)
-            else:
-                self.caller.queue(funct, line)
 
 def loadplugin(mod, name, bot, stream):
     if "__initialise__" in dir(mod):
@@ -596,9 +595,9 @@ class StatefulBot(Bot):
     # TODO: Fix nickname case rules and do sanity checking
 
     def __init__(self, conf, cbs=None, icbs=None):
-        super(StatefulBot, self).__init__(conf, cbs, icbs)
+        super(StatefulBot, self).__init__(conf)
         self.channels = {}
-        self.register_alli({"quit"    : [self.user_quit],
+        self.register_all({"quit"    : [self.user_quit],
          "part"    : [self.user_left],
          "join"    : [self.user_join],
          "nick"    : [self.user_nickchange],
