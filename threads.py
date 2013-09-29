@@ -605,7 +605,7 @@ class StatefulBot(Bot):
          "kick"    : [self.user_kicked],
          "352"     : [self.joined_channel]})
 
-    def isAdmin(self, address):
+    def is_admin(self, address):
         return any(fnmatch.fnmatch(address, i) for i in self.admins) or any(address.endswith("@" + i) for i in self.admins)
 
     def user_left(self, line):

@@ -38,7 +38,7 @@ class Shell(object):
     def trigger(self, line):
         message = Message(line)
         user, target, text = message.address, message.context, message.text
-        if user.mask in self.bot.admins and message.text.split()[0] == "$":
+        if self.bot.is_admin(user.hostmask) and message.text.split()[0] == "$":
             args = text.split(" ", 1)[-1]
 
             if not self.activeShell:
