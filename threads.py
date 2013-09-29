@@ -641,6 +641,7 @@ class StatefulBot(SelectiveBot):
     def is_admin(self, address):
         return any(fnmatch.fnmatch(address, i) for i in self.admins) or any(address.endswith("@" + i) for i in self.admins)
 
+    @Callback.inline
     def onServerSettings(self, line):
         """ Implements server settings on connect """
         for i in line.split()[2:]:
@@ -650,40 +651,45 @@ class StatefulBot(SelectiveBot):
                 key, value = i.split("=", 1)
                 self.server_settings[key] = value
 
+    @Callback.inline
     def user_left(self, line):
         """ Handles PARTs """
         words = line.split()
         nick = Address(words[0]).nick
-        channel = words[2].lower()
-        if nick.lower() == self.nick.lower():
+        channel = self.lower(words[2])
+        if self.eq(nick, self.nick):
             del self.channels[channel]
         else:
             self.channels[channel].remove(nick)
 
+    @Callback.inline
     def user_quit(self, line):
         """ Handles QUITs"""
         words = line.split()
         nick = Address(words[0]).nick
         for i in self.channels:
-            if nick in self.channels[i]:
-                self.channels[i].remove(nick)
+            if self.isIn(nick, self.channels[i]):
+                self.channels[i].remove(nick) # Note: May error. This might indicate a logic error or a bastard server.
 
+    @Callback.inline
     def user_join(self, line):
         """ Handles JOINs """
         words = line.split()
         nick = Address(words[0]).nick
-        channel = words[2][1:].lower()
-        if nick.lower() == self.nick.lower():
+        channel = self.lower(words[2][1:])
+        if self.eq(nick, self.nick):
             self.channels[channel] = set()
             self.sendline("WHO %s" % words[2]) # TODO: replace with connection object shit.
         else:
             self.channels[channel].add(nick)
 
+    @Callback.inline
     def joined_channel(self, line):
         """ Handles 352s (WHOs) """
         words = line.split()
-        self.channels.setdefault(words[3].lower(), []).add(words[7])
+        self.channels.setdefault(self.lower(words[3]), set()).add(words[7])
 
+    @Callback.inline
     def user_nickchange(self, line):
         """ Handles NICKs """
         words = line.split()
@@ -693,12 +699,13 @@ class StatefulBot(SelectiveBot):
             if nick in self.channels[i]:
                 self.channels[i].remove(nick)
                 self.channels[i].add(newnick)
-        if nick.lower() == self.nick.lower():
+        if self.eq(nick, self.nick):
             self.nick = newnick
 
+    @Callback.inline
     def user_kicked(self, line):
         """ Handles KICKs """
         words = line.split()
         nick = words[3]
-        channel = words[2].lower()
+        channel = self.lower(words[2])
         self.channels[channel].remove(nick)
