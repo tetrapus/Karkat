@@ -1,17 +1,18 @@
-from text import striplen, aligntable, justifiedtable
-from irc import Callback
+from xml.etree import ElementTree as etree
+import collections
+import difflib
+import re
+import sys
+import urllib.parse
+import urllib.request
+
+import yaml 
+
 import url as URL
 import util
 
-import re
-import sys
-import collections
-import difflib
-import urllib.parse
-import urllib.request
-from xml.etree import ElementTree as etree
-
-import yaml 
+from irc import Callback
+from text import striplen, aligntable, justifiedtable
 
 try:
     apikeys = yaml.safe_load(open("apikeys.conf"))["wolfram"]

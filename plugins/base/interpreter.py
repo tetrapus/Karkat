@@ -1,5 +1,7 @@
-from irc import Message, Callback
 import sys
+
+from irc import Message, Callback
+
 
 class Allbots:
     def __init__(self, bots, args = ""):

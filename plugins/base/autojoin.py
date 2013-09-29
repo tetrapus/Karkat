@@ -1,8 +1,9 @@
 import os
+
 from irc import Callback
 
+
 class AutoJoin(object):
-    #    chans = open("autojoin.txt").read().strip() if "-t" not in sys.argv else "#karkat" # TODO: #docopt
 
     CHANFILE = "autojoin.txt"
     cb = Callback()

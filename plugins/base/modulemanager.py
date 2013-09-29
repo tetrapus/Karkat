@@ -1,11 +1,12 @@
 import imp
 import json
-import sys
 import os
+import sys
 
 from irc import Callback
 from text import namedtable
 from threads import loadplugin, SelectiveBot
+
 
 cb = Callback()
 

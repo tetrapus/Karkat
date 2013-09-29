@@ -1,18 +1,20 @@
-from irc import Callback
-from text import pretty_date
-
-import os
+import collections
+import json
 import math
+import os
 import re
 import sys
-import json
-import yaml
-import collections
-import requests
-import urllib.parse as urllib
 import time
 import url
+import urllib.parse as urllib
+
+import requests
+import yaml
+
 import util
+
+from irc import Callback
+from text import pretty_date
 
 try:
     import pylast

@@ -1,10 +1,10 @@
 import os
-import time
-import threading
-import subprocess
 import signal
-from irc import Callback
+import subprocess
+import threading
+import time
 
+from irc import Callback
 from irc import Message
 
 class Process(threading.Thread):
