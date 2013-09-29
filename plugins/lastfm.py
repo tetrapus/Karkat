@@ -37,7 +37,7 @@ else:
             yt = None
             print("Warning: Youtube module not loaded, using slow heuristic version.")
         else:
-            yt = youtube.Youtube()
+            yt = youtube.youtube
 
         def __init__(self, name, bot, printer):
             self.userfile = bot.get_config_dir(self.FILENAME)

@@ -108,6 +108,11 @@ class Youtube(object):
         answer = requests.get("https://www.googleapis.com/youtube/v3/search", params=p).json()
         return (answer["items"][0]["snippet"]["title"], answer["items"][0]["id"]["videoId"])
 
+    @apimethod
+    def search(self, query, results=1):
+        p = {"part": "snippet", "access_token": self.token, "maxResults":results, "q": query, "type":"video"}
+        answer = requests.get("https://www.googleapis.com/youtube/v3/search", params=p).json()
+        return answer["items"]
 
     def trigger(self, words, line):
         message = Message(line)
@@ -116,3 +121,5 @@ class Youtube(object):
             playlist = self.get_playlist_id(message.context) or self.create_playlist(message.context)
             for video in videos:
                 self.playlist_insert(playlist, video)
+
+youtube = Youtube()
