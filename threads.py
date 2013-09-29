@@ -614,13 +614,17 @@ class StatefulBot(SelectiveBot):
         super().__init__(conf)
         self.channels = {}
         self.server_settings = {}
-        self.register_all({"quit"    : [self.user_quit],
-         "part"    : [self.user_left],
-         "join"    : [self.user_join],
-         "nick"    : [self.user_nickchange],
-         "kick"    : [self.user_kicked],
-         "352"     : [self.joined_channel],
-         "005"     : [self.onServerSettings]})
+        self.away = None
+        self.register_all({"quit" : [self.user_quit],
+                           "part" : [self.user_left],
+                           "join" : [self.user_join],
+                           "nick" : [self.user_nickchange],
+                           "kick" : [self.user_kicked],
+                           "352"  : [self.joined_channel],
+                           "005"  : [self.onServerSettings],
+                           "306"  : [self.went_away],
+                           "305"  : [self.came_back],
+                           "301"  : [self.user_awaymsg]})
 
     def nickcmp(self, nick1, nick2):
         """ Implements RFC-compliant nickcmp """
@@ -643,6 +647,25 @@ class StatefulBot(SelectiveBot):
 
     def is_admin(self, address):
         return any(fnmatch.fnmatch(address, i) for i in self.admins) or any(address.endswith("@" + i) for i in self.admins)
+
+    @Callback.inline
+    def went_away(self, line):
+        assert self.eq(self.line.split()[2], self.nick)
+        # Get away message
+        self.sendline("WHOIS %s" % self.nick)
+
+
+    @Callback.inline
+    def came_back(self, line):
+        assert self.eq(self.line.split()[2], self.nick)
+        assert self.away
+        self.away = None
+
+    @Callback.inline
+    def user_awaymsg(self, line):
+        server, code, me, user, reason = line.split(" ", 4)
+        if self.eq(me, self.nick):
+            self.away = reason[1:]
 
     @Callback.inline
     def onServerSettings(self, line):
