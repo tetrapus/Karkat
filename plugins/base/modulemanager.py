@@ -48,7 +48,7 @@ class ModManager(object):
     @cb.command("disable", "([^ ]+)", private="", public=":", 
                 usage="12Module Manager⎟ Usage: :disable <modname>")
     def disable_module(self, message, module):
-        blacklisted = self.bot.blacklist.setdefault(message.context.lower(), [])
+        blacklisted = self.bot.blacklist.setdefault(message.context.lower(), self.bot.blacklist[None])
         if module not in blacklisted:
             blacklisted.append(module)
             return "12Module Manager⎟ Module %s disabled." % module
@@ -60,7 +60,7 @@ class ModManager(object):
     @cb.command("enable", "([^ ]+)", private="", public=":", 
                 usage="12Module Manager⎟ Usage: :enable <modname>")
     def enable_module(self, message, module):
-        blacklisted = self.bot.blacklist.setdefault(message.context.lower(), [])
+        blacklisted = self.bot.blacklist.setdefault(message.context.lower(), self.bot.blacklist[None])
         if module in blacklisted:
             blacklisted.remove(module)
             return "12Module Manager⎟ Module %s re-enabled." % module

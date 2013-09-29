@@ -567,14 +567,14 @@ class Bot(Connection):
 class SelectiveBot(Bot):
     def __init__(self, conf):
         super().__init__(conf)
-        self.blacklist = {}
+        self.blacklist = {None:[]}
 
     def execute(self, handler, line):
         """ Executes a callback. """
         # TODO: replace queues with something more generic.
         # Check if PRIVMSG:
         data = line.split()
-        if data[1] != "PRIVMSG" or handler.module.__name__ not in self.blacklist.get(data[2].lower(), []): 
+        if data[1] != "PRIVMSG" or handler.module.__name__ not in self.blacklist.get(data[2].lower(), self.blacklist[None]): 
             super().execute(handler, line)
 
 def loadplugin(mod, name, bot, stream):
