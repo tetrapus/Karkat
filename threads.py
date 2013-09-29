@@ -564,6 +564,18 @@ class Bot(Connection):
         for funct in self.callbacks["ALL"] + self.callbacks.get(msgType.lower(), []):
             self.execute(funct, line)
 
+class SelectiveBot(Bot):
+    def __init__(self, conf):
+        super().__init__(conf)
+        self.blacklist = {}
+
+    def execute(self, handler, line):
+        """ Executes a callback. """
+        # TODO: replace queues with something more generic.
+        # Check if PRIVMSG:
+        data = line.split()
+        if data[1] != "PRIVMSG" or handler.module.__name__ not in self.blacklist.get(data[2].lower(), []): 
+            super().execute(handler, line)
 
 def loadplugin(mod, name, bot, stream):
     if "__initialise__" in dir(mod):
@@ -583,7 +595,7 @@ def loadplugin(mod, name, bot, stream):
         bot.register_i("DIE", mod.__destroy__)
         print("        Registered destructor: %s" % mod.__destroy__.__name__)
 
-class StatefulBot(Bot):
+class StatefulBot(SelectiveBot):
     """ Beware of thread safety when manipulating server state. If a callback
     interacts with this class, it must either be inlined, or be
     okay with the fact the state can change under your feet. """
@@ -594,8 +606,8 @@ class StatefulBot(Bot):
     #       See xchat docs for interface ideas.
     # TODO: Fix nickname case rules and do sanity checking
 
-    def __init__(self, conf, cbs=None, icbs=None):
-        super(StatefulBot, self).__init__(conf)
+    def __init__(self, conf):
+        super().__init__(conf)
         self.channels = {}
         self.register_all({"quit"    : [self.user_quit],
          "part"    : [self.user_left],

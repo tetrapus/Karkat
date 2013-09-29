@@ -95,7 +95,6 @@ if __name__ == "__main__":
         loadplugin(mod, servername, server, server.printer)
         print("Loaded %s" % mod.__name__)
 
-    server.register_all(flist)
     server.register_all(inline)
 
     print("Running...")

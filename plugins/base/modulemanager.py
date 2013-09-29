@@ -1,13 +1,19 @@
 import imp
+import json
+import sys
+import os
 
 from irc import Callback
 from text import namedtable
-from threads import loadplugin
+from threads import loadplugin, SelectiveBot
 
 cb = Callback()
 
 
 class ModManager(object):
+
+    BLACKLIST = "blacklist.json"
+
     def __init__(self, name, bot, stream):
         self.bot = bot
         self.stream = stream
@@ -17,6 +23,62 @@ class ModManager(object):
         bot.register("privmsg", self.unregister_modules)
         bot.register("privmsg", self.reload_modules)
         bot.register("privmsg", self.load_modules)
+        if isinstance(bot, SelectiveBot):
+            self.bfile = bot.get_config_dir(self.BLACKLIST)
+            try:
+                bot.blacklist.update(json.load(open(self.bfile, "r")))
+            except:
+                # File doesn't exist
+                os.makedirs(bot.get_config_dir(), exist_ok=True)
+            self.sync()
+
+            bot.register("privmsg", self.enable_module)
+            bot.register("privmsg", self.disable_module)
+            bot.register("privmsg", self.list_disabled)
+        else:
+            print("[Module Manager] Warning: This bot architecture does not support blacklists. Add the SelectiveBot mixin to enable blacklist support.", file=sys.stderr)
+
+    # Disable/Enable plugins
+
+    def sync(self):
+        with open(self.bot.get_config_dir(self.BLACKLIST), "w") as f:
+            f.write(json.dumps(self.bot.blacklist))
+
+    @cb.inline
+    @cb.command("disable", "([^ ]+)", private="", public=":", 
+                usage="12Module Manager⎟ Usage: :disable <modname>")
+    def disable_module(self, message, module):
+        blacklisted = self.bot.blacklist.setdefault(message.context.lower(), [])
+        if module not in blacklisted:
+            blacklisted.append(module)
+            return "12Module Manager⎟ Module %s disabled." % module
+        else:
+            return "12Module Manager⎟ %s is already blacklisted." % module
+        self.sync()
+
+    @cb.inline
+    @cb.command("enable", "([^ ]+)", private="", public=":", 
+                usage="12Module Manager⎟ Usage: :enable <modname>")
+    def enable_module(self, message, module):
+        blacklisted = self.bot.blacklist.setdefault(message.context.lower(), [])
+        if module in blacklisted:
+            blacklisted.remove(module)
+            return "12Module Manager⎟ Module %s re-enabled." % module
+        else:
+            return "12Module Manager⎟ %s is not blacklisted." % module
+        self.sync()
+
+    @cb.command("disabled")
+    def list_disabled(self, message):
+        blacklisted = self.bot.blacklist.get(message.context.lower(), [])
+        if blacklisted:
+            table = namedtable(blacklisted, size=72, header="Disabled modules ")
+            for i in table:
+                yield
+        else:
+            yield "12Module Manager⎟ Blacklist is empty."
+
+    # Module management plugins
 
     def remove_modules(self, module):
         removed = []
@@ -39,6 +101,7 @@ class ModManager(object):
         for i in table:
             yield i
 
+    @cb.inline
     @cb.command("unload", "(.+)", 
                 admin=True, 
                 usage="12Module Manager⎟ Usage: [!@]unload <module>")
@@ -55,6 +118,7 @@ class ModManager(object):
             for i in table:
                 yield i
 
+    @cb.inline
     @cb.command("reload", "(.+)", 
                 admin=True, 
                 usage="12Module Manager⎟ Usage: [!@]reload <module>",
@@ -85,7 +149,7 @@ class ModManager(object):
         else:
             yield "05Module Manager⎟ Module not found."
 
-
+    @cb.inline
     @cb.command("load", "(.+)", 
                 admin=True, 
                 usage="12Module Manager⎟ Usage: [!@]load <module>",
