@@ -13,6 +13,7 @@ import fnmatch
 
 import yaml
 
+import util
 from irc import Address, Callback
 from text import lineify, TimerBuffer, average, Buffer
 
@@ -609,15 +610,37 @@ class StatefulBot(SelectiveBot):
     def __init__(self, conf):
         super().__init__(conf)
         self.channels = {}
+        self.server_settings = {}
         self.register_all({"quit"    : [self.user_quit],
          "part"    : [self.user_left],
          "join"    : [self.user_join],
          "nick"    : [self.user_nickchange],
          "kick"    : [self.user_kicked],
-         "352"     : [self.joined_channel]})
+         "352"     : [self.joined_channel],
+         "005"     : [self.onServerSettings]})
+
+    def nickcmp(self, nick1, nick2):
+        """ Implements RFC-compliant nickcmp """
+        return util.cmp(self.nickkey(nick1), self.nickkey(nick2))
+
+    def nickkey(self, nick):
+        """ Maps a nick to it's rfc-compliant lowercase form. """
+        if self.server_settings.get("CASEMAPPING", "ascii") == "rfc1459":
+            return util.rfc_nickkey(nick)
+        else:
+            return nick.lower()
 
     def is_admin(self, address):
         return any(fnmatch.fnmatch(address, i) for i in self.admins) or any(address.endswith("@" + i) for i in self.admins)
+
+    def onServerSettings(self, line):
+        """ Implements server settings on connect """
+        for i in line.split()[2:]:
+            if "=" not in i:
+                self.server_settings[i] = True
+            else:
+                key, value = i.split("=", 1)
+                self.server_settings[key] = value
 
     def user_left(self, line):
         """ Handles PARTs """
