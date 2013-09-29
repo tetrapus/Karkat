@@ -630,6 +630,14 @@ class StatefulBot(SelectiveBot):
         else:
             return nick.lower()
 
+    lower = nickkey # for convenience
+
+    def isIn(self, nick, ls):
+        return self.lower(nick) in [self.lower(i) for i in ls]
+
+    def eq(self, nick1, nick2):
+        return self.nickcmp(nick1, nick2) == 0
+
     def is_admin(self, address):
         return any(fnmatch.fnmatch(address, i) for i in self.admins) or any(address.endswith("@" + i) for i in self.admins)
 

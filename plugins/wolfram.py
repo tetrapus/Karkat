@@ -401,8 +401,8 @@ class WolframAlpha(WolframParser):
         return "\n".join(res)
 
     def getoutputsettings(self, target):
-            if target.lower() in self.h_max_settings:
-                return self.h_max_settings[target.lower()]
+            if self.bot.isIn(target, self.h_max_settings):
+                return self.h_max_settings[self.bot.lower(target)]
             else:
                 return self.h_max
 
