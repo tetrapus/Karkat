@@ -4,7 +4,6 @@ import url as URL
 import util
 
 import re
-import time
 import sys
 import collections
 import difflib
@@ -342,9 +341,7 @@ class WolframAlpha(WolframParser):
                 category = "res"
 
         if category:
-            timetest = time.time()
             results = max(answer, key=lambda x:difflib.SequenceMatcher(None, category, x).ratio())
-            print("Difflib:", time.time() - timetest)
             results = {results:answer[results]}
 
             # TODO: add a thing to automatically detect if it's small enough. Else:

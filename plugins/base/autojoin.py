@@ -8,6 +8,7 @@ class AutoJoin(object):
     cb = Callback()
 
     def __init__(self, name, bot, printer):
+        self.stream = printer
         self.cb.initialise(name, bot, printer)
         self.chanfile = bot.get_config_dir(self.CHANFILE)
 

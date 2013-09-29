@@ -137,7 +137,6 @@ else:
             difftime["np"] = time.time()
             if not track:
                 recent = recent[0]
-                print(dir(recent))
                 since = time.time() - int(recent.timestamp)
                 # Calculate colour
                 scolour = colors[min(2, int(math.log(since/60 +1, 60)))]
