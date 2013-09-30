@@ -217,18 +217,18 @@ class ColourPrinter(Printer):
         """
         Parse a message and colour it in.
         """
+        value = []
         color = self.color
-        if " " in data and data[0] + data[-1] == "\x01\x01":
-            return "%s %s" % (data.split()[0],
-                              self.defaultcolor(" ".join(data.split()[1:])))
-        data = re.sub("\x03([^\d])",
-                      lambda x: (("\x03%s" % (color)) + (x.group(1) or "")),
-                      data)
-        data = data.replace("\x0f", "\x0f\x03%s" % (color))
-        if "\n" in data:
-            data = data.split("\n", 1)
-            data = "%s\n%s" % (data[0], self.defaultcolor(data[1]))
-        return "\x03%s%s" % (color, data)
+        for line in data.split("\n"):
+            if " " in line and line[0] + line[-1] == "\x01\x01":
+                value.append("%s %s" % (line.split()[0],
+                                        self.defaultcolor(" ".join(line.split()[1:]))))
+            line = re.sub("\x03([^\d])",
+                          lambda x: (("\x03%s" % (color)) + (x.group(1) or "")),
+                          line)
+            line = line.replace("\x0f", "\x0f\x03%s" % (color))
+            value.append("\x03%s%s" % (color, line))
+        return "\n".join(value)
 
     def message(self, msg, recipient=None, method="PRIVMSG"):
         if method.upper() in ["PRIVMSG", "NOTICE"] and self.hasink:
