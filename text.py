@@ -102,8 +102,13 @@ def unescape(text):
 def striplen(data):
     return len(ircstrip(data))
 
+def spacepad(left, right, length):
+    """ Glues together the left and the right with the correct amount of padding. """
+    clength = striplen(left) + striplen(right)
+    return left + (" " * (length - clength)) + right
 
-def namedtable(results, size=100, rowmax=None, header="", rheader=""):
+
+def namedtable(results, size=100, rowmax=None, header="", rheader="", color=12):
     results = list(results)
     # Calculate the biggest column size
     biggest = len(max(results, key=len))
@@ -124,17 +129,16 @@ def namedtable(results, size=100, rowmax=None, header="", rheader=""):
             rows = int(math.ceil(len(results)/float(columns)))
         rownum = "(first %d rows) " % rows
     # Create the header
-    data = ["%s\x0312%s%s%s" % (header, 
-                                   rownum, 
-                                   " "*((columns * (biggest+3)) -1 - striplen(header) - striplen(rheader) - len(rownum)), 
-                                   rheader)]
+    data = [spacepad("%s\x03%.2d%s" % (header, color, rownum),
+                     rheader, 
+                     (columns * (biggest+3)) -1)]
     # If the header is too big, expand the table. TODO: verify this.
     cellsize = int((striplen(data[0])-1) / columns) - 1 if columns*(biggest+3) - 1 < striplen(data[0]) else biggest
     #cellsize = biggest
     for i in range(rows):
         line = results[i*columns:(i+1)*columns if len(results) > (i+1)*columns else len(results)]
         line = ["%s%s"%((x, " "*(cellsize-striplen(x))) if y == 0 or y + 1 < columns else (" "*(cellsize-striplen(x)), x)) for y, x in enumerate(line)]
-        data.append("%s%s%s" %("\x0312⎢\x03", " \x0312⎪\x03 ".join(line), "\x0312⎥\x03"))
+        data.append("%s%s%s" %("\x03%.2d⎢\x03" % color, (" \x03%.2d⎪\x03 " % color).join(line), "\x03%.2d⎥\x03" % color))
     if len(data) > 2 and len(data[-1]) < len(data[1]):
         replacement = list(data[-2])
         replacement.insert(len(data[-1])-1, "\x1f")
