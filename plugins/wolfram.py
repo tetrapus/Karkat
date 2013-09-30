@@ -482,7 +482,7 @@ class WolframAlpha(WolframParser):
                         res.append(" 08⎪ " + line)
 
                     if len(truncated) != len(lines):
-                        omission = "%d more lines omitted" % (len(lines) - h_max)
+                        omission = "%d more lines" % (len(lines) - h_max)
                         length = t_max - len(omission) - 5
                         res.append(" 08⎬✁" + ("-"*int(length)) + " 07%s" % omission)
         else:
