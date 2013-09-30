@@ -219,7 +219,7 @@ class ColourPrinter(Printer):
         """
         value = []
         color = self.color
-        for line in data.split("\n"):
+        for line in data.rstrip().split("\n"):
             if " " in line and line[0] + line[-1] == "\x01\x01":
                 value.append("%s %s" % (line.split()[0],
                                         self.defaultcolor(" ".join(line.split()[1:]))))
