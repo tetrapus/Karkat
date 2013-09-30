@@ -46,7 +46,7 @@ class AutoJoin(object):
     def trigger(self, msg):
         if msg.context.startswith("#"):
             if self.server.isIn(msg.context, self.chans):
-                self.chans.remove(self.bot.lower(msg.context))
+                self.chans.remove(self.server.lower(msg.context))
                 self.sync()
                 return "12Auto-join⎟ Channel removed."
             else:
