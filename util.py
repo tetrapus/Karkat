@@ -57,3 +57,19 @@ def parallelise(jobs):
     # Join all threads
     for i in threads: i.join()
     return [i.answer for i in threads]
+
+class ComposableFunction(object):
+    def __init__(self, funct):
+        self.funct = funct
+        self.passto = lambda x: x
+
+    def __or__(self, nextfunct):
+        self.passto = nextfunct
+        return ComposableFunction(self)
+
+    def __call__(self, *args, **kwargs):
+        return self.passto(self.funct(*args, **kwargs))
+
+
+def composable(funct):
+    return ComposableFunction(funct)

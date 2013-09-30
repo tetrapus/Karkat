@@ -46,7 +46,7 @@ class ModManager(object):
             f.write(json.dumps(self.bot.blacklist))
 
     @cb.inline
-    @cb.command("disable", "([^ ]+)", private="", public=":", 
+    @cb.command("disable", "([^ ]+)", private="", public=":", admin=True,
                 usage="12Module Manager⎟ Usage: :disable <modname>")
     def disable_module(self, message, module):
         blacklisted = self.bot.blacklist.setdefault(self.bot.lower(message.context), self.bot.blacklist[None])
@@ -58,7 +58,7 @@ class ModManager(object):
         self.sync()
 
     @cb.inline
-    @cb.command("enable", "([^ ]+)", private="", public=":", 
+    @cb.command("enable", "([^ ]+)", private="", public=":", admin=True,
                 usage="12Module Manager⎟ Usage: :enable <modname>")
     def enable_module(self, message, module):
         blacklisted = self.bot.blacklist.setdefault(self.bot.lower(message.context), self.bot.blacklist[None])
