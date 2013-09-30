@@ -1,3 +1,3 @@
-from . import autojoin, botmode, interpreter, autorejoin, modulemanager, ctcp
+from . import autojoin, botmode, interpreter, autorejoin, modulemanager, ctcp, restart
 
-__all__ = [autojoin, botmode, interpreter, autorejoin, modulemanager, ctcp]
+__all__ = [autojoin, botmode, interpreter, autorejoin, modulemanager, ctcp, restart]

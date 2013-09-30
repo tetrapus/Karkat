@@ -327,6 +327,7 @@ class Connection(threading.Thread):
         self.name = conf.split(".")[0]
 
         self.connected = False
+        self.restart = False
 
         # TODO: replace with options
         if "-d" in sys.argv:

@@ -25,6 +25,7 @@ __destroy__(): A function triggered on bot death.
 
 import socket
 import sys
+import subprocess
 
 import docopt
 
@@ -74,7 +75,17 @@ if __name__ == "__main__":
 
     print("Running...")
     server.start()
+    try:
+        server.join()
+    except KeyboardInterrupt:
+        print("Terminating...")
+        server.connected = False
+        server.sock.send("QUIT\r\n".encode("utf-8"))
+    if server.restart == True:
+        print("Restarting...")
+        subprocess.call(sys.argv)
 
+"""
     while server.connected:
         try:
             exec(input())
@@ -84,3 +95,4 @@ if __name__ == "__main__":
             server.sock.send("QUIT\r\n".encode("utf-8"))
         except BaseException:
             sys.excepthook(*sys.exc_info())
+"""
