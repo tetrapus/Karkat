@@ -39,7 +39,7 @@ GP_CALLERS = 2
 
 if __name__ == "__main__":
     args = docopt.docopt(__doc__ % {"name": sys.argv[0]}, version=__version__)
-    exclude = args["--exclude"].split(",")
+    exclude = args["--exclude"].split(",") if args["--exclude"] else []
     server = StatefulBot(args["<config>"])
 
     server.connect()
