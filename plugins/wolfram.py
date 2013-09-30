@@ -314,8 +314,9 @@ class WolframParser(object):
 
         table = aligntable(data)
 
-        if data and not data[0][0]: 
-            table[0] = "%s" % table[0]
+        if data and not data[0][0]:
+            if any(i[0] for i in data):
+                table[0] = "%s" % table[0]
         return table
 
     @classmethod
@@ -341,7 +342,7 @@ class WolframAlpha(WolframParser):
     timeout = 45
     h_max = 8
     h_max_settings = {"#lgbteens": 3, "lion":50}
-    t_lines = 14
+    t_lines = 10
     nerf = ["implosion"]
     ascii = [chr(i) for i in range(128)]
 
@@ -471,7 +472,7 @@ class WolframAlpha(WolframParser):
                     #if striplen(category) + striplen(lines[0]) + 4 <= t_max:
                     #    # If we can fit everything in nicely
                     first = lines.pop(0)
-                    res.append(spacepad(" 08⎬ %s " % first, " 07%s" % category, t_max))
+                    res.append(spacepad(" 08⎨ %s " % first, " 07%s" % category, t_max))
                     # Ignore all the other options.
                     if len(lines) == h_max:
                         truncated = lines[:h_max]
@@ -482,9 +483,10 @@ class WolframAlpha(WolframParser):
 
                     if len(truncated) != len(lines):
                         omission = "%d more lines omitted" % (len(lines) - h_max)
-                        res.append(spacepad(" 08⎨ ", "07%s" % omission, t_max))
+                        length = t_max - len(omission) - 5
+                        res.append(" 08⎬✁" + ("-"*int(length)) + " 07%s" % omission)
         else:
-            res.append(" 08‣ 05No plaintext results. See 12http://www.wolframalpha.com/input/?i=%s05" % urllib.quote_plus(query))
+            res.append(" 08‣ 05No plaintext results. See " + URL.format(URL.shorten("http://www.wolframalpha.com/input/?i=%s" % urllib.quote_plus(query))))
         res = [i.rstrip() for i in res]
         return "\n".join(res)
 
@@ -516,42 +518,5 @@ class WolframAlpha(WolframParser):
                 usage="05Wolfram08Alpha04⎟ Usage: [.@](wa|wolfram) 03query")
     def trigger(self, message, query):
         return self.wolfram_format(query, h_max=self.getoutputsettings(message.context))
-
-    '''
-    @cb.threadsafe
-    @cb.msghandler
-    def trigger(self, user, context, message):
-        """
-        - Name: Wolfram|Alpha
-        - Identifier: Wolfram
-        - Syntax: [~`]03category 03query or [!@]wa 03query (category may be quoted for multiple words)
-        - Description: Send a query to 05Wolfram08Alpha. 
-        - Access: ALL
-        - Type: Command 
-        """
-        if len(x) > 3 and len(x[3]) > 2 and ((x[3][1] in "!@" and x[3][2:].lower() in ["wolfram", "wa"]) or x[3][1] in "~`" and (len(x) > 4 or (len(x) > 3 and len(x[3]) > 3 and x[3][2] in "`~"))):
-
-            nick, msgtype = (Message(y).context, "PRIVMSG")  if x[3][1] in "@~" else (Address(x[0]).nick, "NOTICE")
-            category = None
-            if x[3][1] in "~`":
-                if x[3][2] not in "({[<":
-                    if x[3][1] == x[3][2]:
-                        category = False
-                        query = " ".join([x[3][3:]] + x[4:])
-                    else:
-                        category = x[3][2:]
-                        query = " ".join(x[4:])
-                else:
-                    query = Message(y).text
-                    category = query[2:query.find({"(":")", "{":"}", "[":"]", "<":">"}[query[1]])]
-                    query = str.rstrip(query[len(category)+3:])
-            else:
-                query = " ".join(x[4:])
-
-            if nick.startswith("#"):
-                self.printer.message(self.wolfram_format(query, category, h_max=2), nick, msgtype)
-            else:
-                self.printer.message(self.wolfram_format(query, category), nick, msgtype)
-    '''
 
 __initialise__ = WolframAlpha

@@ -34,19 +34,19 @@ class AutoJoin(object):
     @cb.threadsafe
     def onInvite(self, line):
         words = line.split()
-        if self.server.is_admin(words[0]) or self.bot.isIn(words[3][1:], self.chans.split(",")):
+        if self.server.is_admin(words[0]) or self.server.isIn(words[3][1:], self.chans.split(",")):
             self.stream.raw_message("JOIN %s" % words[3])
 
     @cb.command("autojoin", public=":", private="")
     def trigger(self, msg):
         if msg.context.startswith("#"):
-            if self.bot.isIn(msg.context, self.chans.split(",")):
+            if self.server.isIn(msg.context, self.chans.split(",")):
                 chans = self.chans.split(",")
                 chans.remove(self.bot.lower(msg.context))
                 self.chans = ",".join(chans)
                 return "12Auto-join⎟ Channel removed."
             else:
-                self.chans = ",".join(self.chans.split(",") + [self.bot.lower(msg.context)])
+                self.chans = ",".join(self.chans.split(",") + [self.server.lower(msg.context)])
 
                 return "12Auto-join⎟ Channel added."
             with open(self.chanfile, "w") as cf:
