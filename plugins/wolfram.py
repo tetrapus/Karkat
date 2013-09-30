@@ -224,7 +224,6 @@ class WolframParser(object):
         tension = 0
         lastpipe = 0
         for i in data:
-            print(i)
             pdg = cls.get_parenthetic_degree(i)
             if i.startswith("(") and not i.endswith(")") and pdg > 0:
                 multibracket = True
@@ -304,8 +303,7 @@ class WolframParser(object):
         data[-1]   =  "⎝%s⎠" % data[-1]
         data = [(" "*len(prematrix))+i for i in data]
         data[int(len(data)/2)] = prematrix + data[int(len(data)/2)].lstrip() + postmatrix
-        import pprint
-        pprint.pprint(data)
+
         return data
 
     @staticmethod
@@ -374,11 +372,7 @@ class WolframAlpha(WolframParser):
         data = self.parse_supersubs(data)
         data = self.tableise_equalities(data)
         data = self.shorten_urls(data)
-        
         data = self.rechunk(data)
-
-        print(data)
-
         data = self.format(data)
 
         return data
