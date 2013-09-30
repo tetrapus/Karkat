@@ -3,13 +3,26 @@
 Multithreaded python IRC socket bot.
 Warning: This readme may be out of date. Karkat is undergoing thorough modifications to his plugin structure. The majority of former features are currently not ported to the new interface- this is reasonably easy to do, but I have not done so as I am cleaning them all up before re-adding them. Please be patient, and feel free to do it yourself.
 
-## How to use Karkat
-Create a config file. A sample file (Sample.yaml) is provided. Run Karkat as follows: ``python karkat.py <config>``
-Some data files are not provided. Karkat will show warnings if any necessary apikeys are not present. Some dependancies are not included and may be required (anyone want to write a setup.py?)
-These are:
+## Getting Started
+### Step 1: Download dependencies
+If not already installed, the following packages must be installed:
 - Docopt
 - Requests
 - PyYaml
+- PyLast
+ 
+Run ``sudo pip3 install docopt pyyaml requests pylast`` to install them.
+
+### Step 2: Create server config
+Create a config file. A sample file (Sample.yaml) is provided. For convenience, a config generator mkconf.py is provided.
+
+### Step 3: Make api keys (optional)
+Some modules require api keys. Create a file apikeys.conf in the working directory. Put your keys in there in the format specified by the module.
+
+### Step 4: Run karkat
+Karkat is run via ``./karkat.py <config>``. Some options are available, see the full argspec via ./karkat.py -h.
+
+The information below this point is outdated.
 
 ## Files
 The main file is ``karkat.py``. 
