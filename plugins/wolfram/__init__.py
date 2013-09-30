@@ -168,3 +168,4 @@ else:
         wa = WolframAlpha()
         bot.register("privmsg", wa.trigger)
         bot.register("privmsg", wa.shorthand_trigger)
+    __all__ = [__initialise__, parser]

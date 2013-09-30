@@ -25,6 +25,7 @@ __destroy__(): A function triggered on bot death.
 import socket
 import sys
 import subprocess
+import inspect
 
 import docopt
 
@@ -58,9 +59,10 @@ if __name__ == "__main__":
             continue
         if "__all__" in dir(mod):
             # Subpackage. Import submodules.
-            modules.extend(mod.__all__)
-            continue
-
+            for m in mod.__all__:
+                if inspect.ismodule(m):
+                    modules.append(m)
+        print("Loading %s" % mod.__name__)
         loadplugin(mod, servername, server, server.printer)
         print("Loaded %s" % mod.__name__)
 
