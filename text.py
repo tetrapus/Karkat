@@ -69,7 +69,7 @@ def ordinal(value):
     return "%d%s" % (value, suffix)
 
 def ircstrip(data):
-    return re.sub("(\x03(\d{0,2}(,\d{1,2})?)?|\x1f|\x0f|\x16)", "", data)
+    return re.sub("(\x03(\d{0,2}(,\d{1,2})?)?|\x1f|\x0f|\x16\x02)", "", data)
 
 def unescape(text):
     def fixup(m):

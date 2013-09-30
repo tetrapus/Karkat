@@ -154,13 +154,13 @@ class WolframParser(object):
         
         return expr[:count]
 
-    @classmethod
-    def substitute(cls, regex, sub, raw_subset):
+    @staticmethod
+    def substitute(regex, sub, raw_subset):
         greedy = regex.group(1)
         subset = "".join(sub.keys())
 
         if greedy.startswith("("):
-            expr = cls.getexpr(greedy, subset)
+            expr = getexpr(greedy, subset)
             if expr:
                 result = "".join(map(lambda x: sub[x], expr[1:-1])).replace(" ", "")
                 result += greedy[len(expr):]
@@ -175,8 +175,8 @@ class WolframParser(object):
             result += greedy[len(result):]
         return result
 
-    @classmethod
-    def parse_supersubs(cls, data):
+    @staticmethod
+    def parse_supersubs(data):
         sub = {"0":"₀","1":"₁","2":"₂","3":"₃","4":"₄","5":"₅","6":"₆","7":"₇",
                "8":"₈","9":"₉","+":"₊","-":"₋","=":"₌","(":"₍",")":"₎","a":"ₐ",
                "e":"ₑ","h":"ₕ","i":"ᵢ","k":"ₖ","l":"ₗ","m":"ₘ","n":"ₙ","o":"ₒ",
@@ -197,11 +197,11 @@ class WolframParser(object):
             sups = ""
             while sups != line:
                 sups = line
-                line = re.sub("\\^(.+)", lambda s: cls.substitute(s, sup, supset), line, flags=re.IGNORECASE)
+                line = re.sub("\\^(.+)", lambda s: substitute(s, sup, supset), line, flags=re.IGNORECASE)
             subs = ""
             while subs != line:
                 subs = line
-                line = re.sub("_(.+)", lambda s: cls.substitute(s, sub, subset), line, flags=re.IGNORECASE)
+                line = re.sub("_(.+)", lambda s: substitute(s, sub, subset), line, flags=re.IGNORECASE)
             rval.append(line)
         return rval
 
@@ -213,6 +213,125 @@ class WolframParser(object):
 
         return util.parallelise(jobs)
 
+    @staticmethod
+    def tableise_equalities(data):
+        return (re.sub("^= ", "| 15= ", i) for i in data)
+
+    @classmethod
+    def rechunk(cls, data):
+        chunks = []
+        multibracket = False
+        tension = 0
+        lastpipe = 0
+        for i in data:
+            print(i)
+            pdg = cls.get_parenthetic_degree(i)
+            if i.startswith("(") and not i.endswith(")") and pdg > 0:
+                multibracket = True
+                chunks.append("")
+
+            if i.endswith(")") and multibracket and pdg < 0:
+                multibracket = False
+
+            if i.startswith("= "):
+                chunks.append("| "*lastpipe + "15= ")
+            elif lastpipe and lastpipe == i.count("|"):
+                chunks[-1] += "\n" + i
+                if tension and tension + pdg == 0:
+                    i = "" # Split off- we resolved a matrix!
+            elif lastpipe and lastpipe + 1 == i.count("|"):
+                chunk, split = i.rsplit("|", 1)
+                chunks[-1] += "\n" + chunk
+                i = split
+                chunks.append(i)
+            else:
+                if multibracket:
+                    chunks[-1] += i
+                else:
+                    chunks.append(i)
+            lastpipe = i.count("|")
+            tension += pdg
+
+        return chunks
+
+    @staticmethod
+    def get_parenthetic_degree(line):
+        return line.count("(") - line.count(")")
+
+    @classmethod
+    def is_parenthetic(cls, chunk):
+        return chunk.startswith("(") and chunk.endswith(")") and not cls.is_matrix(chunk)
+
+    @classmethod
+    def is_matrix(cls, chunk):
+        # It's a matrix if all lines have equal pipe counts, all middle brackets are balanced but the first and last are - of each other.
+        is_matrix = bool(chunk)                                                          # Empty lines are not matrices
+        is_matrix = is_matrix and len({i.count("|") for i in chunk.split("\n")}) == 1    # Matrices have equal number of columns for all columns
+        lines = chunk.split("\n")
+        is_matrix = is_matrix and cls.get_parenthetic_degree(lines[0]) == cls.get_parenthetic_degree(lines[-1]) + 2
+        for i in lines[1:-1]:
+            is_matrix = is_matrix and not cls.get_parenthetic_degree(i)
+        return is_matrix
+
+    @classmethod
+    def is_table(cls, chunk):
+        # It's a table if all lines have equal pipe counts, pipes exist and all brackets are balanced
+        is_table = bool(chunk)                                                          # Empty lines are not tables
+        is_table = is_table and len({i.count("|") for i in chunk.split("\n")}) == 1     # Tables have equal number of columns for all columns
+        is_table = is_table and "|" in chunk                                            # Tables have more than 1 column
+        for i in chunk.split("\n"):
+            is_table = is_table and not cls.get_parenthetic_degree(i)
+        return is_table
+
+    @staticmethod
+    def format_brackets(chunk):
+        return "05⤷ %s" % chunk[1:-1]
+
+    @staticmethod
+    def format_normal(chunk):
+        # TODO: split into lines maybe?
+        return chunk
+
+    @staticmethod
+    def format_matrix(chunk):
+        data = chunk.split("\n")
+        prematrix, data[0] = data[0].split("(", 1)
+        data[-1], postmatrix = data[-1].rsplit(")", 1)
+        data = [[cell.strip() for cell in row.split("|")] for row in data]
+        data = aligntable(data, "  ")
+        data[0]    =  "⎛%s⎞" % data[0]
+        data[1:-1] = ["⎜%s⎟" % i for i in data[1:-1]]
+        data[-1]   =  "⎝%s⎠" % data[-1]
+        data = [(" "*len(prematrix))+i for i in data]
+        data[int(len(data)/2)] = prematrix + data[int(len(data)/2)].lstrip() + postmatrix
+        import pprint
+        pprint.pprint(data)
+        return data
+
+    @staticmethod
+    def format_table(chunk):
+        data = [[cell.strip() for cell in row.split("|")] for row in chunk.split("\n")]
+
+        table = aligntable(data)
+
+        if data and not data[0][0]: 
+            table[0] = "%s" % table[0]
+        return table
+
+    @classmethod
+    def format(cls, data):
+        newdata = []
+        for i in data:
+            if cls.is_parenthetic(i):
+                newdata.append(cls.format_brackets(i))
+            elif cls.is_table(i):
+                newdata.extend(cls.format_table(i))
+            elif cls.is_matrix(i):
+                newdata.extend(cls.format_matrix(i))
+            else:
+                newdata.append(cls.format_normal(i))
+        return newdata
+
 
 class WolframAlpha(WolframParser):
 
@@ -221,7 +340,7 @@ class WolframAlpha(WolframParser):
     cat_outlier = 18 # Maximum width of outlier column.
     timeout = 45
     h_max = 8
-    h_max_settings = {"#lgbteens": 3}
+    h_max_settings = {"#lgbteens": 3, "lion":50}
     t_lines = 14
     nerf = ["implosion"]
     ascii = [chr(i) for i in range(128)]
@@ -246,49 +365,20 @@ class WolframAlpha(WolframParser):
         Parses meta, lists, numbers, URLs, numbered lists and tables.
         Truncates long or multiple lines.
         """
-        hasHeadings = False
 
         data = self.delete_blank(data)
         data = self.transpose_prepare(data)
         data = self.replace_encoded_chars(data)
         data = self.parse_maths(data)
         data = self.parse_supersubs(data)
+        data = self.tableise_equalities(data)
         data = self.shorten_urls(data)
         
-        data = list(data)
+        data = self.rechunk(data)
 
-        joined = "\n".join(data)
-        meta = re.findall("\n\\s*\\((.+?)\\)\\s*$", joined, flags=re.DOTALL)
-        data = re.sub("\n\\s*\\((.+?)\\)\\s*$", "", joined, flags=re.DOTALL).split("\n")
-        if len({i.count("|") for i in data if i}) == 1: # fix when matrices are nested in lists.
-            # Probably an aligned table!
-            isMatrix = len(data) > 1 and data[0].count("(") == data[0].count(")") + 1 and data[-1].count(")") == data[-1].count("(") + 1
-            #meta = [(i, string) for i, string in enumerate(data) if string.lstrip().startswith("(") and string.rstrip().endswith(")")]
-            #for i, string in meta:
-            #    data.remove(string)
-            if isMatrix:
-                prematrix, data[0] = data[0].split("(", 1)
-                data[-1], postmatrix = data[-1].rsplit(")", 1)
-            data = [[cell.strip() for cell in row.split("|")] for row in data]
+        print(data)
 
-            if data and not data[0][0]:
-                hasHeadings = True
-            if isMatrix:
-                data = aligntable(data, "  ")
-                data[0]    =  "⎛%s⎞" % data[0]
-                data[1:-1] = ["⎜%s⎟" % i for i in data[1:-1]]
-                data[-1]   =  "⎝%s⎠" % data[-1]
-                data = [(" "*len(prematrix))+i for i in data]
-                data[int(len(data)/2)] = prematrix + data[int(len(data)/2)].lstrip() + postmatrix
-            else: 
-                data = aligntable(data)
-        
-        for i in meta:
-            data.append("(%s)" % i.replace("\n", ""))
-        
-        if hasHeadings: data[0] = "%s" % data[0]
-
-
+        data = self.format(data)
 
         return data
         
@@ -381,20 +471,18 @@ class WolframAlpha(WolframParser):
                     #if striplen(category) + striplen(lines[0]) + 4 <= t_max:
                     #    # If we can fit everything in nicely
                     first = lines.pop(0)
-                    res.append(spacepad(" 04⎜ %s" % first, " 07%s" % category, t_max))
+                    res.append(spacepad(" 08⎬ %s " % first, " 07%s" % category, t_max))
                     # Ignore all the other options.
                     if len(lines) == h_max:
                         truncated = lines[:h_max]
                     else:
                         truncated = lines[:h_max-1]
                     for line in truncated:
-                        if line and line == getexpr(line, self.ascii):
-                            res.append(" 08‣ 05%s" % line[1:-1])
-                        else:
-                            res.append(" 08⎜ %s" % line)
+                        res.append(" 08⎪ " + line)
+
                     if len(truncated) != len(lines):
                         omission = "%d more lines omitted" % (len(lines) - h_max)
-                        res.append(spacepad(" 08• • •", "07%s" % omission, t_max))
+                        res.append(spacepad(" 08⎨ ", "07%s" % omission, t_max))
         else:
             res.append(" 08‣ 05No plaintext results. See 12http://www.wolframalpha.com/input/?i=%s05" % urllib.quote_plus(query))
         res = [i.rstrip() for i in res]
