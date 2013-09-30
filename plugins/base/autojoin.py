@@ -1,4 +1,5 @@
 import os
+import json
 
 from irc import Callback
 
@@ -14,42 +15,45 @@ class AutoJoin(object):
         self.chanfile = bot.get_config_dir(self.CHANFILE)
 
         try:
-            self.chans = open(self.chanfile, "r").read()
+            self.chans = json.load(open(self.chanfile, "r"))
         except:
             # File doesn't exist
             os.makedirs(bot.get_config_dir(), exist_ok=True)
-            self.chans = ""
-            open(self.chanfile, "w")
+            self.chans = []
+            self.sync()
         self.server = bot
 
         bot.register("invite", self.onInvite)
         bot.register("376", self.join)
         bot.register("privmsg", self.trigger)
 
+    def sync(self):
+        with open(self.chanfile, "w") as cf:
+            cf.write(json.dumps(self.chans))
+
     @cb.threadsafe
     def join(self, line):
         if self.chans:
-            self.stream.raw_message("JOIN %s" % self.chans)
+            self.stream.raw_message("JOIN :%s" % (",".join(self.chans)))
 
     @cb.threadsafe
     def onInvite(self, line):
         words = line.split()
-        if self.server.is_admin(words[0]) or self.server.isIn(words[3][1:], self.chans.split(",")):
+        if self.server.is_admin(words[0]) or self.server.isIn(words[3][1:], self.chans):
             self.stream.raw_message("JOIN %s" % words[3])
 
     @cb.command("autojoin", public=":", private="")
     def trigger(self, msg):
         if msg.context.startswith("#"):
-            if self.server.isIn(msg.context, self.chans.split(",")):
-                chans = self.chans.split(",")
-                chans.remove(self.bot.lower(msg.context))
-                self.chans = ",".join(chans)
+            if self.server.isIn(msg.context, self.chans):
+                self.chans.remove(self.bot.lower(msg.context))
+                self.sync()
                 return "12Auto-join⎟ Channel removed."
             else:
-                self.chans = ",".join(self.chans.split(",") + [self.server.lower(msg.context)])
+                self.chans.append(self.server.lower(msg.context))
 
+                self.sync()
                 return "12Auto-join⎟ Channel added."
-            with open(self.chanfile, "w") as cf:
-                cf.write(self.chans)
+
 
 __initialise__ = AutoJoin

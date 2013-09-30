@@ -6,9 +6,8 @@ Usage: %(name)s [options] <config>
 Options:
     -h --help                           Show this message.
     --version                           Show version.
-    -v N, --verbosity=N                 Set verbosity [default: 1]
     -p PACKAGE, --plugins=PACKAGE       Set plugin package [default: plugins]
-    -e MODULES, --exclude=MODULES       Comma separated list of modules to exlcude
+    -e PLUGINS, --exclude=PLUGINS       Don't load these plugins
     -d --debug                          Turn on debugging
     -i PASSWORD, --identify=PASSWORD    Identify with the given password
 """
@@ -38,11 +37,9 @@ socket.setdefaulttimeout(1800)
 
 GP_CALLERS = 2
 
-#TODO: Move connection object and subclasses
-# TODO: Turn subclasses into objects owned by the connection thread.
 if __name__ == "__main__":
-    args = docopt.docopt(__doc__ % {"name": sys.argv[0]})
-
+    args = docopt.docopt(__doc__ % {"name": sys.argv[0]}, version=__version__)
+    exclude = args["--exclude"].split(",")
     server = StatefulBot(args["<config>"])
 
     server.connect()
@@ -50,11 +47,15 @@ if __name__ == "__main__":
 
     servername = args["<config>"].split(".")[0]
 
-    plugins = __import__("plugins") # temporary
-    modules = plugins.__all__
+    __import__(args["--plugins"])
+
+    modules = sys.modules[args["--plugins"]].__all__
 
     while modules:
         mod = modules.pop()
+        if mod.__name__ in exclude:
+            print("Skipping %s" % mod.__name__)
+            continue
         if "__all__" in dir(mod):
             # Subpackage. Import submodules.
             modules.extend(mod.__all__)
@@ -84,15 +85,3 @@ if __name__ == "__main__":
     if server.restart == True:
         print("Restarting...")
         subprocess.call(sys.argv)
-
-"""
-    while server.connected:
-        try:
-            exec(input())
-        except KeyboardInterrupt:
-            print("Terminating...")
-            server.connected = False
-            server.sock.send("QUIT\r\n".encode("utf-8"))
-        except BaseException:
-            sys.excepthook(*sys.exc_info())
-"""
