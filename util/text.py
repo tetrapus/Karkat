@@ -11,13 +11,13 @@ import html.entities
 
 def lineify(data, max_size=400):
     """ Split text up into IRC-safe lines. """
-    
+
     lines = [item.rstrip() for item in data.split('\n')]
     for item in lines:
         if len(item) > max_size:
             index = lines.index(item)
-            lines[index] = item[:item.rfind(' ',0,400)]
-            lines.insert(index+1, item[item.rfind(' ',0,400)+1:])
+            lines[index] = item[:item.rfind(' ', 0, 400)]
+            lines.insert(index+1, item[item.rfind(' ', 0, 400) + 1:])
     return lines
 
 
@@ -58,6 +58,7 @@ def pretty_date(delta):
     return str(int(day_diff/365)) + " years ago"
 
 def ordinal(value):
+    """ Return the ordinal representation of an integer (e.g 1 => 1st) """
     suffixes = {1:"st", 2:"nd", 3:"rd"}
     if value % 100//10 != 1 and value % 10 in suffixes:
         suffix = suffixes[value % 10]
@@ -67,11 +68,13 @@ def ordinal(value):
     return "%d%s" % (value, suffix)
 
 def ircstrip(data):
-    return re.sub("(\x03(\d{0,2}(,\d{1,2})?)?|\x1f|\x0f|\x16\x02)", "", data)
+    """ Strip irc control characters from a string """
+    return re.sub(r"(\x03(\d{0,2}(,\d{1,2})?)?|\x1f|\x0f|\x16|\x02)", "", data)
 
 def unescape(text):
-    def fixup(m):
-        text = m.group(0)
+    """ Parse html encoded characters """
+    def fixup(match):
+        text = match.group(0)
         if text[:2] == "&#":
             # character reference
             try:
@@ -92,21 +95,28 @@ def unescape(text):
                     text = "'"
             except UnicodeDecodeError:
                 pass
-                
+
         return text # leave as is
-    return re.sub("&#?\w+;", fixup, text)
-    
+    return re.sub(r"&#?\w+;", fixup, text)
+
 
 def striplen(data):
+    """ Calculate the display length of a string """
     return len(ircstrip(data))
 
+
 def spacepad(left, right, length):
-    """ Glues together the left and the right with the correct amount of padding. """
+    """ Glues together left and right with the correct amount of padding. """
     clength = striplen(left) + striplen(right)
     return left + (" " * (length - clength)) + right
 
 
 def namedtable(results, size=100, rowmax=None, header="", rheader="", color=12):
+    """ Create a bordered table. """
+    border_left  =  "\x03%.2d⎢\x03"  % color
+    divider      = " \x03%.2d⎪\x03 " % color
+    border_right =  "\x03%.2d⎥\x03"  % color
+
     results = list(results)
     # Calculate the biggest column size
     biggest = len(max(results, key=len))
@@ -128,38 +138,55 @@ def namedtable(results, size=100, rowmax=None, header="", rheader="", color=12):
         rownum = "(first %d rows) " % rows
     # Create the header
     data = [spacepad("%s\x03%.2d%s" % (header, color, rownum),
-                     rheader, 
+                     rheader,
                      (columns * (biggest+3)) -1)]
-    # If the header is too big, expand the table. TODO: verify this.
-    cellsize = int((striplen(data[0])-1) / columns) - 1 if columns*(biggest+3) - 1 < striplen(data[0]) else biggest
-    #cellsize = biggest
+    # If the header is too big, expand the table.
+    if columns*(biggest+3) - 1 < striplen(data[0]):
+        cellsize = int((striplen(data[0])-1) / columns) - 1
+    else:
+        cellsize = biggest
+
     for i in range(rows):
-        line = results[i*columns:(i+1)*columns if len(results) > (i+1)*columns else len(results)]
-        line = ["%s%s"%((x, " "*(cellsize-striplen(x))) if y == 0 or y + 1 < columns else (" "*(cellsize-striplen(x)), x)) for y, x in enumerate(line)]
-        data.append("%s%s%s" %("\x03%.2d⎢\x03" % color, (" \x03%.2d⎪\x03 " % color).join(line), "\x03%.2d⎥\x03" % color))
+        if len(results) > (i+1)*columns:
+            line = results[i*columns:(i+1)*columns]
+        else:
+            line = results[i*columns:]
+        padded_line = []
+        for index, cell in enumerate(line):
+            # Right-align the rightmost row.
+            padding = " " * cellsize-striplen(cell)
+            if index + 1 == columns:
+                padded_line.append("%s%s" % (padding, cell))
+            else:
+                padded_line.append("%s%s" % (cell, padding))
+
+        data.append(border_left + divider.join(padded_line) + border_right)
+
     if len(data) > 2 and len(data[-1]) < len(data[1]):
         replacement = list(data[-2])
         replacement.insert(len(data[-1])-1, "\x1f")
         data[-2] = "".join(replacement)
         data[-1] = data[-1][:-2] + " ⎪\x03"
     data[-1] = ""+data[-1]
-    return data     
+    return data
 
 def justifiedtable(array, width, minsep=3):
     """
     Formats a string array into equal-length rows.
     """
-    result = [[]]
+    rows = [[]]
     table = []
     for data in array:
-        if sum(striplen(x) + minsep for x in result[-1]) + striplen(data) <= width:
-            result[-1].append(data)
+        length = sum(striplen(x) + minsep for x in rows[-1]) + striplen(data)
+        if length <= width:
+            rows[-1].append(data)
         else:
-            result.append([data])
-    for row in result:
+            rows.append([data])
+    for row in rows:
         if len(row) > 1:
             table.append(row[0])
-            sepwidth, spares = divmod(width - sum(striplen(x) for x in row), len(row) - 1) 
+            rowlength = sum(striplen(x) for x in row)
+            sepwidth, spares = divmod(width - rowlength, len(row) - 1)
             for i, string in enumerate(row[1:]):
                 table[-1] += " "*sepwidth
                 if i < spares:
@@ -169,7 +196,6 @@ def justifiedtable(array, width, minsep=3):
             table.append(row[0])
     return table
 
-# TODO: space-saving version
 
 def aligntable(rows, separator=" 08⎪ "):
     """
@@ -189,14 +215,6 @@ def aligntable(rows, separator=" 08⎪ "):
             rows[j][i] = cell + (" "*(width - striplen(cell)))
     rows = [separator.join(x) for x in rows]
     return rows
-
-def tree(tree, separator=" 08⎪ "):
-    "│  ├───" # treechars
-    tree = sorted(tree)
-    # Determine the maximum depth and the width for each column
-    # TODO
-
-def generate_tree(ls): pass
 
 
 class Buffer(object):
@@ -221,7 +239,7 @@ class Buffer(object):
 
     def __next__(self):
         return self.next()
-        
+
     def append(self, data):
         self.buffer += data
         return data
@@ -243,7 +261,7 @@ class LineReader(object):
         """ Refill the buffer. Return False on closed connection. """
         while "\n" not in self.buffer:
             data = self.sock.recv(self.recv)
-            if not data: 
+            if not data:
                 return False
             self.buffer += data
 
@@ -267,15 +285,15 @@ class TimerBuffer(Buffer):
 
     def next(self):
         if self.start is not None:
-            timeTook = time.time() - self.start
-            if timeTook > self.threshhold:
-                print("!!! Warning: Loop executed in %r seconds." % (time.time() - self.start))
-                self.log.append(timeTook)
+            time_taken = time.time() - self.start
+            if time_taken > self.threshhold:
+                print("!!! Warning: Loop executed in %r seconds." % time_taken)
+                self.log.append(time_taken)
         try:
-            nextVal = super(TimerBuffer, self).next()
+            nextval = super(TimerBuffer, self).next()
         except StopIteration:
             self.start = None
             raise
         else:
             self.start = time.time()
-            return nextVal
+            return nextval

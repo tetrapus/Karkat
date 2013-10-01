@@ -1,3 +1,24 @@
-from . import google, addgame, shorten, shell, base, suggest, lastfm, wolfram, youtube
+"""
+Karkat features.
+Disable a plugin globally by removing it from __modules__.
+"""
 
-__modules__ = [google, addgame, shorten, shell, base, suggest, lastfm, wolfram, youtube]
+from . import google
+from . import addgame
+from . import shorten
+from . import shell
+from . import base
+from . import suggest
+from . import lastfm
+from . import wolfram
+from . import youtube
+
+__modules__ = [google,
+               addgame,
+               shorten,
+               shell,
+               base,
+               suggest,
+               lastfm,
+               wolfram,
+               youtube]
