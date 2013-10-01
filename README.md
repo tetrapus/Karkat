@@ -80,4 +80,4 @@ Karkat also provides two interpretters, a bash one which may be used by sending 
 ## Features:
 - A list of features is available at http://www.tetrap.us/karkat
 
-Karkat's base system is thoroughly incomplete. Better documentation will be made available when the callback system is completed.
+Karkat's base system is undergoing renovations. Better documentation will be made available when the callback system is completed.
