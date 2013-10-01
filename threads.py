@@ -120,10 +120,16 @@ class PrinterBuffer(object):
 class Printer(WorkerThread):
     """ This queue-like thread controls the output to a socket."""
 
+    QUIET = 0
+    QUEUE_STATE = 1
+    FULL_MESSAGE = 2
+    TYPE_ONLY = 6
+
     def __init__(self, connection):
         WorkerThread.__init__(self)
         self.flush = False
         self.bot = connection
+        self.verbosity = self.TYPE_ONLY | self.QUEUE_STATE
 
     def send(self, message):
         """
@@ -148,21 +154,29 @@ class Printer(WorkerThread):
     def raw_message(self, mesg):
         self.work.put(mesg)
 
+    def log(self, data):
+        if self.verbosity != self.QUIET:
+            #TODO: Turn this into an event callback.
+            output = data
+            if self.verbosity & self.FULL_MESSAGE:
+                if self.verbosity & self.TYPE_ONLY:
+                    output = data.split()[0]
+                sys.stdout.write("%s ← %s" % (self.bot.server[0], output))
+            if self.work.qsize() and self.verbosity & self.QUEUE_STATE:
+                sys.stdout.write(" ⬩ %d messages queued." % self.work.qsize())
+            print()
+
     def run(self):
         while True:
             for data in self.work:
                 if not self.flush:
                     try:
                         self.send(data)
-                    except BaseException as err:
-                        print("Shit, printer error: %r\n" % err)
+                    except BaseException:
+                        print("Printer could not send: %r\n" % data, file=sys.stderr)
                         sys.excepthook(*sys.exc_info())
                     else:
-                        sys.stdout.write(">>> %s" % data.split()[0]) #TODO: Replace with informative debug info
-                        if self.work.qsize():
-                            sys.stdout.write(" %d items queued." %
-                                                 self.work.qsize())
-                        sys.stdout.write("\n")
+                        self.log(data)
                 else:
                     self.flush = False
                     self.work = Work()
@@ -583,6 +597,12 @@ class SelectiveBot(Bot):
             super().execute(handler, line)
 
 def loadplugin(mod, name, bot, stream):
+    """ The following can optionally be defined to hook into karkat:
+    __callbacks__: A mapping of callbacks.
+    __icallbacks__:  A mapping of inline callbacks.
+    __initialise__(name, botobj, printer) : A function to initialise the module.
+    __destroy__(): A function triggered on bot death.
+    """
     if "__initialise__" in dir(mod):
         mod.__initialise__(name, bot, stream)
         print("    Initialised %s." % mod.__name__)
@@ -597,7 +617,7 @@ def loadplugin(mod, name, bot, stream):
                 bot.register_i(trigger, callback)
                 print("        Registered inline callback: %s" % callback.__name__)
     if "__destroy__" in dir(mod):
-        bot.register_i("DIE", mod.__destroy__)
+        bot.register("DIE", mod.__destroy__)
         print("        Registered destructor: %s" % mod.__destroy__.__name__)
 
 class StatefulBot(SelectiveBot):
