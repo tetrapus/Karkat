@@ -66,7 +66,7 @@ class Work(queue.Queue):
                 return value
 
 
-class WorkerThread(threading.Thread):
+class WorkerThread(threading.Thread, object):
     """
     A thread which feeds tasks off of a queue.
     """
@@ -248,7 +248,7 @@ class ColourPrinter(Printer):
     def message(self, msg, recipient=None, method="PRIVMSG"):
         if method.upper() in ["PRIVMSG", "NOTICE"] and self.hasink:
             mesg = self.defaultcolor(str(msg))
-        super(ColourPrinter, self).message(mesg, recipient, method)
+        super().message(mesg, recipient, method)
         return msg
 
 
@@ -324,9 +324,9 @@ class Caller(WorkerThread):
             self.last = None
         assert self.work.qsize() == 0
 
-class Connection(threading.Thread):
+class Connection(threading.Thread, object):
     def __init__(self, conf):
-        super(Connection, self).__init__()
+        super().__init__()
         config = yaml.safe_load(open(conf))
         self.sock = None
         self.server = tuple(config["Server"])
@@ -468,7 +468,7 @@ class EventHandler(object):
 class Bot(Connection):
 
     def __init__(self, conf):
-        super(Bot, self).__init__(conf)
+        super().__init__(conf)
         self.callbacks = {"ALL": [], "DIE":[]}
         self.register("ping", self.pong)
 
@@ -511,7 +511,7 @@ class Bot(Connection):
                 print("Caller added.")
 
     def cleanup(self):
-        super(Bot, self).cleanup()
+        super().cleanup()
         for funct in self.callbacks["DIE"]:
             funct()
         print("Cleaned up.")
@@ -522,7 +522,7 @@ class Bot(Connection):
 
     def run(self):
         self.makeCallers()
-        super(Bot, self).run()
+        super().run()
 
     def register_all(self, callbacks):
         for trigger in callbacks:
@@ -672,14 +672,14 @@ class StatefulBot(SelectiveBot):
 
     @Callback.inline
     def went_away(self, line):
-        assert self.eq(self.line.split()[2], self.nick)
+        assert self.eq(line.split()[2], self.nick)
         # Get away message
         self.sendline("WHOIS %s" % self.nick)
 
 
     @Callback.inline
     def came_back(self, line):
-        assert self.eq(self.line.split()[2], self.nick)
+        assert self.eq(line.split()[2], self.nick)
         assert self.away
         self.away = None
 

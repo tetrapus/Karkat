@@ -19,6 +19,14 @@ except:
     raise ImportError
 
 
+def apimethod(funct):
+    @functools.wraps(funct)
+    def wrapper(self, *args, **kwargs):
+        if self.tokensExpired():
+            self.refresh_tokens()
+        return funct(self, *args, **kwargs)
+    return wrapper
+
 class Youtube(object):
     refresh = apikeys["channel"]
     appid = apikeys["appid"]
@@ -55,14 +63,6 @@ class Youtube(object):
 
     def tokensExpired(self):
         return time.time() > self.refresh_after
-
-    def apimethod(funct):
-        @functools.wraps(funct)
-        def wrapper(self, *args, **kwargs):
-            if self.tokensExpired():
-                self.refresh_tokens()
-            return funct(self, *args, **kwargs)
-        return wrapper
 
     @apimethod
     def get_playlist_id(self, channel):

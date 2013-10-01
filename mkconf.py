@@ -16,7 +16,8 @@ port = input("Port (default: 6667): ")
 settings["Server"] = [server, int(port or 6667)]
 settings["Nick"] = [input("Bot Nick (e.g Karkat): ")]
 while settings["Nick"][-1]:
-    settings["Nick"].append(input(("Backup " * len(settings["Nick"])) + ("Bot Nick (enter for None): ")))
+    settings["Nick"].append(input(("Backup " * len(settings["Nick"])) 
+                            + ("Bot Nick (enter for None): ")))
 del settings["Nick"][-1] 
 
 settings["Real Name"] = input("Real Name (default=Nick): ")
@@ -29,9 +30,9 @@ if not settings["Username"]:
 
 settings["Admins"] = [i.strip() for i in input("Administrators (Comma separated, e.g *@goes.rawr, tetrap.us): ").split(",")]
 
-datadir = input("Configuration Directory (default: /config/Server): ")
-if datadir:
-    settings["Data"] = datadir
+confidr = input("Configuration Directory (default: /config/Server): ")
+if confidr:
+    settings["Data"] = confidr
 
 with open(fname, "w") as f:
     f.write(yaml.dump(settings))

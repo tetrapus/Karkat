@@ -16,7 +16,6 @@ Options:
 import socket
 import sys
 import subprocess
-import inspect
 
 import docopt
 
@@ -28,6 +27,7 @@ __version__ = 2.0
 socket.setdefaulttimeout(1800)
 
 GP_CALLERS = 2
+
 
 def main():
     """
@@ -42,33 +42,34 @@ def main():
 
     servername = args["<config>"].split(".")[0]
 
-    __import__(args["--plugins"])
+    modules = args["--plugins"].split(",")
+    for mod in modules: 
+        __import__(args["--plugins"])
 
-    modules = sys.modules[args["--plugins"]].__all__
+    modules = [sys.modules[i] for i in modules]
 
     while modules:
         mod = modules.pop()
         if mod.__name__ in exclude:
             print("Skipping %s" % mod.__name__)
             continue
-        if "__all__" in dir(mod):
+        if "__modules__" in dir(mod):
             # Subpackage. Import submodules.
-            for submodule in mod.__all__:
-                if inspect.ismodule(submodule):
-                    modules.append(submodule)
+            for submodule in mod.__modules__:
+                modules.append(submodule)
+
         print("Loading %s" % mod.__name__)
         loadplugin(mod, servername, server, server.printer)
-        print("Loaded %s" % mod.__name__)
 
     if args["--identify"]:
-        if args["--auth"]:
-            def authenticate(line):
-                """ Sends nickserv credentials after the server preamble. """
-                server.sendline("nickserv AUTH %s" % args["--identify"])
-        else:
-            def authenticate(line):
-                """ Sends nickserv credentials after the server preamble. """
-                server.sendline("nickserv IDENTIFY %s" % args["--identify"])
+        def authenticate(line):
+            """ Sends nickserv credentials after the server preamble. """
+            if args["--auth"]:
+                cmd = "nickserv AUTH %s"
+            else:
+                cmd = "nickserv IDENTIFY %s"
+            server.sendline(cmd % args["--identify"])
+
         server.register("376", authenticate)
     if args["--debug"]:
         @Callback.inline
@@ -86,7 +87,7 @@ def main():
         print("Terminating...")
         server.connected = False
         server.sock.send("QUIT\r\n".encode("utf-8"))
-    if server.restart == True:
+    if server.restart is True:
         print("Restarting...")
         subprocess.call(sys.argv)
 

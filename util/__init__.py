@@ -65,4 +65,4 @@ def parallelise(jobs):
 
 def average(x): return float(sum(x))/len(x) if x else 0.00
 
-__all__ = [services, irc, text, parallelise, cmp, rfc_nickkey, average]
+__all__ = ["services", "irc", "text", "parallelise", "cmp", "rfc_nickkey", "average"]

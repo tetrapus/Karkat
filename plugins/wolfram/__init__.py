@@ -133,7 +133,7 @@ else:
                                 length = t_max - len(omission) - 5
                                 output[-1] = " 08⎬✁" + ("-"*int(length)) + " 07%s" % omission
                 else:
-                    output.append(" 08‣ 05No plaintext results. See " + URL.format(URL.shorten("http://www.wolframalpha.com/input/?i=%s" % urllib.quote_plus(query))))
+                    output.append(" 08‣ 05No plaintext results. See " + URL.format(URL.shorten("http://www.wolframalpha.com/input/?i=%s" % urllib.parse.quote_plus(query))))
                 return "\n".join(i.rstrip() for i in output)
 
             def getoutputsettings(self, target):
@@ -168,4 +168,3 @@ else:
         wa = WolframAlpha()
         bot.register("privmsg", wa.trigger)
         bot.register("privmsg", wa.shorthand_trigger)
-    __all__ = [__initialise__, parser]
