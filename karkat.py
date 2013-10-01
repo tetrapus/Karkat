@@ -10,6 +10,7 @@ Options:
     -e PLUGINS, --exclude=PLUGINS       Don't load these plugins
     -d --debug                          Turn on debugging
     -i PASSWORD, --identify=PASSWORD    Identify with the given password
+    -a --auth                           Auth instead of identify
 """
 
 import socket
@@ -60,9 +61,14 @@ def main():
         print("Loaded %s" % mod.__name__)
 
     if args["--identify"]:
-        def authenticate(line):
-            """ Sends nickserv credentials after the server preamble. """
-            server.sendline("msg nickserv :identify %s" % args["--identify"])
+        if args["--auth"]:
+            def authenticate(line):
+                """ Sends nickserv credentials after the server preamble. """
+                server.sendline("msg nickserv :AUTH %s" % args["--identify"])
+        else:
+            def authenticate(line):
+                """ Sends nickserv credentials after the server preamble. """
+                server.sendline("msg nickserv :IDENTIFY %s" % args["--identify"])
         server.register("376", authenticate)
     if args["--debug"]:
         @Callback.inline
