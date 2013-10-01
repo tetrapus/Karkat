@@ -123,7 +123,7 @@ class Printer(WorkerThread):
     QUIET = 0
     QUEUE_STATE = 1
     FULL_MESSAGE = 2
-    TYPE_ONLY = 6
+    TYPE_ONLY = 4
 
     def __init__(self, connection):
         WorkerThread.__init__(self)
@@ -157,10 +157,11 @@ class Printer(WorkerThread):
     def log(self, data):
         if self.verbosity != self.QUIET:
             #TODO: Turn this into an event callback.
-            output = data
-            if self.verbosity & self.FULL_MESSAGE:
+            if self.verbosity & (self.FULL_MESSAGE | self.TYPE_ONLY):
                 if self.verbosity & self.TYPE_ONLY:
                     output = data.split()[0]
+                else:
+                    output = data
                 sys.stdout.write("%s ← %s" % (self.bot.server[0], output))
             if self.work.qsize() and self.verbosity & self.QUEUE_STATE:
                 sys.stdout.write(" ⬩ %d messages queued." % self.work.qsize())
