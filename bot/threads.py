@@ -15,7 +15,7 @@ import yaml
 
 import util
 from util.irc import Address, Callback
-from util.text import lineify, TimerBuffer, average, Buffer
+from util.text import lineify, TimerBuffer, Buffer, ircstrip
 
 
 class Work(queue.Queue):
@@ -161,7 +161,7 @@ class Printer(WorkerThread):
                 if self.verbosity & self.TYPE_ONLY:
                     output = data.split()[0]
                 else:
-                    output = data
+                    output = ircstrip(data)
                 sys.stdout.write("%s ← %s" % (self.bot.server[0], output))
             if self.work.qsize() and self.verbosity & self.QUEUE_STATE:
                 sys.stdout.write(" ⬩ %d messages queued." % self.work.qsize())
@@ -409,7 +409,7 @@ class Connection(threading.Thread):
 
             self.printer.join()
             if "-d" in sys.argv and self.buff.log:
-                print("%d high latency events recorded, max=%r, avg=%r" % (len(self.buff.log), max(self.buff.log), average(self.buff.log)))
+                print("%d high latency events recorded, max=%r, avg=%r" % (len(self.buff.log), max(self.buff.log), util.average(self.buff.log)))
 
     def run(self):
         try:
