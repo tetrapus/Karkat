@@ -64,11 +64,11 @@ def main():
         if args["--auth"]:
             def authenticate(line):
                 """ Sends nickserv credentials after the server preamble. """
-                server.sendline("privmsg nickserv :AUTH %s" % args["--identify"])
+                server.sendline("nickserv AUTH %s" % args["--identify"])
         else:
             def authenticate(line):
                 """ Sends nickserv credentials after the server preamble. """
-                server.sendline("privmsg nickserv :IDENTIFY %s" % args["--identify"])
+                server.sendline("nickserv IDENTIFY %s" % args["--identify"])
         server.register("376", authenticate)
     if args["--debug"]:
         @Callback.inline
