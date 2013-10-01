@@ -28,7 +28,7 @@ else:
 
             t_max = 62
             h_max = 7
-            h_max_settings = {"#lgbteens": 3, "lion":50}
+            h_max_settings = {"#lgbteens": 3}
             t_lines = 12
             timeout = 45
 
