@@ -112,9 +112,9 @@ else:
                 
                 if total_lines > self.t_lines:
                     # Too many lines, print the available categories instead.
-                    for i in justifiedtable(sorted(results.keys(), key=len), t_max-3):
+                    for i in justifiedtable(sorted(results.keys(), key=len) + "05Available Categories", t_max-3):
                         output.append(" 04⎪ %s" % i)
-                    output.append(spacepad(" 04⎩","05Available Categories", t_max))
+                    output[-1] = " 04⎩" + output[-1][5:]
                 elif results:
                     if len(results) == 1 and len(list(results.values())[0]) == 1:
                         # Single line: Shorten output
