@@ -20,7 +20,7 @@ class Interpreter(object):
         self.codeReact = 0
         self.stream = stream
         self.bot = bot
-        self.namespace = {"server": bot, "printer": stream, "print": stream.message, "bot": Allbots([bot]), "main":__import__("__main__")}
+        self.namespace = {"server": bot, "printer": stream, "print": stream.message, "karkat": Allbots([bot]), "main":__import__("__main__")}
         self.namespace.update(sys.modules)
         bot.register("privmsg", self.trigger)
 
