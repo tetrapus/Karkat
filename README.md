@@ -17,15 +17,18 @@ Run ``sudo pip3 install docopt pyyaml requests pylast`` to install them.
 Create a config file. A sample file (Sample.yaml) is provided. For convenience, a config generator mkconf.py is provided.
 
 ### Step 3: Make api keys (optional)
-Some modules require api keys. Create a file apikeys.conf in the working directory. Put your keys in there in the format specified by the module.
+Some modules require api keys. Create a file apikeys.conf in the config directory. Put your keys in there in the format specified by the module.
 
 ### Step 4: Run karkat
-Karkat is run via ``./karkat.py <config>``. Some options are available, see the full argspec via ./karkat.py -h.
-
-The information below this point is outdated.
+Karkat is run via ``./karkat.py <config>``. Other options are available, see the full argspec via ./karkat.py -h.
 
 ## Files
-The main file is ``karkat.py``. 
+
+### karkat.py
+
+This file loads all the plugins and spawns the server object. You may put code to replace the plugin system here (if, e.g you want to run a different bot's plugins on it).
+
+The information below this point is outdated.
 
 ### threads.py 
 
@@ -38,14 +41,6 @@ This file contains some helper functions to parse IRC messages. The callback cla
 
 ### text.py
 This file contains some general text manipulation utilities. The design aesthetic of Karkat encourages short, multi-line output over information-dense, word-wrapped output.
-
-### karkat.py
-Good luck with this one.
-
-Karkat reads from a socket connection to a server one line at a time and queues up the callbacks (in flist) to the caller threads with the arguments (words, line). callers[1] is the main worker thread and callers[0] is reserved for non-critical operations. Threadsafe callbacks can utilise all caller threads.
-
-The printer class should be the only method for sending data to the server, to prevent threading issues. NOTE: ``karkat.py`` sets stdout to privmsg to the last used channel. 
-Use printer.message(text, <channel, <method>>) to send a message to the server, or use the printer.buffer(channel) context manager to ensure multiple lines are not interleaved.
 
 ### features.py
 All of the like, features are here. Currently they're just ``execfile()``'d after everything else is defined, so uh, be careful with that.
