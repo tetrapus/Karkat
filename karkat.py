@@ -19,8 +19,8 @@ import inspect
 
 import docopt
 
-from threads import StatefulBot, loadplugin, Printer
-from irc import Callback
+from bot.threads import StatefulBot, loadplugin, Printer
+from util.irc import Callback
 
 __version__ = 2.0
 

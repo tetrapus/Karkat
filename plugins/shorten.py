@@ -1,6 +1,5 @@
-import url as URL
-
-from irc import Callback
+from util.services import url as URL
+from util.irc import Callback
 
 cb = Callback()
 

@@ -11,7 +11,7 @@ import requests
 import yaml
 
 try:
-    apikeys = yaml.safe_load(open("apikeys.conf"))["bit.ly"]
+    apikeys = yaml.safe_load(open("config/apikeys.conf"))["bit.ly"]
 except:
     print("Warning: invalid or nonexistant api key.", file=sys.stderr)
     print("Defining url.shorten as identity function", file=sys.stderr)

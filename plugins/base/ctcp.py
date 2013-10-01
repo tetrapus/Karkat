@@ -2,9 +2,9 @@ import os
 
 import yaml
 
-from irc import Message
+from util.irc import Message
 
-REPLYFILE = "ctcp.yaml"
+REPLYFILE = "config/ctcp.yaml"
 
 def __initialise__(name, bot, stream):
 	replies = {}

@@ -1,8 +1,6 @@
 """
 Functions for manipulating urls.
 """
-from irc import Message
-
 import yaml
 import json
 import functools
@@ -11,8 +9,10 @@ import time
 import sys
 import re
 
+from util.irc import Message
+
 try:
-    apikeys = yaml.safe_load(open("apikeys.conf"))["youtube"]
+    apikeys = yaml.safe_load(open("config/apikeys.conf"))["youtube"]
 except:
     print("Warning: invalid or nonexistant api key.", file=sys.stderr)
     print("Youtube module not loaded.", file=sys.stderr)

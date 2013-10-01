@@ -3,8 +3,8 @@ import urllib.parse as urllib
 
 import requests
 
-from irc import Callback
-from text import unescape
+from util.irc import Callback
+from util.text import unescape
 
 cb = Callback()
 

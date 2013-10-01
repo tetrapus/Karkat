@@ -1,6 +1,10 @@
 #! /usr/bin/env python3
 
 import yaml
+import os
+
+if not os.path.exists("config/apikeys.conf"):
+    print("Warning: No apikeys file found.")
 
 fname = input("Config filename (e.g Freenode.yaml): ")
 if "." not in fname:

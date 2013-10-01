@@ -5,7 +5,6 @@ import os
 import re
 import sys
 import time
-import url
 import urllib.parse as urllib
 
 import requests
@@ -13,12 +12,13 @@ import yaml
 
 import util
 
-from irc import Callback
-from text import pretty_date
+from util.services import url
+from util.irc import Callback
+from util.text import pretty_date
 
 try:
     import pylast
-    apikeys = yaml.safe_load(open("apikeys.conf"))["last.fm"]
+    apikeys = yaml.safe_load(open("config/apikeys.conf"))["last.fm"]
 
 except ImportError:
     print("[%s] Warning: pylast is a dependency, install with\n$ pip install pylast" % __name__, file=sys.stderr)
@@ -26,18 +26,18 @@ except:
     print("Warning: invalid or nonexistant api key.", file=sys.stderr)
     print("%s not loaded." % __name__, file=sys.stderr)
 else:
+    try:
+        from util.services import youtube
+    except ImportError:
+        yt = None
+        print("Warning: Youtube module not loaded, using slow heuristic version.")
+    else:
+        yt = youtube.youtube
     cb = Callback()
 
     class LastFM(object):
 
         FILENAME = "lastfm_users.json"
-        try:
-            import youtube
-        except ImportError:
-            yt = None
-            print("Warning: Youtube module not loaded, using slow heuristic version.")
-        else:
-            yt = youtube.youtube
 
         def __init__(self, name, bot, printer):
             self.userfile = bot.get_config_dir(self.FILENAME)
@@ -58,9 +58,9 @@ else:
             bot.register("privmsg", self.now_playing)
             bot.register("privmsg", self.compare)
 
-        @classmethod
-        def get_youtube(cls, query):
-            if cls.yt is None:
+        @staticmethod
+        def get_youtube(query):
+            if yt is None:
                 data  = requests.get("https://gdata.youtube.com/feeds/api/videos?q=%s&alt=json" % urllib.quote_plus(query)).text
                 data  = json.loads(data)
                 title = data["feed"]["entry"][0]["title"]["$t"]
@@ -73,7 +73,7 @@ else:
                 if len({i for i in qfilter & tfilter if len(i) > 2}) >= 2 and qtfilter & tfilter:
                     return url.format("http://youtu.be/" + data)
             else:
-                return url.format("http://youtu.be/" + cls.yt.get_music_video(query)[1]) # Don't check title for now.
+                return url.format("http://youtu.be/" + yt.get_music_video(query)[1]) # Don't check title for now.
 
         @staticmethod
         def get_listens(username, mbid):

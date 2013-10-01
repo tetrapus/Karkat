@@ -14,8 +14,8 @@ import fnmatch
 import yaml
 
 import util
-from irc import Address, Callback
-from text import lineify, TimerBuffer, average, Buffer
+from util.irc import Address, Callback
+from util.text import lineify, TimerBuffer, average, Buffer
 
 
 class Work(queue.Queue):

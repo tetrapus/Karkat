@@ -1,4 +1,4 @@
-from irc import Callback
+from util.irc import Callback
 
 def __initialise__(name, bot, printer):
     cb = Callback()

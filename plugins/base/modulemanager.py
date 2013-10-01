@@ -3,9 +3,9 @@ import json
 import os
 import sys
 
-from irc import Callback
-from text import namedtable
-from threads import loadplugin, SelectiveBot
+from util.irc import Callback
+from util.text import namedtable
+from bot.threads import loadplugin, SelectiveBot
 
 
 cb = Callback()

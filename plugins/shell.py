@@ -4,8 +4,8 @@ import subprocess
 import threading
 import time
 
-from irc import Callback
-from irc import Message
+from util.irc import Callback
+from util.irc import Message
 
 class Process(threading.Thread):
     def __init__(self, shell, target, invocator):

@@ -1,10 +1,10 @@
 import collections
 import re
 
-import url
 import util
 
-from text import aligntable
+from util.services import url
+from util.text import aligntable
 
 
 symbols = {"lambda"      :"λ", 

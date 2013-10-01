@@ -1,7 +1,7 @@
 import requests
 
-from irc import Callback
-from text import namedtable
+from util.irc import Callback
+from util.text import namedtable
 
 cb = Callback()
 

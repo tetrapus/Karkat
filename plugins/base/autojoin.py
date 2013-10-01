@@ -1,7 +1,7 @@
 import os
 import json
 
-from irc import Callback
+from util.irc import Callback
 
 
 class AutoJoin(object):

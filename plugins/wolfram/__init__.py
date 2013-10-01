@@ -8,14 +8,14 @@ import urllib.request
 
 import yaml 
 
-import url as URL
 from . import parser
 
-from irc import Callback
-from text import striplen, spacepad, justifiedtable
+from util.services import url as URL
+from util.irc import Callback
+from util.text import striplen, spacepad, justifiedtable
 
 try:
-    apikeys = yaml.safe_load(open("apikeys.conf"))["wolfram"]
+    apikeys = yaml.safe_load(open("config/apikeys.conf"))["wolfram"]
 except:
     print("Warning: Wolfram module not loaded: invalid or nonexistant api key.", file=sys.stderr)
     print("Request an apikey at https://developer.wolframalpha.com/portal/apisignup.html and place in apikeys.conf as wolfram.key.<key>")

@@ -1,6 +1,6 @@
-from youtube import youtube as yt
+from util.services.youtube import youtube as yt
 
-from irc import Callback
+from util.irc import Callback
 
 templates = {"@": "You04Tube⎟ %(title)s\nYou04Tube⎟ 15by %(channel)s 12↗ http://youtu.be/%(url)s",
              ".": "You04Tube⎟ %(title)s 12↗ http://youtu.be/%(url)s",

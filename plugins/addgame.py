@@ -1,7 +1,7 @@
 import os
 import time
 
-from irc import Callback
+from util.irc import Callback
 
 
 class AddGame(object):

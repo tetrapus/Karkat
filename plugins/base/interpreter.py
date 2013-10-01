@@ -1,6 +1,6 @@
 import sys
 
-from irc import Message, Callback
+from util.irc import Message, Callback
 
 
 class Allbots:

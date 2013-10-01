@@ -1,5 +1,9 @@
 import threading
 
+from . import services
+from . import irc
+from . import text
+
 # Taken straight from the xchat source. Thanks, xchat!
 rfc_tolowertab = [0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa,
     0xb, 0xc, 0xd, 0xe, 0xf, 0x10, 0x11, 0x12, 0x13, 0x14,
@@ -58,18 +62,4 @@ def parallelise(jobs):
     for i in threads: i.join()
     return [i.answer for i in threads]
 
-class ComposableFunction(object):
-    def __init__(self, funct):
-        self.funct = funct
-        self.passto = lambda x: x
-
-    def __or__(self, nextfunct):
-        self.passto = nextfunct
-        return ComposableFunction(self)
-
-    def __call__(self, *args, **kwargs):
-        return self.passto(self.funct(*args, **kwargs))
-
-
-def composable(funct):
-    return ComposableFunction(funct)
+__all__ = [services, irc, text, parallelise, cmp, rfc_nickkey]
