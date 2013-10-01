@@ -29,7 +29,7 @@ else:
             t_max = 62
             h_max = 7
             h_max_settings = {"#lgbteens": 3, "lion":50}
-            t_lines = 10
+            t_lines = 12
             timeout = 45
 
             results = ["Result", "Response", "Infinite sum", "Decimal approximation", "Decimal form", "Limit", "Definition", "Definitions", "Description", "Balanced equation", "Chemical names and formulas", "Conversions to other units", "Roots", "Root", "Definite integral", "Plot", "Plots"]
@@ -108,7 +108,7 @@ else:
                 
                 results = collections.OrderedDict([(k, self.breakdown(v.split("\n"), t_max - 3)) for k, v in results.items()])
                 
-                total_lines = sum([min([len(results[x]), h_max]) for x in results])
+                total_lines = sum([min(len(results[x]), h_max) for x in results])
                 
                 if total_lines > self.t_lines:
                     # Too many lines, print the available categories instead.
