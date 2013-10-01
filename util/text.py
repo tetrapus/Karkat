@@ -9,8 +9,6 @@ from datetime import timedelta
 import html.entities
 
 
-def average(x): return float(sum(x))/len(x) if x else 0.00
-
 def lineify(data, max_size=400):
     """ Split text up into IRC-safe lines. """
     
@@ -186,9 +184,9 @@ def aligntable(rows, separator=" 08⎪ "):
     # Invert
     columns = list(zip(*rows))
     for i, col in enumerate(columns):
-        width = max(len(x) for x in col)
+        width = max(striplen(x) for x in col)
         for j, cell in enumerate(col):
-            rows[j][i] = cell + (" "*(width - len(cell)))
+            rows[j][i] = cell + (" "*(width - striplen(cell)))
     rows = [separator.join(x) for x in rows]
     return rows
 
