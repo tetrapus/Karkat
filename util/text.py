@@ -152,14 +152,14 @@ def justifiedtable(array, width, minsep=3):
     result = [[]]
     table = []
     for data in array:
-        if sum(len(x) + minsep for x in result[-1]) + len(data) <= width:
+        if sum(striplen(x) + minsep for x in result[-1]) + striplen(data) <= width:
             result[-1].append(data)
         else:
             result.append([data])
     for row in result:
         if len(row) > 1:
             table.append(row[0])
-            sepwidth, spares = divmod(width - sum(len(x) for x in row), len(row) - 1) 
+            sepwidth, spares = divmod(width - sum(striplen(x) for x in row), len(row) - 1) 
             for i, string in enumerate(row[1:]):
                 table[-1] += " "*sepwidth
                 if i < spares:
