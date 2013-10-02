@@ -61,11 +61,11 @@ def is_maths(line):
         2. The average contiguous sequence of alpha characters is < 1.5
         3. At least 25% of characters are non-alphanumeric
     """
-    alpha_seq = re.split("[^a-zA-Z]+", line)
-    rule1 = max(len(x) for x in alpha_seq) <= 3
-    rule2 = sum(len(i) for i in alpha_seq) / len(alpha_seq) < 1.5
+    #alpha_seq = re.split("[^a-zA-Z]+", line)
+    #rule1 = max(len(x) for x in alpha_seq) <= 3
+    #rule2 = sum(len(i) for i in alpha_seq) / len(alpha_seq) < 1.5
     rule3 = len([i for i in line if not i.isalpha()]) / len(line) > 0.25
-    return rule1 and rule2 and rule3
+    return rule3
 
 def replace_symbol_words(line):
     """ Replace symbolic names for symbols with the mapped symbol. """
@@ -81,7 +81,7 @@ def respace_expression(line):
 def parse_maths(data):
     """ Parse all mathematical lines into a unicodier format. """
     symbolic = (replace_symbol_words(i) for i in data)
-    return (respace_expression(i) if is_maths(i) else i for i in data)
+    return (respace_expression(i) if is_maths(i) else i for i in symbolic)
 
 def getexpr(expr, mapping):
     """ 
