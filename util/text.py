@@ -154,7 +154,7 @@ def namedtable(results, size=100, rowmax=None, header="", rheader="", color=12):
         padded_line = []
         for index, cell in enumerate(line):
             # Right-align the rightmost row.
-            padding = " " * cellsize-striplen(cell)
+            padding = " " * (cellsize-striplen(cell))
             if index + 1 == columns:
                 padded_line.append("%s%s" % (padding, cell))
             else:

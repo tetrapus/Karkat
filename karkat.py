@@ -44,7 +44,7 @@ def main():
 
     modules = args["--plugins"].split(",")
     for mod in modules: 
-        __import__(args["--plugins"])
+        __import__(mod)
 
     modules = [sys.modules[i] for i in modules]
 

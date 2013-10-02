@@ -7,7 +7,8 @@ from util.services import url
 from util.text import aligntable
 
 
-symbols = {"lambda"      :"λ", 
+symbols = {"~~"          :"≈";
+           "lambda"      :"λ", 
            "e"           :"ℯ", 
            "theta"       :"θ", 
            "infinity"    :"∞", 
@@ -69,11 +70,18 @@ def is_maths(line):
 def replace_symbol_words(line):
     """ Replace symbolic names for symbols with the mapped symbol. """
     replace_symbol = lambda x: symbols[x.group(0).lower()] if x.group(0) in symbols else x.group(0)
-    return re.sub(r"[a-z]+", replace_symbol, line, flags=re.IGNORECASE)
+    return re.sub(r"[a-z~]+", replace_symbol, line, flags=re.IGNORECASE)
+
+def respace_expression(line):
+    """ Re-space expressions to be more mathematical """
+    line = re.sub(r"(\d) ([a-z]\b)", r"\1\2", line)
+    line = re.sub(r"([^a-z][-+].|.[-+][^a-z])", lambda x: " ".join(x), line)
+    return line
 
 def parse_maths(data):
     """ Parse all mathematical lines into a unicodier format. """
-    return (replace_symbol_words(i) if is_maths(i) else i for i in data)
+    symbolic = (replace_symbol_words(i) for i in data)
+    return (respace_expression(i) if is_maths(i) else i for i in data)
 
 def getexpr(expr, mapping):
     """ 

@@ -12,6 +12,7 @@ from . import suggest
 from . import lastfm
 from . import wolfram
 from . import youtube
+from . import cardsagainsthumanity
 
 __modules__ = [google,
                addgame,
