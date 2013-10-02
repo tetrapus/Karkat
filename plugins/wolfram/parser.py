@@ -7,7 +7,7 @@ from util.services import url
 from util.text import aligntable
 
 
-symbols = {"~~"          :"≈";
+symbols = {"~~"          :"≈",
            "lambda"      :"λ", 
            "e"           :"ℯ", 
            "theta"       :"θ", 
