@@ -75,7 +75,7 @@ def replace_symbol_words(line):
 def respace_expression(line):
     """ Re-space expressions to be more mathematical """
     line = re.sub(r"(\d) ([a-z]\b)", r"\1\2", line)
-    line = re.sub(r"([^a-z][-+].|.[-+][^a-z])", lambda x: " ".join(x), line)
+    line = re.sub(r"([^a-z][-+].|.[-+][^a-z])", lambda x: " ".join(x.group(0)), line)
     return line
 
 def parse_maths(data):
