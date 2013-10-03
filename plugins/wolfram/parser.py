@@ -7,7 +7,9 @@ from util.services import url
 from util.text import aligntable
 
 
-symbols = {"~~"          :"≈",
+symbols = {"~~" : "≈",
+           "=>" : "⇒",
+           "superset"    :"⊃",
            "lambda"      :"λ", 
            "e"           :"ℯ", 
            "theta"       :"θ", 
@@ -18,10 +20,11 @@ symbols = {"~~"          :"≈",
            "intersection":"∩", 
            "union"       :"∪", 
            "IMPLIES"     :"⇒", 
-           "sqrt"        :"√‾", 
            "sum"         :"∑", 
            "product"     :"∏", 
-           "constant"    :"08 Constant"}
+           "constant"    :"08 Constant",
+           "(open curly double quote)": "“",
+           "(close curly double quote)": "”"}
 
 sub = {"0":"₀","1":"₁","2":"₂","3":"₃","4":"₄","5":"₅","6":"₆","7":"₇",
        "8":"₈","9":"₉","+":"₊","-":"₋","=":"₌","(":"₍",")":"₎","a":"ₐ",
@@ -39,6 +42,10 @@ sup = {"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"�
 
 supset = "abcdefghijklmnoprstuvwxyz0123456789_T"
 subset = "aehiklmnoprstuvx0123456789"
+
+vulgar_fractions = {(1, 2): "½",
+                    (1, 4): "¼",
+                    (3, 4): "¾"}
 
 def delete_blank(data):
     """ Remove blank lines from the data. """
@@ -65,23 +72,47 @@ def is_maths(line):
     #rule1 = max(len(x) for x in alpha_seq) <= 3
     #rule2 = sum(len(i) for i in alpha_seq) / len(alpha_seq) < 1.5
     rule3 = len([i for i in line if not i.isalpha()]) / len(line) > 0.25
-    return rule3
+    return rule3 and "http" not in line # good heuristic :)
 
-def replace_symbol_words(line):
+def replace_symbol_words(data):
     """ Replace symbolic names for symbols with the mapped symbol. """
-    replace_symbol = lambda x: symbols[x.group(0).lower()] if x.group(0) in symbols else x.group(0)
-    return re.sub(r"[a-z~]+", replace_symbol, line, flags=re.IGNORECASE)
+    for expr in symbols:
+        data = (re.sub("(?:\b%s\b|\b[^a-z]%s[^a-z]\b)" % (expr, expr), symbols[expr], i) for i in data)
+    return data
 
 def respace_expression(line):
     """ Re-space expressions to be more mathematical """
-    line = re.sub(r"(\d) ([a-z]\b)", r"\1\2", line)
-    line = re.sub(r"([^a-z][-+].|.[-+][^a-z])", lambda x: " ".join(x.group(0)), line)
+    line = re.sub(r"(\d) ([a-zπℯ]\b)", r"\1\2", line) # Add more!
+    line = re.sub(r"(\b[^a-z][-+≈=].|[\w][-+=≈][^a-z]\b)", lambda x: " ".join(x.group(0)), line)
     return line
+
+def parse_sqrt(line):
+    while re.search(r"sqrt\(.*\)", line):
+        line, rest = line.split("sqrt(", 1)
+        line += "√"
+        rest = list(rest)
+        balance = 1
+        while rest:
+            char = rest.pop(0)
+            if char == "(":
+                balance += 1
+            elif char == ")":
+                balance -= 1
+
+            if balance == 0:
+                line = line + "".join(rest)
+                break
+            else:
+                line += char + "\u0305"
+    return line
+
+def parse_all_sqrts(data):
+    return (parse_sqrt(i) for i in data)
+
 
 def parse_maths(data):
     """ Parse all mathematical lines into a unicodier format. """
-    symbolic = (replace_symbol_words(i) for i in data)
-    return (respace_expression(i) if is_maths(i) else i for i in symbolic)
+    return (respace_expression(i) if is_maths(i) else i for i in data)
 
 def getexpr(expr, mapping):
     """ 

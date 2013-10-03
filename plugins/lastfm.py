@@ -107,6 +107,7 @@ else:
                 if youtube:
                     trackdata["link"] = "12↗ %s" % youtube
                     trackdata["barelink"] = youtube
+                    trackdata["dotlink"] = "· %s" % youtube
             except:
                 pass
             return trackdata
@@ -145,11 +146,11 @@ else:
                 # Calculate colour
                 scolour = colors[min(2, int(math.log(since/60 +1, 60)))]
                 trackdata["timeago"] = "%.2d⌚ %s " % (scolour, pretty_date(since))
+                trackdata["tad"] = "· %s" % trackdata["timeago"]
                 track = recent.track
                 difftime["recent"] = time.time()
             
             trackdata["duration"] = "⌛ %dm%.2ds " % divmod(track.get_duration()/1000, 60)
-            trackdata["tod"] = "(%s) " % ((trackdata["timeago"] or trackdata["duration"])[:-1])
 
             trackdata["artist"], trackdata["title"] = (track.get_artist(), track.get_title())
             trackname = "%(artist)s - %(title)s" % trackdata
@@ -161,7 +162,7 @@ else:
                 template = "04Last.FM⎟ %(loved)s%(artist)s · %(title)s\n"\
                            "04Last.FM⎟ %(listens)s%(timeago)s%(duration)s%(link)s"
             else:
-                template = "04Last.FM⎟ %(loved)s%(artist)s · %(title)s %(tod)s%(barelink)s"
+                template = "04Last.FM⎟ %(loved)s%(artist)s · %(title)s (%(duration)s) %(tad)s%(dotlink)s"
             difftime["template"] = time.time()
             for i in util.parallelise(jobs):
                 trackdata.update(i)

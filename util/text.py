@@ -69,7 +69,7 @@ def ordinal(value):
 
 def ircstrip(data):
     """ Strip irc control characters from a string """
-    return re.sub(r"(\x03(\d{0,2}(,\d{1,2})?)?|\x1f|\x0f|\x16|\x02)", "", data)
+    return re.sub(r"(\x03(\d{0,2}(,\d{1,2})?)?|\x1f|\x0f|\x16|\x02|\u0305)", "", data)
 
 def unescape(text):
     """ Parse html encoded characters """
@@ -297,3 +297,12 @@ class TimerBuffer(Buffer):
         else:
             self.start = time.time()
             return nextval
+
+def overline(text):
+    return "\u0305".join(text) + "\u0305"
+
+def strikethrough(text):
+    return "\u0336".join(text) + "\u0336"
+
+def underline(text):
+    return "\u0332".join(text) + "\u0332"
