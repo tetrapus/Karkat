@@ -18,15 +18,6 @@ except:
     print("Youtube module not loaded.", file=sys.stderr)
     raise ImportError
 
-
-def apimethod(funct):
-    @functools.wraps(funct)
-    def wrapper(self, *args, **kwargs):
-        if self.tokensExpired():
-            self.refresh_tokens()
-        return funct(self, *args, **kwargs)
-    return wrapper
-
 class Youtube(object):
     refresh = apikeys["channel"]
     appid = apikeys["appid"]
@@ -34,6 +25,19 @@ class Youtube(object):
 
     def __init__(self):
         self.refresh_tokens()
+
+    @staticmethod
+    def apimethod(funct):
+        @functools.wraps(funct)
+        def wrapper(self, *args, **kwargs):
+            if self.tokensExpired():
+                self.refresh_tokens()
+            return funct(self, *args, **kwargs)
+        return wrapper
+
+    @apimethod
+    def refresh_trigger(self, *x, **y):
+        pass
 
     def request_auth(self):
         import webbrowser
