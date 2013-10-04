@@ -9,7 +9,7 @@ import time
 import sys
 import re
 
-from util.irc import Message
+from util.irc import Message, Callback
 
 try:
     apikeys = yaml.safe_load(open("config/apikeys.conf"))["youtube"]
@@ -34,6 +34,7 @@ class Youtube(object):
     def __init__(self):
         self.refresh_tokens()
 
+    @Callback.background
     @apimethod
     def refresh_trigger(self, *x, **y):
         pass

@@ -14,6 +14,11 @@ def __initialise__(name, bot, stream):
     cb = Callback()
     cb.initialise(name, bot, stream)
 
+    @cb.background
+    def refresh_tokens(line):
+        if yt.tokensExpired():
+            yt.refresh_tokens()
+
     @cb.command(["youtube", "yt"], "(-\d\s+)?(.+)", public=".@", private="!",
                 usage="You04Tube⎟ Usage: [.@]youtube [-NUM_RESULTS] <query>",
                 error="You04Tube⎟ Failed to get search results.")
@@ -34,3 +39,4 @@ def __initialise__(name, bot, stream):
         
 
     bot.register("privmsg", youtube)
+    bot.register("ALL", refresh_tokens) # keep tokens current
