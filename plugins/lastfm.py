@@ -135,7 +135,7 @@ else:
 
             user = self.network.get_user(username)
 
-            trackdata = {i:"" for i in ("duration", "timeago", "title", "artist", "link", "listens", "loved", "barelink", "album")}
+            trackdata = {i:"" for i in ("duration", "timeago", "title", "artist", "link", "listens", "loved", "barelink", "album", "tad")}
             difftime["user"] = time.time()
             track, recent = util.parallelise([user.get_now_playing, lambda: user.get_recent_tracks(limit=1)])
             #track = user.get_now_playing()
