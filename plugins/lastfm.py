@@ -154,7 +154,7 @@ else:
 
             trackdata["artist"], trackdata["title"], trackdata["album"] = (track.get_artist(), track.get_title(), track.get_album())
             if trackdata["album"]:
-                trackdata["album"] += " · "
+                trackdata["album"] = trackdata["album"].get_title() + " · "
             trackname = "%(artist)s - %(title)s" % trackdata
 
             if message.prefix in "!@":
