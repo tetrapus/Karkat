@@ -135,7 +135,7 @@ else:
 
             user = self.network.get_user(username)
 
-            trackdata = {i:"" for i in ("duration", "timeago", "title", "artist", "link", "listens", "loved", "barelink", "album", "tad")}
+            trackdata = {i:"" for i in ("duration", "timeago", "title", "artist", "link", "listens", "loved", "barelink", "tad")}
             difftime["user"] = time.time()
             track, recent = util.parallelise([user.get_now_playing, lambda: user.get_recent_tracks(limit=1)])
             #track = user.get_now_playing()
@@ -152,22 +152,20 @@ else:
             
             trackdata["duration"] = "⌛ %dm%.2ds" % divmod(track.get_duration()/1000, 60)
 
-            trackdata["artist"], trackdata["title"], trackdata["album"] = (track.get_artist(), track.get_title(), track.get_album())
-            if trackdata["album"]:
-                trackdata["album"] = trackdata["album"].get_title() + " · "
+            trackdata["artist"], trackdata["title"] = (track.get_artist(), track.get_title())
             trackname = "%(artist)s - %(title)s" % trackdata
+
+            jobs = [lambda: self.get_yt_data(trackname), lambda: self.get_listens(username, track.get_mbid())]
 
             if message.prefix in "!@":
                 # Provide full template
-                jobs = [lambda: self.get_yt_data(trackname), lambda: self.get_listens(username, track.get_mbid())]
-                template = "04Last.FM⎟ %(loved)s%(artist)s · %(album)s%(title)s\n"\
+                template = "04Last.FM⎟ %(loved)s%(artist)s · %(title)s\n"\
                            "04Last.FM⎟ %(listens)s%(timeago)s%(duration)s %(link)s"
-                for i in util.parallelise(jobs):
-                    trackdata.update(i)
             else:
-                template = "04Last.FM⎟ %(artist)s · %(album)s%(title)s (%(duration)s) %(tad)s"
+                template = "04Last.FM⎟ %(loved)s%(artist)s · %(title)s (%(duration)s) %(tad)s%(dotlink)s"
             difftime["template"] = time.time()
-
+            for i in util.parallelise(jobs):
+                trackdata.update(i)
             final = time.time()
             for i in difftime:
                 print("[Last.FM] %s: %f" % (i, final - difftime[i]))
