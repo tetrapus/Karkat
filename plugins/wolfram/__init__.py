@@ -100,7 +100,7 @@ else:
                                 results = {i: results[i]}
                                 break
                         else:
-                            results = {results.keys()[0]: results.values()[0]}
+                            results = {list(results.keys())[0]: list(results.values())[0]}
                 else:
                     results = max(answer, key=lambda x:difflib.SequenceMatcher(None, category, x).ratio())
                     results = {results:answer[results]}
