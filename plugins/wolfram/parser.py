@@ -320,12 +320,10 @@ def format_table(chunk):
     data = [[cell.strip() for cell in row.split("|")] 
                           for row in chunk.split("\n")]
 
-    table = aligntable(data)
-
     if data and not data[0][0]:
         if any(i[0] for i in data):
-            # Blank top-left cell implies first row is headings.
-            table[0] = "%s" % table[0]
+            data[0][0] = ""
+    table = aligntable(data)
     return table
 
 def format(data):
