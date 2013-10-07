@@ -11,6 +11,7 @@ Options:
     -d --debug                          Turn on debugging
     -i PASSWORD, --identify=PASSWORD    Identify with the given password
     -a --auth                           Auth instead of identify
+    -r --restart                        Restart on disconnect
 """
 
 import socket
@@ -37,7 +38,8 @@ def main():
     args = docopt.docopt(__doc__ % {"name": sys.argv[0]}, version=__version__)
     exclude = args["--exclude"].split(",") if args["--exclude"] else []
     server = StatefulBot(args["<config>"])
-
+    if args["--restart"]:
+        server.restart = True
     server.connect()
 
     servername = args["<config>"].split(".")[0]
