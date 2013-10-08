@@ -95,7 +95,7 @@ def is_maths(line):
 def replace_symbol_words(data):
     """ Replace symbolic names for symbols with the mapped symbol. """
     for expr in symbols:
-        data = (re.sub(r"(?:\b%s\b|\b[^a-z]%s[^a-z]\b)" % (expr, expr), symbols[expr], i) for i in data)
+        data = [re.sub(r"(?:\b%s\b|\b[^a-z]%s[^a-z]\b)" % (expr, expr), symbols[expr], i) for i in data]
     return data
 
 def respace_expression(line):
