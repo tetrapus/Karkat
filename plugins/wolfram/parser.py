@@ -95,7 +95,7 @@ def is_maths(line):
 def replace_symbol_words(data):
     """ Replace symbolic names for symbols with the mapped symbol. """
     for expr in symbols:
-        data = (re.sub("(?:\b%s\b|\b[^a-z]%s[^a-z]\b)" % (expr, expr), symbols[expr], i) for i in data)
+        data = (re.sub(r"(?:\b%s\b|\b[^a-z]%s[^a-z]\b)" % (expr, expr), symbols[expr], i) for i in data)
     return data
 
 def respace_expression(line):
@@ -323,6 +323,7 @@ def format_table(chunk):
     if data and not data[0][0]:
         if any(i[0] for i in data):
             data[0][0] = ""
+            data[0][-1] += ""
     table = aligntable(data)
     return table
 
