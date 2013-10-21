@@ -122,12 +122,12 @@ else:
             difftime["start"] = time.time()
             colors = [1, 14, 15]
             nick = cb.bot.lower(message.address.nick)
+            if not username:
+                username = message.address.nick
+
             if save:
                 self.users[nick] = username
                 self.savefile()
-
-            if not username:
-                username = message.address.nick
 
             lowername = cb.bot.lower(username)
             if lowername in self.users:
@@ -151,7 +151,7 @@ else:
                 difftime["recent"] = time.time()
             
             trackdata["duration"] = "⌛ %dm%.2ds" % divmod(track.get_duration()/1000, 60)
-
+            trackdata["album"] = track.get_album().get_title()
             trackdata["artist"], trackdata["title"] = (track.get_artist(), track.get_title())
             trackname = "%(artist)s - %(title)s" % trackdata
 
@@ -159,10 +159,10 @@ else:
 
             if message.prefix in "!@":
                 # Provide full template
-                template = "04Last.FM⎟ %(loved)s%(artist)s · %(title)s\n"\
+                template = "04Last.FM⎟ %(loved)s%(artist)s · %(album)s · %(title)s\n"\
                            "04Last.FM⎟ %(listens)s%(timeago)s%(duration)s %(link)s"
             else:
-                template = "04Last.FM⎟ %(loved)s%(artist)s · %(title)s (%(duration)s) %(tad)s%(dotlink)s"
+                template = "04⎟ %(loved)s%(artist)s · %(title)s (%(duration)s) %(tad)s%(dotlink)s"
             difftime["template"] = time.time()
             for i in util.parallelise(jobs):
                 trackdata.update(i)
@@ -179,6 +179,7 @@ else:
                 users = (message.address.nick, user1)
             else:
                 users = (user1, user2)
+            users_display = ["%s (%s)" % (i, self.users[cb.bot.lower(i)]) if cb.bot.lower(i) in self.users else i for i in users]
             users = [self.users[cb.bot.lower(i)] if cb.bot.lower(i) in self.users else i for i in users]
             first = self.network.get_user(users[0])
             tasteometer, artists = first.compare_with_user(users[1])
@@ -197,7 +198,7 @@ else:
                 else:
                     overflow = (" and %d more" % len(artists)) * bool(len(artists))
 
-            yield "04Last.FM⎟ %s ⟺ %s: %.2d%.1f%% compatible" % (users[0], users[1], [4, 7, 8, 9, 3][int(tasteometer * 4.95)], tasteometer * 100)
+            yield "04Last.FM⎟ %s ⟺ %s: %.2d%.1f%% compatible" % (users_display[0], users_display[1], [4, 7, 8, 9, 3][int(tasteometer * 4.95)], tasteometer * 100)
             yield "04Last.FM⎟ %s%s in common." % (common, overflow)
 
 

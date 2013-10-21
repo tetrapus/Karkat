@@ -5,6 +5,7 @@ import re
 import sys
 import urllib.parse
 import urllib.request
+from functools import lru_cache
 
 import yaml 
 
@@ -55,6 +56,7 @@ else:
 
                 return data
                 
+            @lru_cache(maxsize=4096)
             def wolfram(self, query):
                 response = urllib.request.urlopen("http://api.wolframalpha.com/v2/query?"+urllib.parse.urlencode({"appid": apikeys["key"], "input":query, "scantimeout":str(self.timeout)}), timeout=self.timeout)
                 response = etree.parse(response)
@@ -120,7 +122,7 @@ else:
                 elif results:
                     if len(results) == 1 and len(list(results.values())[0]) == 1:
                         # Single line: Shorten output
-                        output = [spacepad("05Wolfram08Alpha04⎟ %s " % list(results.values())[0][0], "07%s" % list(results.keys())[0], t_max)]
+                        output = [spacepad("08⎟ %s " % list(results.values())[0][0], "07%s" % list(results.keys())[0], t_max)]
                     else:
                         for category in results:
                             lines = [x.rstrip() for x in results[category]]
