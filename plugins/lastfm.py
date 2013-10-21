@@ -114,7 +114,7 @@ else:
 
         @staticmethod
         def get_album(track):
-            trackdata = {"album": ""}
+            trackdata = {}
             album = track.get_album()
             if album:
                 trackdata["album"] = " · %s" % album.get_name()
@@ -143,7 +143,7 @@ else:
 
             user = self.network.get_user(username)
 
-            trackdata = {i:"" for i in ("duration", "timeago", "title", "artist", "link", "listens", "loved", "barelink", "tad")}
+            trackdata = {i:"" for i in ("duration", "timeago", "title", "artist", "link", "listens", "loved", "barelink", "tad", "album", "dotlink")}
             difftime["user"] = time.time()
             track, recent = util.parallelise([user.get_now_playing, lambda: user.get_recent_tracks(limit=1)])
             #track = user.get_now_playing()
