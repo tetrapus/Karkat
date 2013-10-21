@@ -57,6 +57,7 @@ else:
 
             bot.register("privmsg", self.now_playing)
             bot.register("privmsg", self.compare)
+            bot.register("privmsg", self.setlfm)
 
         @staticmethod
         def get_youtube(query):
@@ -120,22 +121,30 @@ else:
                 trackdata["album"] = " · %s" % album.get_name()
             return trackdata
 
-        @cb.command("np", "(-s\s*)?([^ ]*)", 
-                    usage="04Last.FM⎟ Usage: [.@]np [-s] [user]",
-                    error="04Last.FM⎟ Couldn't retrieve Last.FM playing history.",
-                    private="!",
-                    public=".@")
-        def now_playing(self, message, save, username):
-            difftime = collections.OrderedDict()
-            difftime["start"] = time.time()
-            colors = [1, 14, 15]
+        @cb.command("setlfm", "([^ ]*)")
+        def setlfm(self, message, username):
             nick = cb.bot.lower(message.address.nick)
             if not username:
                 username = message.address.nick
+            self.users[nick] = username
+            self.savefile()
+            return "04Last.FM⎟ Associated %s with Last.FM user %s." % (message.address.nick, username)
 
-            if save:
-                self.users[nick] = username
-                self.savefile()
+        @cb.threadsafe
+        @cb.command("np", "(-\d+)?\s*([^ ]*)", 
+                    usage="04Last.FM⎟ Usage: [.!@]np [-d] [user]",
+                    error="04Last.FM⎟ Couldn't retrieve Last.FM playing history.",
+                    private="!",
+                    public=".@")
+        def now_playing(self, message, lastnum, username):
+            difftime = collections.OrderedDict()
+            difftime["start"] = time.time()
+            colors = [1, 14, 15]
+            if not username:
+                username = message.address.nick
+
+            if lastnum:
+                lastnum = -int(lastnum)
 
             lowername = cb.bot.lower(username)
             if lowername in self.users:
@@ -145,11 +154,10 @@ else:
 
             trackdata = {i:"" for i in ("duration", "timeago", "title", "artist", "link", "listens", "loved", "barelink", "tad", "album", "dotlink")}
             difftime["user"] = time.time()
-            track, recent = util.parallelise([user.get_now_playing, lambda: user.get_recent_tracks(limit=1)])
-            #track = user.get_now_playing()
+            track, recent = util.parallelise([user.get_now_playing, lambda: user.get_recent_tracks(limit=lastnum or 1)])
             difftime["np"] = time.time()
-            if not track:
-                recent = recent[0]
+            if not track or lastnum:
+                recent = recent[-1]
                 since = time.time() - int(recent.timestamp)
                 # Calculate colour
                 scolour = colors[min(2, int(math.log(since/60 +1, 60)))]
@@ -178,6 +186,7 @@ else:
                 print("[Last.FM] %s: %f" % (i, final - difftime[i]))
             return template % trackdata
 
+        @cb.threadsafe
         @cb.command("compare", "([^ ]+)(?:\s+([^ ]+))?",
                     usage="04Last.FM⎟ Usage: [.@]compare user1 [user2]",
                     error="04Last.FM⎟ Couldn't retrieve Last.FM user data.")
