@@ -112,6 +112,14 @@ else:
                 pass
             return trackdata
 
+        @staticmethod
+        def get_album(track):
+            trackdata = {"album": ""}
+            album = track.get_album()
+            if album:
+                trackdata["album"] = " · %s" % album.get_name()
+            return trackdata
+
         @cb.command("np", "(-s\s*)?([^ ]*)", 
                     usage="04Last.FM⎟ Usage: [.@]np [-s] [user]",
                     error="04Last.FM⎟ Couldn't retrieve Last.FM playing history.",
@@ -151,15 +159,14 @@ else:
                 difftime["recent"] = time.time()
             
             trackdata["duration"] = "⌛ %dm%.2ds" % divmod(track.get_duration()/1000, 60)
-            trackdata["album"] = track.get_album().get_name()
             trackdata["artist"], trackdata["title"] = (track.get_artist(), track.get_title())
             trackname = "%(artist)s - %(title)s" % trackdata
 
-            jobs = [lambda: self.get_yt_data(trackname), lambda: self.get_listens(username, track.get_mbid())]
+            jobs = [lambda: self.get_yt_data(trackname), lambda: self.get_listens(username, track.get_mbid()), lambda: self.get_album(track)]
 
             if message.prefix in "!@":
                 # Provide full template
-                template = "04Last.FM⎟ %(loved)s%(artist)s · %(album)s · %(title)s\n"\
+                template = "04Last.FM⎟ %(loved)s%(artist)s%(album)s · %(title)s\n"\
                            "04Last.FM⎟ %(listens)s%(timeago)s%(duration)s %(link)s"
             else:
                 template = "04⎟ %(loved)s%(artist)s · %(title)s (%(duration)s) %(tad)s%(dotlink)s"
