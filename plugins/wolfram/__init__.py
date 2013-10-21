@@ -122,7 +122,11 @@ else:
                 elif results:
                     if len(results) == 1 and len(list(results.values())[0]) == 1:
                         # Single line: Shorten output
-                        output = [spacepad("08⎟ %s " % list(results.values())[0][0], "07%s" % list(results.keys())[0], t_max)]
+                        catname = list(results.keys())[0]
+                        if catname in self.results:
+                            output = ["08⎟ %s " % list(results.values())[0][0]]
+                        else:
+                            output = [spacepad("08⎟ %s " % list(results.values())[0][0], "07%s" % catname, t_max)]
                     else:
                         for category in results:
                             lines = [x.rstrip() for x in results[category]]

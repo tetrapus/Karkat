@@ -151,7 +151,7 @@ else:
                 difftime["recent"] = time.time()
             
             trackdata["duration"] = "⌛ %dm%.2ds" % divmod(track.get_duration()/1000, 60)
-            trackdata["album"] = track.get_album().get_title()
+            trackdata["album"] = track.get_album().get_name()
             trackdata["artist"], trackdata["title"] = (track.get_artist(), track.get_title())
             trackname = "%(artist)s - %(title)s" % trackdata
 
