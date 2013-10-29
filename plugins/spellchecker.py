@@ -26,7 +26,7 @@ else:
 
             literalprefixes = ".!/@<`~"
             dataprefixes = "#$<[/"
-            contractions = ["s", "d", "ve", "nt"]
+            contractions = ["s", "d", "ve", "nt", "m"]
             delrioisms = ["dong", "lix", "saq", "dix"]
 
             @classmethod
