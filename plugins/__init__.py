@@ -12,6 +12,7 @@ from . import suggest
 from . import lastfm
 from . import wolfram
 from . import youtube
+from . import spellchecker
 #from . import cardsagainsthumanity
 
 __modules__ = [google,
@@ -22,4 +23,5 @@ __modules__ = [google,
                suggest,
                lastfm,
                wolfram,
-               youtube]
+               youtube,
+               spellchecker]

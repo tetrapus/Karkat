@@ -22,6 +22,7 @@ symbols = {"~~" : "≈",
            "IMPLIES"     :"⇒", 
            "sum"         :"∑", 
            "product"     :"∏", 
+           "congruent"   :"≡",
            "constant"    :"08 Constant",
            "(open curly double quote)": "“",
            "(close curly double quote)": "”"}
