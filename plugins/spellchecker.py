@@ -31,6 +31,8 @@ else:
 
             @classmethod
             def stripContractions(cls, word):
+                if word[0] == word[-1] and word[0] in "'\"":
+                    word = word[1:-1]
                 last = word.rsplit("'", 1)[-1].lower()
                 return word[:-len(last) - 1] if last in cls.contractions else word
 
