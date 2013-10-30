@@ -124,6 +124,8 @@ else:
                     user[1] /= self.reset_to
                 if data and user[1] and nick not in self.immune and ((x[2].lower() in self.channels and 1000*user[0]/user[1] > self.channels[x[2].lower()]) or (nick in self.channels and 1000*user[0]/user[1] > self.channels[nick])):
                     sentence_substitute = ircstrip(Message(line).text)
+                    if sentence_substitute.startswith("\x01ACTION") and sentence_substitute.endswith("\x01"):
+                        sentence_substitute = "* %s %s" % (Address(x[0]).nick, sentence_substitute[7:-1])
                     for word, sub in data.items():
                         sentence_substitute = sentence_substitute.replace(word, "\x02%s\x02" % sub[0] if sub else strikethrough(word))
                     printer.message(("%s: " % Address(x[0]).nick) + sentence_substitute, target)

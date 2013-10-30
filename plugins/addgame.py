@@ -12,6 +12,7 @@ class AddGame(object):
     def __init__(self, name, bot, printer):
         self.cb.initialise(name, bot, printer)
         self.addfile = bot.get_config_dir(self.ADDFILE)
+        self.printer = printer
 
         try:
             self.num = int(open(self.addfile, "r").read().strip())
@@ -23,6 +24,11 @@ class AddGame(object):
 
         self.history = {}
         bot.register("privmsg", self.trigger)
+        bot.register("privmsg", self.subtract)
+
+    @cb.command("subtract", public=".", private="")
+    def subtract(self, msg):
+        return "YOU CAN ONLY ADD FUCKWIT."
 
     @cb.command("add", public=".", private="")
     def trigger(self, msg):
@@ -35,7 +41,7 @@ class AddGame(object):
             self.history[nick] = [(time.time(), 0)]
         
         if sum(i[0] for i in self.history[nick]) / len(self.history[nick]) < 1.5 or (len(self.history[nick]) - 1 and sum(abs(self.history[nick][i][-1] - self.history[nick][i-1][-1]) for i in range(1, len(self.history[nick]))) / len(self.history[nick]) < 2):
-            return "fuck you bitch i ain't no adding machine"
+            self.printer.message("fuck you bitch i ain't no adding machine", msg.address.nick, "NOTICE")
         else:
             self.num += 1
             open(self.addfile, 'w').write(str(self.num))
