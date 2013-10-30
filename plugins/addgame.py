@@ -13,6 +13,7 @@ class AddGame(object):
         self.cb.initialise(name, bot, printer)
         self.addfile = bot.get_config_dir(self.ADDFILE)
         self.printer = printer
+        self.msged = {}
 
         try:
             self.num = int(open(self.addfile, "r").read().strip())
@@ -26,8 +27,12 @@ class AddGame(object):
         bot.register("privmsg", self.trigger)
         bot.register("privmsg", self.subtract)
 
-    @cb.command("subtract", public=".", private="")
+    @cb.command("subtract multiply times halve double".split(), public=".", private="")
     def subtract(self, msg):
+        msged = msg.context
+        if msged in self.msged and time.time() - self.msged[msged] < 600:
+            return "WHAT DID I FUCKING SAY?"
+        self.msged[msged] = time.time()
         return "YOU CAN ONLY ADD FUCKWIT."
 
     @cb.command("add", public=".", private="")
