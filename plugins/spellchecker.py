@@ -42,8 +42,9 @@ else:
 
             def getSettings(self, context):
                 with sqlite3.connect(self.db) as db:
-                    db.execute("SELECT threshhold FROM settings WHERE server=? AND context=?", (name, server.lower(context)))
-                    return db.fetchone()
+                    c = db.cursor()
+                    c.execute("SELECT threshhold FROM settings WHERE server=? AND context=?", (name, server.lower(context)))
+                    return c.fetchone()
 
             def setThreshhold(self, context, threshhold):
                 with sqlite3.connect(self.db) as db:
