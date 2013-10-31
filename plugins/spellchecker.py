@@ -42,14 +42,14 @@ else:
 
             def getSettings(self, context):
                 with sqlite3.connect(self.db) as db:
-                    db.execute("SELECT threshhold FROM settings WHERE server=? AND context=?", name, server.lower(context))
+                    db.execute("SELECT threshhold FROM settings WHERE server=? AND context=?", (name, server.lower(context)))
                     return db.fetchone()
 
             def setThreshhold(self, context, threshhold):
                 with sqlite3.connect(self.db) as db:
-                    db.execute("DELETE FROM threshhold WHERE server=? AND context=?", name, server.lower(context))
+                    db.execute("DELETE FROM settings WHERE server=? AND context=?", (name, server.lower(context)))
                     if threshhold is not None:
-                        db.execute("INSERT INTO threshhold VALUES (?, ?, ?)", name, server.lower(context), threshhold)
+                        db.execute("INSERT INTO settings VALUES (?, ?, ?)", (name, server.lower(context), threshhold))
 
             @classmethod
             def stripContractions(cls, word):
@@ -145,7 +145,7 @@ else:
                 if data:
                     with sqlite3.connect(self.db) as typos:
                         for i in data:
-                            typos.execute("INSERT INTO typos VALUES (?, ?, ?, ?)", (time.time(), nick, msg.context, server, i))
+                            typos.execute("INSERT INTO typos VALUES (?, ?, ?, ?, ?)", (time.time(), nick, msg.context, server, i))
 
                     threshhold_context = self.getSettings(msg.context)
                     threshhold_user = self.getSettings(nick)
