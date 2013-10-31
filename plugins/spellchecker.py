@@ -1,4 +1,5 @@
 import sys
+import os
 import math
 import re
 import sqlite3
@@ -11,23 +12,44 @@ except ImportError:
     print("Enchant dependancy found, spellchecker not loaded.", file=sys.stderr)
 else:
     def __initialise__(name, server, printer):
-        # Callback = Callback.initialise(name, bot, printer)
+        cb = Callback()
+        cb.initialise(name, server, printer)
         class SpellChecker(object):
-            channels = {}
+            DBFILE = "spellchecker.db"
             users = {}
-            immune = ["soap"]
             dictionary = enchant.DictWithPWL("en_US", pwl="ircwords")
             alternate = enchant.Dict("en_GB")
             threshhold = 2
             reset_at = 1500
             reset_to = int(round(math.log(reset_at)))
             last = None
+            last_correction = None
             wordsep = "/.:^&*|+=-?,_"
 
             literalprefixes = ".!/@<`~"
             dataprefixes = "#$<[/"
             contractions = ["s", "d", "ve", "nt", "m"]
             delrioisms = ["dong", "lix", "saq", "dix"]
+
+            def __init__(self):
+                self.db = server.get_config_dir(self.DBFILE)
+                if not os.path.exists(self.db):
+                    os.makedirs(server.get_config_dir(), exist_ok=True)
+                    # Initialise the db
+                    with sqlite3.connect(self.db) as db:
+                        db.execute("CREATE TABLE typos (timestamp int, nick text, channel text, server text, word text);")
+                        db.execute("CREATE TABLE settings (server text, context text, threshhold int);")
+
+            def getSettings(self, context):
+                with sqlite3.connect(self.db) as db:
+                    db.execute("SELECT threshhold FROM settings WHERE server=? AND context=?", name, server.lower(context))
+                    return db.fetchone()
+
+            def setThreshhold(self, context, threshhold):
+                with sqlite3.connect(self.db) as db:
+                    db.execute("DELETE FROM threshhold WHERE server=? AND context=?", name, server.lower(context))
+                    if threshhold is not None:
+                        db.execute("INSERT INTO threshhold VALUES (?, ?, ?)", name, server.lower(context), threshhold)
 
             @classmethod
             def stripContractions(cls, word):
@@ -103,50 +125,55 @@ else:
             
             @Callback.background
             def passiveCorrector(self, line):
-                x = line.split(" ")
-                nick = Address(x[0]).nick
+                msg = Message(line)
+                nick = msg.address.nick
                 if not self.dictionary.check(nick):
                     self.dictionary.add(nick)
-                nick = nick.lower()
-                if len(x[3]) > 1 and x[3][1] in "@!.:`~/": return
-                target = x[2]
-                if target[0] != "#": 
-                    target = Address(x[0]).nick
-                data = self.spellcheck(Message(line).text)
-                with sqlite3.connect("spellchecker.db") as typos:
-                    for i in (data or []):
-                        typos.execute("INSERT INTO typos VALUES (?, ?, ?, ?)", (time.time(), nick, target, i))
-                user = self.users.setdefault(Address(x[0]).nick.lower(), [0, 0])
+                nick = server.lower(nick)
+                if msg.text and msg.text[0] in "@!.:`~/": 
+                    return
+
+                data = self.spellcheck(msg.text)
+
+                user = self.users.setdefault(nick, [0, 0])
                 user[0] += len(data) if data else 0
-                user[1] += len(x) - 3
+                user[1] += len(line.split(" ")) - 3
                 if user[1] > self.reset_at:
                     user[0] /= self.reset_to
                     user[1] /= self.reset_to
-                if data and user[1] and nick not in self.immune and ((x[2].lower() in self.channels and 1000*user[0]/user[1] > self.channels[x[2].lower()]) or (nick in self.channels and 1000*user[0]/user[1] > self.channels[nick])):
-                    sentence_substitute = ircstrip(Message(line).text)
-                    if sentence_substitute.startswith("\x01ACTION") and sentence_substitute.endswith("\x01"):
-                        sentence_substitute = "* %s %s" % (Address(x[0]).nick, sentence_substitute[7:-1])
-                    for word, sub in data.items():
-                        sentence_substitute = sentence_substitute.replace(word, "\x02%s\x02" % sub[0] if sub else strikethrough(word))
-                    printer.message(("%s: " % Address(x[0]).nick) + sentence_substitute, target)
-                    if len(data) == 1:
-                        self.last = list(data.keys())[0]
-                    else:
-                        self.last = None
+
+                if data:
+                    with sqlite3.connect(self.db) as typos:
+                        for i in data:
+                            typos.execute("INSERT INTO typos VALUES (?, ?, ?, ?)", (time.time(), nick, msg.context, server, i))
+
+                    threshhold_context = self.getSettings(msg.context)
+                    threshhold_user = self.getSettings(nick)
+                    if threshhold_user == threshhold_context == None:
+                        return
+                    
+                    threshhold = min(threshhold_context, threshhold_user, key=lambda x: float("inf") if x is None else x)
+
+                    if user[1] and 1000*user[0]/user[1] > threshhold:
+                        sentence_substitute = ircstrip(msg.text)
+                        if sentence_substitute.startswith("\x01ACTION") and sentence_substitute.endswith("\x01"):
+                            sentence_substitute = "You %s" % sentence_substitute[7:-1]
+                        for word, sub in data.items():
+                            sentence_substitute = sentence_substitute.replace(word, "\x02%s\x02" % sub[0] if sub else strikethrough(word))
+                        printer.message(("%s: " % msg.address.nick) + sentence_substitute, msg.context)
+                        if len(data) == 1:
+                            self.last = list(data.keys())[0]
+                        else:
+                            self.last = None
                     
             @Callback.threadsafe
-            def activeCorrector(self, y):
-                x = y.split(" ")
-                if len(x) > 4 and len(x[3]) > 2 and x[3][1:].lower() == "!spell":
-                    nick, msgtype = (Message(y).context, "PRIVMSG")
-                    
-                    query = x[4]
-                    
-                    if (self.dictionary.check(query) or self.alternate.check(query)):
-                        printer.message("%s, that seems to be spelt correctly." % Address(x[0]).nick, nick, msgtype)
-                    else:
-                        suggestions = self.alternate.suggest(query)[:6]
-                        printer.message("Possible correct spellings: %s" % ("/".join(suggestions)), nick, msgtype)
+            @cb.command("spell spellcheck".split(), "(.+)")
+            def activeCorrector(self, msg, query):
+                if (self.dictionary.check(query) or self.alternate.check(query)):
+                    return "%s, %s is spelt correctly." % (msg.address.nick, query)
+                else:
+                    suggestions = self.alternate.suggest(query)[:6]
+                    return "Possible correct spellings: %s" % ("/".join(suggestions))
             
             def updateKnown(self, y):
                 x = y.split(" ")
@@ -164,29 +191,30 @@ else:
                         printer.message("I KNOW.", x[2] if x[2][0] == "#" else Address(x[0]).nick)
                     else:
                         self.dictionary.add(word)
-                        printer.message("Oh, sorry, I'll remember that.", x[2] if x[2][0] == "#" else Address(x[0]).nick) 
+                        printer.message("Oh, sorry, I'll remember that.", x[2] if x[2][0] == "#" else Address(x[0]).nick)
+                        self.last_correction = word
                 if notword:
+                    if word.lower() == "that":
+                        word = self.last_correction
                     word = notword.group(2)
                     if self.dictionary.is_added(word):
                         self.dictionary.remove(word)
                         printer.message("Okay then.", x[2] if x[2][0] == "#" else Address(x[0]).nick) 
                     else:
                         printer.message("I DON'T CARE.", x[2] if x[2][0] == "#" else Address(x[0]).nick)
-                        
-            def correctChannel(self, y):
-                x = y.split(" ")
-                if len(x) == 5 and x[3].lower().startswith(":!spellcheck") and (x[4].lower() in ["on", "off"] or x[4].isdigit()):
-                    nick, msgtype = (Message(y).context, "PRIVMSG")
-                    if x[4].lower() == "off":
-                        if nick.lower() in self.channels:
-                            del self.channels[nick.lower()]
-                            printer.message("FINE.", nick, msgtype)
-                        else:
-                            printer.message("IT'S OFF DICKBUTT", nick, msgtype)
+            
+            @cb.command("spellchecker", "(on|off|\d+)")
+            def correctChannel(self, msg, threshhold):
+                if threshhold == "off":
+                    if self.getSettings(msg.context) is not None:
+                        self.setThreshhold(msg.context, None)
+                        return "FINE."
                     else:
-                        query = int(x[4]) if x[4].isdigit() else 0
-                        self.channels[nick.lower()] = query
-                        printer.message("DONE.", nick, msgtype) 
+                        return "IT'S OFF DICKBUTT"
+                else:
+                    query = int(threshhold) if threshhold.isdigit() else 0
+                    self.setThreshhold(msg.context, query)
+                    return "DONE."
 
 
         spellchecker = SpellChecker()

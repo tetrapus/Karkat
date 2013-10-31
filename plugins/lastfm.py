@@ -121,7 +121,7 @@ else:
                 trackdata["album"] = " · %s" % album.get_name()
             return trackdata
 
-        @cb.command("setlfm", "([^ ]*)")
+        @cb.command("setlfm savelfm".split(), "([^ ]*)")
         def setlfm(self, message, username):
             nick = cb.bot.lower(message.address.nick)
             if not username:
