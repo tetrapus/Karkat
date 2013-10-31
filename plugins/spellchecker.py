@@ -17,7 +17,7 @@ else:
         class SpellChecker(object):
             DBFILE = "spellchecker.db"
             users = {}
-            dictionary = enchant.DictWithPWL("en_US", pwl="ircwords")
+            dictionary = enchant.DictWithPWL("en_US", pwl=server.get_config_dir("ircwords"))
             alternate = enchant.Dict("en_GB")
             threshhold = 2
             reset_at = 1500

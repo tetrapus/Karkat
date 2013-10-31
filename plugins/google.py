@@ -20,7 +20,7 @@ deflines = {"@": 1,
             "!": 4}
 
 @cb.threadsafe
-@cb.command("google", "(-\d\s+)?(.+)", private="!", public=".@",
+@cb.command(["google", "search"], "(-\d\s+)?(.+)", private="!", public=".@",
             usage="12Google⎟ Usage: !google [-NUM_RESULTS] <query>",
             error="04Google⎟ Error: Could not fetch google results.")
 def google(message, nresults, query):
