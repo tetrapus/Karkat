@@ -19,7 +19,8 @@ Create a config file. A sample file (Sample.yaml) is provided. For convenience, 
 ### Step 3: Make api keys (optional)
 Some modules require api keys. Create a file apikeys.conf in the config directory. Put your keys in there in the format specified by the module.
 For the keys currently required to get karkat to run, the format is:
-``bit.ly:
+```
+bit.ly:
     user: USERNAME
     key: APIKEY
 youtube:
@@ -30,7 +31,8 @@ wolfram:
     key: API_KEY
 last.fm:
     key: API_KEY
-    secret: API_SECRET``
+    secret: API_SECRET
+```
 
 ### Step 4: Run karkat
 Karkat is run via ``./karkat.py <config>``. Other options are available, see the full argspec via ./karkat.py -h.
