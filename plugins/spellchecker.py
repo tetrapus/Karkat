@@ -145,7 +145,7 @@ else:
                 if data:
                     with sqlite3.connect(self.db) as typos:
                         for i in data:
-                            typos.execute("INSERT INTO typos VALUES (?, ?, ?, ?, ?)", (time.time(), nick, msg.context, server, i))
+                            typos.execute("INSERT INTO typos VALUES (?, ?, ?, ?, ?)", (time.time(), nick, msg.context, name, i))
 
                     threshhold_context = self.getSettings(msg.context)
                     threshhold_user = self.getSettings(nick)
