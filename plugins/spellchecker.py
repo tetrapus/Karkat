@@ -134,8 +134,10 @@ else:
                 nick = server.lower(nick)
                 if msg.text and msg.text[0] in "@!.:`~/": 
                     return
-
-                data = self.spellcheck(msg.text)
+                if msg.text.startswith("\x01ACTION") and msg.text.endswith("\x01"):
+                    data = self.spellcheck(msg.text[8:-1])
+                else:
+                    data = self.spellcheck(msg.text)
 
                 user = self.users.setdefault(nick, [0, 0])
                 user[0] += len(data) if data else 0
@@ -159,7 +161,7 @@ else:
                     if user[1] and 1000*user[0]/user[1] > threshhold:
                         sentence_substitute = ircstrip(msg.text)
                         if sentence_substitute.startswith("\x01ACTION") and sentence_substitute.endswith("\x01"):
-                            sentence_substitute = "You %s" % sentence_substitute[7:-1]
+                            sentence_substitute = "%s %s" % (msg.address.nick, sentence_substitute[8:-1])
                         for word, sub in data.items():
                             sentence_substitute = sentence_substitute.replace(word, "\x02%s\x02" % sub[0] if sub else strikethrough(word))
                         printer.message(("%s: " % msg.address.nick) + sentence_substitute, msg.context)
