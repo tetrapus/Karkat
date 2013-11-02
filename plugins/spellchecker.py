@@ -74,6 +74,11 @@ else:
                 # words prefixed with the following are not real words
                 if word[0] in cls.dataprefixes:
                     return False
+
+                # words with unicode in them are not words
+                if any(ord(c) > 127 for c in word):
+                    return False
+
                 return True
 
             @classmethod
