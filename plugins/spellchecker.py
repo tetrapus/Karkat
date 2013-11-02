@@ -198,9 +198,9 @@ else:
                         printer.message("Oh, sorry, I'll remember that.", x[2] if x[2][0] == "#" else Address(x[0]).nick)
                         self.last_correction = word
                 if notword:
+                    word = notword.group(2)
                     if word.lower() == "that":
                         word = self.last_correction
-                    word = notword.group(2)
                     if self.dictionary.is_added(word):
                         self.dictionary.remove(word)
                         printer.message("Okay then.", x[2] if x[2][0] == "#" else Address(x[0]).nick) 
