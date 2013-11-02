@@ -85,8 +85,8 @@ else:
                 sentence = ircstrip(sentence)
                 if cls.isLiteral(sentence): return
                 sentence = [cls.stripContractions(i) for i in sentence.split() if cls.isWord(i)]
-                errors = [i for i in sentence if not (cls.dictionary.check(i) or cls.alternate.check(i))]
-                suggestions = [set(cls.alternate.suggest(i)) | set(cls.dictionary.suggest(i)) for i in errors]
+                errors = [i for i in sentence if not (cls.dictionary.check(i.encode("utf-8")) or cls.alternate.check(i.encode("utf-8")))]
+                suggestions = [set(cls.alternate.suggest(i.encode("utf-8"))) | set(cls.dictionary.suggest(i.encode("utf-8"))) for i in errors]
                 # reduce the suggestions
                 suggestions = [{"".join(z for z in i if z.isalpha() or z in "'").lower() for i in x} for x in suggestions]
                 wrong = []
@@ -116,7 +116,7 @@ else:
                             pattern = re.sub(r"(.+?)\1\1+", r"(\1)+", string, flags=re.IGNORECASE)
                             truncated = re.sub(r"(.+?)\1\1+", r"\1\1", word, flags=re.IGNORECASE)
                             truncated2 = re.sub(r"(.+?)\1\1+", r"\1", word, flags=re.IGNORECASE)
-                            suggestions[i] |= set(cls.alternate.suggest(truncated)) | set(cls.dictionary.suggest(truncated)) | set(cls.alternate.suggest(truncated2)) | set(cls.dictionary.suggest(truncated2))
+                            suggestions[i] |= set(cls.alternate.suggest(truncated.encode("utf-8"))) | set(cls.dictionary.suggest(truncated.encode("utf-8"))) | set(cls.alternate.suggest(truncated2.encode("utf-8"))) | set(cls.dictionary.suggest(truncated2.encode("utf-8")))
                             if not any(re.match(pattern, x) for x in suggestions[i]):
                                 wrong.append(word)
 
@@ -173,10 +173,10 @@ else:
             @Callback.threadsafe
             @cb.command("spell spellcheck".split(), "(.+)")
             def activeCorrector(self, msg, query):
-                if (self.dictionary.check(query) or self.alternate.check(query)):
+                if (self.dictionary.check(query.encode("utf-8")) or self.alternate.check(query.encode("utf-8"))):
                     return "%s, %s is spelt correctly." % (msg.address.nick, query)
                 else:
-                    suggestions = self.alternate.suggest(query)[:6]
+                    suggestions = self.alternate.suggest(query.encode("utf-8"))[:6]
                     return "Possible correct spellings: %s" % ("/".join(suggestions))
             
             def updateKnown(self, y):
