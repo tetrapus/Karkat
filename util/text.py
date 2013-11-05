@@ -216,6 +216,102 @@ def aligntable(rows, separator=" 08⎪ "):
     rows = [separator.join(x) for x in rows]
     return rows
 
+def cmp(a, b):
+    return (a > b) - (a < b)
+
+def graph_vertical(values, filled=False, minheight=3):
+    """
+    >>> print(graph_vertical([8, 1, 2, 3, 0, 8.2]))
+    ╻    ┃
+    ┃    ┃
+    ┃    ┃
+    ┃ ╻┃ ┃
+    ┖┸┸┸─┚
+    >>> print(graph_vertical([8, 1, 2, 3, 0, 8.2], True))
+    ╽││││┃
+    ┃││││┃
+    ┃││││┃
+    ┃│╽┃│┃
+    ┖┸┸┸┴┚
+"""
+    CSTART, CMID, CEND = tuple("┖┸┚")
+    if filled:
+        CSZERO, CMZERO, CEZERO = tuple("└┴┘")
+        CFULL, CHALF, CEMPTY = tuple("┃╽│")
+        CONE, COZERO = tuple("╹╵")
+    else:
+        CSZERO, CMZERO, CEZERO = tuple("╶─╴")
+        CFULL, CHALF, CEMPTY = tuple("┃╻ ")
+        CONE, COZERO = tuple("╹·")
+
+    # Draw the axes
+    start = []
+    if not values:
+        return []
+
+    if len(values) == 1:
+        start.append(CONE if values[0] else COZERO)
+    else:
+        start.append(CSTART if values[0] else CSZERO)
+        for i in values[1:-1]:
+            start.append(CMID if i else CMZERO)
+        start.append(CEND if values[-1] else CEZERO)
+
+    values = [i-1 for i in values]
+
+    # Create the graph
+    height = max(math.ceil(max(values) / 2), minheight)                         # Number of lines
+    data = [[[CHALF, CEMPTY, CFULL][cmp(y, (x-1) / 2)] for x in values] for y in range(height)][::-1]
+
+    return ["".join(x) for x in data + [start]]
+
+def graph_horizontal(values, filled=False, minheight=3):
+    """
+    >>> print(graph_horizontal([8, 1, 12, 3, 0, 22]))
+    ┍━━━╸       
+    ┝           
+    ┝━━━━━╸     
+    ┝━          
+    │           
+    ┕━━━━━━━━━━╸
+    >>> print(graph_horizontal([8, 1, 12, 3, 0, 22], True))
+    ┍━━━╾───────
+    ┝───────────
+    ┝━━━━━╾─────
+    ┝━──────────
+    ├───────────
+    ┕━━━━━━━━━━╾
+    """
+    CSTART, CMID, CEND = tuple("┍┝┕")
+    if filled:
+        CSZERO, CMZERO, CEZERO = tuple("┌├└")
+        CFULL, CHALF, CEMPTY = tuple("━╾─")
+        CONE, COZERO = tuple("╺╶")
+    else:
+        CSZERO, CMZERO, CEZERO = tuple("╷│╵")
+        CFULL, CHALF, CEMPTY = tuple("━╸ ")
+        CONE, COZERO = tuple("╺·")
+
+    # Draw the axes
+    start = []
+    if not values:
+        return []
+
+    if len(values) == 1:
+        start.append(CONE if values[0] else COZERO)
+    else:
+        start.append(CSTART if values[0] else CSZERO)
+        for i in values[1:-1]:
+            start.append(CMID if i else CMZERO)
+        start.append(CEND if values[-1] else CEZERO)
+
+    values = [i-1 for i in values]
+
+    # Create the graph
+    height = max(math.ceil(max(values) / 2), minheight)                         # Number of lines
+    data = [[start[i]] + [[CHALF, CEMPTY, CFULL][cmp(y, (x-1) / 2)] for y in range(height)] for i, x in enumerate(values)]
+
+    return ["".join(x) for x in data]
 
 class Buffer(object):
     """
