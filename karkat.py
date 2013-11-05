@@ -45,8 +45,11 @@ def main():
     servername = args["<config>"].split(".")[0]
 
     modules = args["--plugins"].split(",")
-    for mod in modules: 
-        __import__(mod)
+    for mod in modules:
+        try: 
+            __import__(mod)
+        except ImportError:
+            pass
 
     modules = [sys.modules[i] for i in modules]
 
