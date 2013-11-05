@@ -260,10 +260,13 @@ def graph_vertical(values, filled=False, minheight=3):
     values = [i-1 for i in values]
 
     # Create the graph
-    height = max(math.ceil(max(values) / 2), minheight)                         # Number of lines
-    data = [[[CHALF, CEMPTY, CFULL][cmp(y, (x-1) / 2)] for x in values] for y in range(height)][::-1]
+    height = max(math.ceil(max(values) / 2), minheight)
+    data = [[[CHALF, CEMPTY, CFULL][cmp(y, (x-1) / 2)] 
+             for x in values] 
+            for y in range(height)][::-1]
 
     return ["".join(x) for x in data + [start]]
+
 
 def graph_horizontal(values, filled=False, minheight=3):
     """
@@ -308,8 +311,11 @@ def graph_horizontal(values, filled=False, minheight=3):
     values = [i-1 for i in values]
 
     # Create the graph
-    height = max(math.ceil(max(values) / 2), minheight)                         # Number of lines
-    data = [[start[i]] + [[CHALF, CEMPTY, CFULL][cmp(y, (x-1) / 2)] for y in range(height)] for i, x in enumerate(values)]
+    height = max(math.ceil(max(values) / 2), minheight)
+    data = [[start[i]] 
+            + [[CHALF, CEMPTY, CFULL][cmp(y, (x-1) / 2)] 
+               for y in range(height)] 
+            for i, x in enumerate(values)]
 
     return ["".join(x) for x in data]
 
