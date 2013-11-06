@@ -163,7 +163,7 @@ else:
             data = graph(data, 4)
             data = ["%2d %s" % (round(largest/9*(8-2*i)), s) if not i % 2 else "   " + s for i, s in enumerate(data)]
 
-            meta = ["04%s (%s)" % (username, self.users[lowername]) if lowername in self.users else username,
+            meta = ["04"+("%s (%s)" % (username, self.users[lowername]) if lowername in self.users else username),
                     "last %d songs" % len(tracks),
                     "over %.1f hours" % (timespan / (60*60)),
                     "%d minute chunks" % (timespan / (60 * values)),
