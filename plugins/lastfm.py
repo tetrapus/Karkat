@@ -153,15 +153,14 @@ else:
 
             user = self.network.get_user(user)
             tracks = user.get_recent_tracks(limit=200)
+            now = time.time()
 
             if period:
                 timespan = 0
                 for i in re.findall(r"\d+[dhms]", period):
                     timespan += int(i[:-1]) * timevals[i[-1]]
             else:
-                timespan = time.time() - int(tracks[-1].timestamp) + 1
-
-            now = time.time()
+                timespan = now - int(tracks[-1].timestamp) + 1
 
             values = 48
 
