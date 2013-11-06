@@ -221,12 +221,12 @@ def cmp(a, b):
 
 def graph_vertical_DOS(values, minheight=3):
 
-    CSTART, CMID, CEND = tuple("╧╧╛")
+    CSTART, CMID, CEND = ("╘", "╧", "╧")
     CSZERO, CMZERO, CEZERO = tuple("═══")
     CFULL, CHALF, CEMPTY = ("│", "┬", "─")
 
     # Draw the axes
-    start = ["╚"]
+    start = []
     if not values:
         return []
 
@@ -234,13 +234,14 @@ def graph_vertical_DOS(values, minheight=3):
     for i in values[1:-1]:
         start.append(CMID if i else CMZERO)
     start.append(CEND if values[-1] else CEZERO)
+    start.append("╝")
 
     values = [i-1 for i in values]
 
     # Create the graph
     height = max(math.ceil(max(values) / 2), minheight)
-    data = [["╟"] + [[CHALF, CEMPTY, CFULL][cmp(y, (x-1) / 2)]
-             for x in values]
+    data = [[[CHALF, CEMPTY, CFULL][cmp(y, (x-1) / 2)]
+             for x in values] + ["╢"]
             for y in range(height)][::-1]
 
     return ["".join(x).replace("", "") for x in data + [start]]

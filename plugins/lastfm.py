@@ -135,14 +135,16 @@ else:
         @cb.threadsafe
         @cb.command("listens", r"(.*)")
         def listenHistory(self, message, username):
+            nick = message.address.nick
             if not username:
-                username = message.address.nick
+                username = nick
+            user = username
 
             lowername = cb.bot.lower(username)
             if lowername in self.users:
-                username = self.users[lowername]
+                user = self.users[lowername]
 
-            user = self.network.get_user(username)
+            user = self.network.get_user(user)
             tracks = user.get_recent_tracks(limit=200)
             first = int(tracks[0].timestamp)
             timespan = first - int(tracks[-1].timestamp)
@@ -155,9 +157,20 @@ else:
 
             data = [0 for i in range(values)]
             for track in tracks:
-                data[int((first - int(track.timestamp)) * values / timespan)] += 1
+                data[int((first - int(track.timestamp)) * values / (timespan+1))] += 1
+            largest = max(data)
+            data = [round(i * 9 / largest) for i in data]
+            data = graph(data, 4)
+            data = ["%2d %s" % (round(largest/9*(8-2*i)), s) if not i % 2 else "   " + s for i, s in enumerate(data)]
 
-            for i in graph(data):
+            meta = ["04%s (%s)" % (username, self.users[lowername]) if lowername in self.users else username,
+                    "last %d songs" % len(tracks),
+                    "over %.1f hours" % (timespan / (60*60)),
+                    "%d minute chunks" % (timespan / (60 * values)),
+                    "%.2f songs per day" % ((len(tracks) / timespan) * 24 * 60 * 60)]
+            data = ["%s04⎟ %s" % (j, i) for i, j in zip(meta, data)]
+
+            for i in data:
                 yield i
 
 
