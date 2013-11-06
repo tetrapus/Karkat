@@ -159,7 +159,7 @@ else:
                 for i in re.findall(r"\d+[dhms]", period):
                     timespan += int(i[:-1]) * timevals[i[-1]]
             else:
-                timespan = time.time() - int(tracks[-1].timestamp)
+                timespan = time.time() - int(tracks[-1].timestamp) + 1
 
             now = time.time()
 
