@@ -347,6 +347,8 @@ def graph_horizontal(values, filled=False, minheight=3):
 
     return ["".join(x) for x in data]
 
+graph = graph_vertical_DOS
+
 class Buffer(object):
     """
     Represents an iterable buffer that returns completed lines.

@@ -14,8 +14,7 @@ import util
 
 from util.services import url
 from util.irc import Callback
-from util.text import pretty_date
-from util.text import graph_vertical_DOS as graph
+from util.text import pretty_date, graph
 
 try:
     import pylast
