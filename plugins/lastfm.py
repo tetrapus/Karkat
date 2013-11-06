@@ -160,16 +160,16 @@ else:
                 for i in re.findall(r"\d+[dhms]", period):
                     timespan += int(i[:-1]) * timevals[i[-1]]
             else:
-                timespan = now - int(tracks[-1].timestamp) + 1
+                timespan = now - int(tracks[-1].timestamp)
 
-            values = 48
+            values = 36
 
             data = [0 for i in range(values)]
             usedtracks = []
             for track in tracks:
                 timeago = now - int(track.timestamp)
-                if timeago < timespan:
-                    data[int(timeago * values / timespan)] += 1
+                if timeago <= timespan:
+                    data[int(timeago * values / (timespan+1))] += 1
                     usedtracks.append(track)
 
             largest = max(data)
