@@ -221,9 +221,9 @@ def cmp(a, b):
 
 def graph_vertical_DOS(values, minheight=3):
 
-    CSTART, CMID, CEND = ("╘", "╧", "╧")
-    CSZERO, CMZERO, CEZERO = tuple("═══")
-    CFULL, CHALF, CEMPTY = ("│", "┬", "─")
+    CSTART, CMID, CEND = "╘", "╧", "╧"
+    CSZERO, CMZERO, CEZERO = "═", "═", "═"
+    CFULL, CHALF, CEMPTY = "│", "┬", "─"
 
     # Draw the axes
     start = []

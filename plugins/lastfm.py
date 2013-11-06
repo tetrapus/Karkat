@@ -133,9 +133,16 @@ else:
             return "04Last.FM⎟ Associated %s with Last.FM user %s." % (message.address.nick, username)
 
         @cb.threadsafe
-        @cb.command("listens", r"(.*)")
-        def listenHistory(self, message, username):
+        @cb.command("listens", r"((?:\d+[dhms])*)\s*(.*)",
+                    usage="04Last.FM⎟ Usage: [.@]listens [(\d+[dhms])+] [user]",
+                    error="04Last.FM⎟ Couldn't retrieve Last.FM playing history.",)
+        def listenHistory(self, message, period, username):
+            timevals = {"d": 24 * 60 * 60, 
+                        "h": 60 * 60, 
+                        "m": 60, 
+                        "s": 1}
             nick = message.address.nick
+            cb.stream.message("\x0304⎟\x03 Fetching Last.FM listen history, please wait...", message.address.nick, "NOTICE")
             if not username:
                 username = nick
             user = username
@@ -146,33 +153,44 @@ else:
 
             user = self.network.get_user(user)
             tracks = user.get_recent_tracks(limit=200)
-            first = int(tracks[0].timestamp)
-            timespan = first - int(tracks[-1].timestamp)
-            if timespan < 24 * 60 * 60: # 24 hours
-                values = 24
-            elif timespan > 48 * 60 * 60:
-                values = 48
+
+            if period:
+                timespan = 0
+                for i in re.findall(r"\d+[dhms]", period):
+                    timespan += int(i[:-1]) * timevals[i[-1]]
             else:
-                values = int(math.ceil(timespan / (60 * 60)))
+                timespan = time.time() - int(tracks[-1].timestamp)
+
+            now = time.time()
+
+            values = 48
 
             data = [0 for i in range(values)]
+            usedtracks = []
             for track in tracks:
-                data[int((first - int(track.timestamp)) * values / (timespan+1))] += 1
-            largest = max(data)
-            data = [round(i * 9 / largest) for i in data]
-            data = graph(data, 4)
-            data = ["%2d %s" % (round(largest/9*(8-2*i)), s) if not i % 2 else "   " + s for i, s in enumerate(data)]
+                timeago = now - int(track.timestamp)
+                if timeago < timespan:
+                    data[int(timeago * values / timespan)] += 1
+                    usedtracks.append(track)
 
-            meta = ["04"+("%s (%s)" % (username, self.users[lowername]) if lowername in self.users else username),
-                    "last %d songs" % len(tracks),
-                    "over %.1f hours" % (timespan / (60*60)),
-                    "%d minute chunks" % (timespan / (60 * values)),
-                    "%.2f songs per day" % ((len(tracks) / timespan) * 24 * 60 * 60)]
-            data = ["%s04⎟ %s" % (j, i) for i, j in zip(meta, data)]
+            largest = max(data)
+            if largest:
+                data = [round(i * 9 / largest) for i in data]
+            data = graph(data, minheight=4)
+            data = ["%2d %s" % (round(largest/9*(8-2*i)), s) if not i % 2 else "   " + s for i, s in enumerate(data)]
+            if len(usedtracks) > 1:
+                average = len(usedtracks) / (int(usedtracks[0].timestamp) - int(usedtracks[-1].timestamp))
+            else:
+                average = 0
+            meta = ["%s (%s)" % (username, self.users[lowername]) if lowername in self.users else username,
+                    " %d songs" % len(usedtracks),
+                    " %.1f hours total" % (timespan / (60*60)),
+                    " %d minute periods" % (timespan / (60 * values)),
+                    " %.2f songs per day" % (average * 24 * 60 * 60)]
+            data = ["%s04⎟ %s" % (j, i) for i, j in zip(meta, data)]
 
             for i in data:
                 yield i
-
 
         @cb.threadsafe
         @cb.command("np", "(-\d+)?\s*([^ ]*)", 
