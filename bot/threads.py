@@ -317,7 +317,7 @@ class Caller(WorkerThread):
         for funct, arg in self.work:
             self.last = time.time()
             try:
-                funct(arg)
+                funct(*arg)
             except BaseException:
                 print("Error in function %s%s" % (funct.name, arg))
                 sys.excepthook(*sys.exc_info())
@@ -569,7 +569,7 @@ class Bot(Connection):
         else:
             handlerq = self.caller[handler.cbtype]
 
-        handlerq.queue(handler, line)
+        handlerq.queue(handler, (self, line))
 
     def dispatch(self, line):
         """
@@ -597,7 +597,7 @@ class SelectiveBot(Bot):
         if data[1] != "PRIVMSG" or handler.module.__name__ not in self.blacklist.get(data[2].lower(), self.blacklist[None]): 
             super().execute(handler, line)
 
-def loadplugin(mod, name, bot, stream):
+def loadplugin(mod, server):
     """ The following can optionally be defined to hook into karkat:
     __callbacks__: A mapping of callbacks.
     __icallbacks__:  A mapping of inline callbacks.
@@ -605,7 +605,10 @@ def loadplugin(mod, name, bot, stream):
     __destroy__(): A function triggered on bot death.
     """
     if "__initialise__" in dir(mod):
-        mod.__initialise__(name, bot, stream)
+        mod.__initialise__(server.name, server, server.printer)
+        print("    Initialised %s (via __initialise__)." % mod.__name__)
+    if "initialise" in dir(mod):
+        mod.initialise(server)
         print("    Initialised %s." % mod.__name__)
     if "__callbacks__" in dir(mod):
         for trigger in mod.__callbacks__:

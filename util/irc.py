@@ -102,11 +102,15 @@ class Callback(object):
 
     def __init__(self):
         self.callbacks = {}
+        self.server = None
+        self.stream = None
+        self.id = None
 
-    def initialise(self, name, bot, printer):
-        self.stream = printer
-        self.bot = bot
-        self.id = name
+    def initialise(self, server):
+        self.server = server
+        self.stream = server.printer
+        self.id = server.name
+        server.register_all(self.callbacks)
 
 
     def command(self, triggers, args=None, key=str.lower, usage=None, error=None, admin=False, private=".", public="@"):

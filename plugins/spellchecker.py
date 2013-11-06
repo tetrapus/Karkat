@@ -18,7 +18,7 @@ def __initialise__(name, server, printer):
     class SpellChecker(object):
         DBFILE = "spellchecker.db"
         users = {}
-        dictionary = enchant.DictWithPWL("en_US", 
+        dictionary = enchant.DictWithPWL("en_US",
                                          pwl=server.get_config_dir("ircwords"))
         alternate = enchant.Dict("en_GB")
         threshhold = 2
@@ -38,21 +38,34 @@ def __initialise__(name, server, printer):
                 os.makedirs(server.get_config_dir(), exist_ok=True)
                 # Initialise the db
                 with sqlite3.connect(self.db) as db:
-                    db.execute("CREATE TABLE typos (timestamp int, nick text, channel text, server text, word text);")
-                    db.execute("CREATE TABLE settings (server text, context text, threshhold int);")
+                    db.execute("CREATE TABLE typos (timestamp int, "
+                                                   "nick text, "
+                                                   "channel text, "
+                                                   "server text, "
+                                                   "word text);")
+                    db.execute("CREATE TABLE settings (server text, "
+                                                      "context text, "
+                                                      "threshhold int);")
 
         def getSettings(self, context):
             with sqlite3.connect(self.db) as db:
                 c = db.cursor()
-                c.execute("SELECT threshhold FROM settings WHERE server=? AND context=?", (name, server.lower(context)))
+                c.execute("SELECT threshhold "
+                          "FROM settings "
+                          "WHERE server=? AND context=?",
+                          (name, server.lower(context)))
                 result = c.fetchone()
                 return result if result is None else result[0]
 
         def setThreshhold(self, context, threshhold):
             with sqlite3.connect(self.db) as db:
-                db.execute("DELETE FROM settings WHERE server=? AND context=?", (name, server.lower(context)))
+                db.execute("DELETE FROM settings "
+                           "WHERE server=? AND context=?",
+                           (name, server.lower(context)))
                 if threshhold is not None:
-                    db.execute("INSERT INTO settings VALUES (?, ?, ?)", (name, server.lower(context), threshhold))
+                    db.execute("INSERT INTO settings "
+                               "VALUES (?, ?, ?)",
+                               (name, server.lower(context), threshhold))
 
         @classmethod
         def stripContractions(cls, word):
@@ -63,8 +76,9 @@ def __initialise__(name, server, printer):
 
         @classmethod
         def isWord(cls, word):
+            isVeryAlpha = lambda i: (i.isalpha() or i in "'")
             # excessively non-alpha strings are not words.
-            if len([i for i in word if not (i.isalpha() or i in "'")]) >= cls.threshhold:
+            if len([i for i in word if not isVeryAlpha(i)]) >= cls.threshhold:
                 return False
 
             # words prefixed with the following are not real words
@@ -85,47 +99,78 @@ def __initialise__(name, server, printer):
         def spellcheck(cls, sentence):
             sentence = ircstrip(sentence)
             if cls.isLiteral(sentence): return
-            sentence = [cls.stripContractions(i) for i in sentence.split() if cls.isWord(i)]
-            errors = [i for i in sentence if not (cls.dictionary.check(i) or cls.alternate.check(i))]
-            suggestions = [set(cls.alternate.suggest(i)) | set(cls.dictionary.suggest(i)) for i in errors]
+            sentence = [cls.stripContractions(i)
+                        for i in sentence.split()
+                        if cls.isWord(i)]
+            errors = [i for i in sentence
+                      if not (cls.dictionary.check(i)
+                              or cls.alternate.check(i))]
+            suggestions = [set(cls.alternate.suggest(i))
+                           | set(cls.dictionary.suggest(i))
+                           for i in errors]
             # reduce the suggestions
-            suggestions = [{"".join(z for z in i if z.isalpha() or z in "'").lower() for i in x} for x in suggestions]
+            suggestions = [{"".join(z for z in i
+                                      if z.isalpha() or z in "'").lower()
+                            for i in x}
+                           for x in suggestions]
             wrong = []
             append = {}
             for i, word in enumerate(errors):
-                if "".join(i for i in word if i.isalpha()).lower() not in suggestions[i]:
-                
+                if "".join(i for i in word
+                             if i.isalpha()).lower() not in suggestions[i]:
+
                     token = set(word) & set(cls.wordsep)
                     if token:
                         token = token.pop()
                         words = word.split(token)
                         suggested = [cls.spellcheck(i) for i in words]
-                        suggested = [list(i.values())[0] if i else None for i in suggested]
+                        suggested = [list(i.values())[0] if i else None
+                                     for i in suggested]
                         if all(suggested):
                             wrong.append(word)
                         elif any(suggested):
                             if suggested[0]:
                                 suggested = suggested[0]
-                                suggested = [i + token + words[1] for i in suggested]
+                                suggested = [i + token + words[1]
+                                             for i in suggested]
                             else:
                                 suggested = suggested[1]
-                                suggested = [words[0] + token + i for i in suggested]
+                                suggested = [words[0] + token + i
+                                             for i in suggested]
                             append[word] = suggested
                     else:
                         # Repetition for emphasis is allowed over a threshhold
                         string = re.escape(word)
-                        pattern = re.sub(r"(.+?)\1\1+", r"(\1)+", string, flags=re.IGNORECASE)
-                        truncated = re.sub(r"(.+?)\1\1+", r"\1\1", word, flags=re.IGNORECASE)
-                        truncated2 = re.sub(r"(.+?)\1\1+", r"\1", word, flags=re.IGNORECASE)
-                        suggestions[i] |= set(cls.alternate.suggest(truncated)) | set(cls.dictionary.suggest(truncated)) | set(cls.alternate.suggest(truncated2)) | set(cls.dictionary.suggest(truncated2))
-                        if not any(re.match(pattern, x) for x in suggestions[i]):
+
+                        pattern = re.sub(r"(.+?)\1\1+",
+                                         r"(\1)+",
+                                         string,
+                                         flags=re.IGNORECASE)
+
+                        truncated = re.sub(r"(.+?)\1\1+",
+                                           r"\1\1",
+                                           word,
+                                           flags=re.IGNORECASE)
+
+                        truncated2 = re.sub(r"(.+?)\1\1+",
+                                            r"\1",
+                                            word,
+                                            flags=re.IGNORECASE)
+
+                        suggestions[i] |= (set(cls.alternate.suggest(truncated))
+                                       | set(cls.dictionary.suggest(truncated))
+                                       | set(cls.alternate.suggest(truncated2))
+                                       | set(cls.dictionary.suggest(truncated2))
+                                       )
+                        if not any(re.match(pattern, x)
+                                   for x in suggestions[i]):
                             wrong.append(word)
 
-            if wrong or append: 
+            if wrong or append:
                 wrong = {i: cls.alternate.suggest(i) for i in wrong}
                 wrong.update(append)
                 return wrong # Give a dictionary of words : [suggestions]
-        
+
         @Callback.background
         def passiveCorrector(self, line):
             msg = Message(line)
@@ -133,7 +178,7 @@ def __initialise__(name, server, printer):
             if not self.dictionary.check(nick):
                 self.dictionary.add(nick)
             nick = server.lower(nick)
-            if msg.text and msg.text[0] in "@!.:`~/": 
+            if msg.text and msg.text[0] in "@!.:`~/":
                 return
             if msg.text.startswith("\x01ACTION") and msg.text.endswith("\x01"):
                 data = self.spellcheck(msg.text[8:-1])
@@ -150,14 +195,18 @@ def __initialise__(name, server, printer):
             if data:
                 with sqlite3.connect(self.db) as typos:
                     for i in data:
-                        typos.execute("INSERT INTO typos VALUES (?, ?, ?, ?, ?)", (time.time(), nick, msg.context, name, i))
+                        typos.execute("INSERT INTO typos "
+                                      "VALUES (?, ?, ?, ?, ?)",
+                                      (time.time(), nick, msg.context, name, i))
 
                 threshhold_context = self.getSettings(msg.context)
                 threshhold_user = self.getSettings(nick)
                 if threshhold_user == threshhold_context == None:
                     return
-                
-                threshhold = min(threshhold_context, threshhold_user, key=lambda x: float("inf") if x is None else x)
+
+                threshhold = min(threshhold_context,
+                                 threshhold_user,
+                                 key=lambda x: float("inf") if x is None else x)
 
                 if user[1] and 1000*user[0]/user[1] > threshhold:
                     sentence_substitute = ircstrip(msg.text)
@@ -208,7 +257,7 @@ def __initialise__(name, server, printer):
                 else:
                     printer.message("I DON'T CARE.", x[2] if x[2][0] == "#" else Address(x[0]).nick)
         
-        @cb.command("spellchecker", "(on|off|\d+)")
+        @cb.command("spellchecker", r"(on|off|\d+)")
         def correctChannel(self, msg, threshhold):
             if threshhold == "off":
                 if self.getSettings(msg.context) is not None:

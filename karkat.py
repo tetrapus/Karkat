@@ -32,7 +32,7 @@ GP_CALLERS = 2
 
 def main():
     """
-    Karkat's mainloop simply spawns a server and registers all plugins.
+    Karkat.py simply spawns a server and registers all plugins.
     You can replace this.
     """
     args = docopt.docopt(__doc__ % {"name": sys.argv[0]}, version=__version__)
@@ -41,8 +41,6 @@ def main():
     if args["--restart"]:
         server.restart = True
     server.connect()
-
-    servername = args["<config>"].split(".")[0]
 
     modules = args["--plugins"].split(",")
     for mod in modules:
@@ -64,7 +62,7 @@ def main():
                 modules.append(submodule)
 
         print("Loading %s" % mod.__name__)
-        loadplugin(mod, servername, server, server.printer)
+        loadplugin(mod, server)
 
     if args["--identify"]:
         def authenticate(line):

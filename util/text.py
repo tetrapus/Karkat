@@ -267,6 +267,44 @@ def graph_vertical(values, filled=False, minheight=3):
 
     return ["".join(x) for x in data + [start]]
 
+def graph_vertical_DOS(values, minheight=3):
+    """
+    >>> print(graph_vertical([8, 1, 2, 3, 0, 8.2]))
+    ╻    ┃
+    ┃    ┃
+    ┃    ┃
+    ┃ ╻┃ ┃
+    ┖┸┸┸─┚
+    >>> print(graph_vertical([8, 1, 2, 3, 0, 8.2], True))
+    ╽││││┃
+    ┃││││┃
+    ┃││││┃
+    ┃│╽┃│┃
+    ┖┸┸┸┴┚
+"""
+    CSTART, CMID, CEND = tuple("╧╧╛")
+    CSZERO, CMZERO, CEZERO = tuple("═══")
+    CFULL, CHALF, CEMPTY = ("04│", "04┬", "─")
+
+    # Draw the axes
+    start = ["04╚"]
+    if not values:
+        return []
+
+    start.append(CSTART if values[0] else CSZERO)
+    for i in values[1:-1]:
+        start.append(CMID if i else CMZERO)
+    start.append(CEND if values[-1] else CEZERO)
+
+    values = [i-1 for i in values]
+
+    # Create the graph
+    height = max(math.ceil(max(values) / 2), minheight)
+    data = [["04╟"] + [[CHALF, CEMPTY, CFULL][cmp(y, (x-1) / 2)] 
+             for x in values] 
+            for y in range(height)][::-1]
+
+    return ["".join(x) for x in data + [start]]
 
 def graph_horizontal(values, filled=False, minheight=3):
     """
