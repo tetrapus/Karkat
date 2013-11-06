@@ -223,10 +223,10 @@ def graph_vertical_DOS(values, minheight=3):
 
     CSTART, CMID, CEND = tuple("╧╧╛")
     CSZERO, CMZERO, CEZERO = tuple("═══")
-    CFULL, CHALF, CEMPTY = ("04│", "04┬", "─")
+    CFULL, CHALF, CEMPTY = ("│", "┬", "─")
 
     # Draw the axes
-    start = ["04╚"]
+    start = ["╚"]
     if not values:
         return []
 
@@ -239,7 +239,7 @@ def graph_vertical_DOS(values, minheight=3):
 
     # Create the graph
     height = max(math.ceil(max(values) / 2), minheight)
-    data = [["04╟"] + [[CHALF, CEMPTY, CFULL][cmp(y, (x-1) / 2)]
+    data = [["╟"] + [[CHALF, CEMPTY, CFULL][cmp(y, (x-1) / 2)]
              for x in values]
             for y in range(height)][::-1]
 
