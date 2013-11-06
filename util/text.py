@@ -243,7 +243,8 @@ def graph_vertical_DOS(values, minheight=3):
              for x in values]
             for y in range(height)][::-1]
 
-    return ["".join(x) for x in data + [start]]
+    return ["".join(x).replace("", "") for x in data + [start]]
+
 
 def graph_vertical(values, filled=False, minheight=3):
     """

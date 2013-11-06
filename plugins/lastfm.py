@@ -15,6 +15,7 @@ import util
 from util.services import url
 from util.irc import Callback
 from util.text import pretty_date
+from util.text import graph_vertical_DOS as graph
 
 try:
     import pylast
@@ -58,6 +59,7 @@ else:
             bot.register("privmsg", self.now_playing)
             bot.register("privmsg", self.compare)
             bot.register("privmsg", self.setlfm)
+            bot.register("privmsg", self.listenHistory)
 
         @staticmethod
         def get_youtube(query):
@@ -129,6 +131,35 @@ else:
             self.users[nick] = username
             self.savefile()
             return "04Last.FM⎟ Associated %s with Last.FM user %s." % (message.address.nick, username)
+
+        @cb.threadsafe
+        @cb.command("listens", r"(.*)")
+        def listenHistory(self, message, username):
+            if not username:
+                username = message.address.nick
+
+            lowername = cb.bot.lower(username)
+            if lowername in self.users:
+                username = self.users[lowername]
+
+            user = self.network.get_user(username)
+            tracks = user.get_recent_tracks(limit=200)
+            first = int(tracks[0].timestamp)
+            timespan = first - int(tracks[-1].timestamp)
+            if timespan < 24 * 60 * 60: # 24 hours
+                values = 24
+            elif timespan > 48 * 60 * 60:
+                values = 48
+            else:
+                values = int(math.ceil(timespan / (60 * 60)))
+
+            data = [0 for i in range(values)]
+            for track in tracks:
+                data[int((first - int(track.timestamp)) * values / timespan)] += 1
+
+            for i in graph(data):
+                yield i
+
 
         @cb.threadsafe
         @cb.command("np", "(-\d+)?\s*([^ ]*)", 
