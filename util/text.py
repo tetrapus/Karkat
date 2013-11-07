@@ -219,6 +219,34 @@ def aligntable(rows, separator=" 08⎪ "):
 def cmp(a, b):
     return (a > b) - (a < b)
 
+def graph_vertical_DOS(values, minheight=3):
+    values = [round(i) for i in values]
+    CSTART, CMID, CEND = "╘", "╧", "╧"
+    CSZERO, CMZERO, CEZERO = "═", "═", "═"
+    CFULL, CHALF, CEMPTY = "│", "┬", "─"
+
+    # Draw the axes
+    start = []
+    if not values:
+        return []
+
+    start.append(CSTART if values[0] else CSZERO)
+    for i in values[1:-1]:
+        start.append(CMID if i else CMZERO)
+    start.append(CEND if values[-1] else CEZERO)
+    start.append("╝")
+
+    values = [i-1 for i in values]
+
+    # Create the graph
+    height = max(math.ceil(max(values) / 2), minheight)
+    data = [[[CHALF, CEMPTY, CFULL][cmp(y, (x-1) / 2)]
+             for x in values] + ["╢"]
+            for y in range(height)][::-1]
+
+    return ["".join(x).replace("", "") for x in data + [start]]
+
+
 def graph_vertical(values, filled=False, minheight=3):
     """
     >>> print(graph_vertical([8, 1, 2, 3, 0, 8.2]))
@@ -234,6 +262,7 @@ def graph_vertical(values, filled=False, minheight=3):
     ┃│╽┃│┃
     ┖┸┸┸┴┚
 """
+    values = [round(i) for i in values]
     CSTART, CMID, CEND = tuple("┖┸┚")
     if filled:
         CSZERO, CMZERO, CEZERO = tuple("└┴┘")
@@ -323,6 +352,7 @@ def graph_horizontal(values, filled=False, minheight=3):
     ├───────────
     ┕━━━━━━━━━━╾
     """
+    values = [round(i) for i in values]
     CSTART, CMID, CEND = tuple("┍┝┕")
     if filled:
         CSZERO, CMZERO, CEZERO = tuple("┌├└")
@@ -356,6 +386,8 @@ def graph_horizontal(values, filled=False, minheight=3):
             for i, x in enumerate(values)]
 
     return ["".join(x) for x in data]
+
+graph = graph_vertical_DOS
 
 class Buffer(object):
     """

@@ -14,7 +14,7 @@ import util
 
 from util.services import url
 from util.irc import Callback
-from util.text import pretty_date
+from util.text import pretty_date, graph
 
 try:
     import pylast
@@ -58,6 +58,7 @@ else:
             bot.register("privmsg", self.now_playing)
             bot.register("privmsg", self.compare)
             bot.register("privmsg", self.setlfm)
+            bot.register("privmsg", self.listenHistory)
 
         @staticmethod
         def get_youtube(query):
@@ -129,6 +130,65 @@ else:
             self.users[nick] = username
             self.savefile()
             return "04Last.FM⎟ Associated %s with Last.FM user %s." % (message.address.nick, username)
+
+        @cb.threadsafe
+        @cb.command("listens", r"((?:\d+[dhms])*)\s*(.*)",
+                    usage="04Last.FM⎟ Usage: [.@]listens [(\d+[dhms])+] [user]",
+                    error="04Last.FM⎟ Couldn't retrieve Last.FM playing history.",)
+        def listenHistory(self, message, period, username):
+            timevals = {"d": 24 * 60 * 60, 
+                        "h": 60 * 60, 
+                        "m": 60, 
+                        "s": 1}
+            nick = message.address.nick
+            cb.stream.message("\x0304⎟\x03 Fetching Last.FM listen history, please wait...", message.address.nick, "NOTICE")
+            if not username:
+                username = nick
+            user = username
+
+            lowername = cb.bot.lower(username)
+            if lowername in self.users:
+                user = self.users[lowername]
+
+            user = self.network.get_user(user)
+            tracks = user.get_recent_tracks(limit=200)
+            now = time.time()
+
+            if period:
+                timespan = 0
+                for i in re.findall(r"\d+[dhms]", period):
+                    timespan += int(i[:-1]) * timevals[i[-1]]
+            else:
+                timespan = now - int(tracks[-1].timestamp)
+
+            values = 36
+
+            data = [0 for i in range(values)]
+            usedtracks = []
+            for track in tracks:
+                timeago = now - int(track.timestamp)
+                if timeago <= timespan:
+                    data[int(timeago * values / (timespan+1))] += 1
+                    usedtracks.append(track)
+
+            largest = max(data)
+            if largest:
+                data = [round(i * 9 / largest) for i in data]
+            data = graph(data, minheight=4)
+            data = ["%2d %s" % (round(largest/9*(8-2*i)), s) if not i % 2 else "   " + s for i, s in enumerate(data)]
+            if len(usedtracks) > 1:
+                average = len(usedtracks) / (int(usedtracks[0].timestamp) - int(usedtracks[-1].timestamp))
+            else:
+                average = 0
+            meta = ["%s (%s)" % (username, self.users[lowername]) if lowername in self.users else username,
+                    " %d songs" % len(usedtracks),
+                    " %.1f hours total" % (timespan / (60*60)),
+                    " %d minute periods" % (timespan / (60 * values)),
+                    " %.2f songs per day" % (average * 24 * 60 * 60)]
+            data = ["%s04⎟ %s" % (j, i) for i, j in zip(meta, data)]
+
+            for i in data:
+                yield i
 
         @cb.threadsafe
         @cb.command("np", "(-\d+)?\s*([^ ]*)", 
