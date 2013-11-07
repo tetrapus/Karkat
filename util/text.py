@@ -220,7 +220,7 @@ def cmp(a, b):
     return (a > b) - (a < b)
 
 def graph_vertical_DOS(values, minheight=3):
-
+    values = [round(i) for i in values]
     CSTART, CMID, CEND = "╘", "╧", "╧"
     CSZERO, CMZERO, CEZERO = "═", "═", "═"
     CFULL, CHALF, CEMPTY = "│", "┬", "─"
@@ -262,6 +262,7 @@ def graph_vertical(values, filled=False, minheight=3):
     ┃│╽┃│┃
     ┖┸┸┸┴┚
 """
+    values = [round(i) for i in values]
     CSTART, CMID, CEND = tuple("┖┸┚")
     if filled:
         CSZERO, CMZERO, CEZERO = tuple("└┴┘")
@@ -313,6 +314,7 @@ def graph_horizontal(values, filled=False, minheight=3):
     ├───────────
     ┕━━━━━━━━━━╾
     """
+    values = [round(i) for i in values]
     CSTART, CMID, CEND = tuple("┍┝┕")
     if filled:
         CSZERO, CMZERO, CEZERO = tuple("┌├└")

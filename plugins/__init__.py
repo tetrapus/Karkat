@@ -13,7 +13,7 @@ from . import lastfm
 from . import wolfram
 from . import youtube
 from . import spellchecker
-#from . import cardsagainsthumanity
+from . import cardsagainsthumanity
 
 __modules__ = [google,
                addgame,
@@ -24,4 +24,5 @@ __modules__ = [google,
                lastfm,
                wolfram,
                youtube,
-               spellchecker]
+               spellchecker,
+               cardsagainsthumanity]
