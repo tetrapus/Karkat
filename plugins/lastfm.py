@@ -185,7 +185,7 @@ else:
                     " %.1f hours total" % (timespan / (60*60)),
                     " %d minute periods" % (timespan / (60 * values)),
                     " %.2f songs per day" % (average * 24 * 60 * 60)]
-            data = ["%s04⎟ %s" % (j, i) for i, j in zip(meta, data)]
+            data = ["%s04│ %s" % (j, i) for i, j in zip(meta, data)]
 
             for i in data:
                 yield i
