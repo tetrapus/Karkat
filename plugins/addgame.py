@@ -41,7 +41,7 @@ class AddGame(object):
         bot.register("privmsg", self.trigger)
         bot.register("privmsg", self.subtract)
 
-    @cb.command("subtract multiply times halve double divide modulo tetrate power exponentiate factorial".split(), public=".", private="")
+    @cb.command("subtract decrement multiply times halve double divide modulo tetrate power exponentiate factorial".split(), public=".", private="")
     def subtract(self, msg):
         msged = msg.context
         if msged in self.msged and time.time() - self.msged[msged] < 600:
