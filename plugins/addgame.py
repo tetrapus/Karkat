@@ -60,7 +60,7 @@ class AddGame(object):
             self.history[nick] = [(time.time(), 0)]
         
         if sum(i[0] for i in self.history[nick]) / len(self.history[nick]) < 1.5 or (len(self.history[nick]) - 1 and sum(abs(self.history[nick][i][-1] - self.history[nick][i-1][-1]) for i in range(1, len(self.history[nick]))) / len(self.history[nick]) < 2):
-            self.printer.message("fuck you bitch i ain't no adding machine", msg.address.nick, "NOTICE")
+            self.printer.message("hey %s, fuck off and let others have a go" % generate_vulgarity(False).lower(), msg.address.nick, "NOTICE")
         else:
             self.num += 1
             open(self.addfile, 'w').write(str(self.num))
