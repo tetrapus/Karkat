@@ -8,7 +8,7 @@ from util.irc import Callback
 def generate_vulgarity(adjective=True):
     adjectives = ["COLOSSAL", "TREMENDOUS", "STUPIFYING", "INCOMPREHENSIBLE", "IMMENSE", "MONUMENTAL", "ABSOLUTE"]
     swears = ["FUCK", "SHIT", "DICK", "TWAT", "CUNT", "FISH", "CRAP", "ASS", "TIT", "PUSSY", "COCK", "DOUCHE", "CUM", "PISS", "MAN"]
-    nouns = ["STAIN", "BAG", "FUCKER", "TARD", "WAFFLE", "NIPPLE", "BURGER", "EATER", "HOLE", "PONY", "NUTS", "JUICE", "CHODE", "SLUT", "BREATH", "WHORE", "DONKEY", "GOBBLER", "NUGGET", "BRAIN", "MUNCHER", "SUCKER", "STICK", "FACE", "TOOL", "WAGON", "WAD", "BUTT", "BUCKET"]
+    nouns = ["STAIN", "BAG", "FUCKER", "TARD", "WAFFLE", "NIPPLE", "BURGER", "EATER", "HOLE", "PONY", "NUTS", "JUICE", "CHODE", "SLUT", "BREATH", "WHORE", "DONKEY", "GOBBLER", "NUGGET", "BRAIN", "MUNCHER", "SUCKER", "STICK", "FACE", "TOOL", "WAGON", "WAD", "BUTT", "BUCKET", "BOX"]
     swearnoun = ["DIPSHIT", "FUCKWIT", "DUMBASS", "CORNHOLE", "LIMPDICK", "PIGSHIT"]
     if random.random() < 0.05:
         vulgarity = random.choice(swearnoun)
@@ -41,7 +41,7 @@ class AddGame(object):
         bot.register("privmsg", self.trigger)
         bot.register("privmsg", self.subtract)
 
-    @cb.command("subtract multiply times halve double divide".split(), public=".", private="")
+    @cb.command("subtract multiply times halve double divide modulo tetrate power exponentiate factorial".split(), public=".", private="")
     def subtract(self, msg):
         msged = msg.context
         if msged in self.msged and time.time() - self.msged[msged] < 600:
