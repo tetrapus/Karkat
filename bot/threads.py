@@ -357,11 +357,12 @@ class Connection(threading.Thread, object):
 
     def connect(self):
         self.sock = socket.socket()
+        print("Connecting...")
         self.sock.connect(self.server)
-
         # Try our first nickname.
         nicks = collections.deque(self.nicks)
         self.nick = nicks.popleft()
+        print("Connected. Trying %s" % self.nick)
         self.sendline("NICK %s" % self.nick)
         # Find a working nickname
         while self.buff.append(self.sock.recv(1)):
@@ -391,6 +392,7 @@ class Connection(threading.Thread, object):
         self.connected = True
         self.printer = ColourPrinter(self)
         self.printer.start()
+        print("Connected.")
 
     def sendline(self, line):
         self.sock.send(("%s\r\n" % line).encode("utf-8"))
