@@ -18,6 +18,7 @@ def __initialise__(name, server, printer):
     class SpellChecker(object):
         DBFILE = "spellchecker.db"
         users = {}
+        os.makedirs(server.get_config_dir(), exist_ok=True)
         dictionary = enchant.DictWithPWL("en_US", 
                                          pwl=server.get_config_dir("ircwords"))
         alternate = enchant.Dict("en_GB")
