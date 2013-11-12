@@ -49,7 +49,7 @@ class AddGame(object):
         self.msged[msged] = time.time()
         return "YOU CAN ONLY ADD, YOU %s." % generate_vulgarity()
 
-    @cb.command("add", public=".", private="")
+    @cb.command("add increment".split(), public=".", private="")
     def trigger(self, msg):
         nick = self.cb.bot.lower(msg.address.nick)
         if nick in self.history:
