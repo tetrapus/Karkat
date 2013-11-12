@@ -362,6 +362,9 @@ class Connection(threading.Thread, object):
         # Try our first nickname.
         nicks = collections.deque(self.nicks)
         self.nick = nicks.popleft()
+        self.sendline("USER %s %s * :%s\r\n" % (self.username, 
+                                                self.mode, 
+                                                self.realname))
         print("Connected. Trying %s" % self.nick)
         self.sendline("NICK %s" % self.nick)
         # Find a working nickname
@@ -386,9 +389,6 @@ class Connection(threading.Thread, object):
                 # not valid.
                 continue
             break
-        self.sendline("USER %s %s * :%s\r\n" % (self.username, 
-                                                self.mode, 
-                                                self.realname))
         self.connected = True
         self.printer = ColourPrinter(self)
         self.printer.start()

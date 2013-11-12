@@ -1,8 +1,22 @@
 import os
 import time
+import random
 
 from util.irc import Callback
 
+
+def generate_vulgarity(adjective=True):
+    adjectives = ["COLOSSAL", "TREMENDOUS", "STUPIFYING", "INCOMPREHENSIBLE", "IMMENSE", "MONUMENTAL", "ABSOLUTE"]
+    swears = ["FUCK", "SHIT", "DICK", "TWAT", "CUNT", "FISH", "CRAP", "ASS", "TIT", "PUSSY", "COCK", "DOUCHE", "CUM", "PISS", "MAN"]
+    nouns = ["STAIN", "BAG", "FUCKER", "TARD", "WAFFLE", "NIPPLE", "BURGER", "EATER", "HOLE", "PONY", "JUICE", "CHODE", "BREATH", "WHORE", "DONKEY", "GOBBLER", "NUGGET", "BRAIN", "MUNCHER", "SUCKER", "STICK", "FACE", "TOOL", "WAGON", "WAD", "BUTT", "BUCKET"]
+    swearnoun = ["DIPSHIT", "FUCKWIT", "DUMBASS", "CORNHOLE", "LIMPDICK", "PIGSHIT"]
+    if random.random() < 0.05:
+        vulgarity = random.choice(swearnoun)
+    else:
+        vulgarity = random.choice(swears) + random.choice(nouns)
+    if random.random() < 0.12 and adjective:
+        vulgarity = random.choice(adjectives) + " " + vulgarity
+    return vulgarity
 
 class AddGame(object):
 
@@ -31,9 +45,9 @@ class AddGame(object):
     def subtract(self, msg):
         msged = msg.context
         if msged in self.msged and time.time() - self.msged[msged] < 600:
-            return "WHAT DID I FUCKING SAY?"
+            return "WHAT DID I FUCKING SAY, %s?" % generate_vulgarity(False)
         self.msged[msged] = time.time()
-        return "YOU CAN ONLY ADD FUCKWIT."
+        return "YOU CAN ONLY ADD, YOU %s." % generate_vulgarity()
 
     @cb.command("add", public=".", private="")
     def trigger(self, msg):
