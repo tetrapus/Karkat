@@ -5,8 +5,7 @@ import random
 from util.irc import Callback
 
 
-def generate_vulgarity(adjective=True):
-    adjectives = ["COLOSSAL", "TREMENDOUS", "STUPIFYING", "INCOMPREHENSIBLE", "IMMENSE", "MONUMENTAL", "ABSOLUTE"]
+def generate_vulgarity():
     swears = ["FUCK", "SHIT", "DICK", "TWAT", "CUNT", "FISH", "CRAP", "ASS", "TIT", "PUSSY", "COCK", "DOUCHE", "CUM", "PISS", "MAN", "CRUD"]
     nouns = ["STAIN", "BAG", "FUCKER", "TARD", "WAFFLE", "NIPPLE", "BOOB", "BURGER", "EATER", "HOLE", "PONY", "NUTS", "JUICE", "CHODE", "SLUT", "BREATH", "WHORE", "DONKEY", "GOBBLER", "NUGGET", "BRAIN", "MUNCHER", "SUCKER", "STICK", "FACE", "TOOL", "WAGON", "WAD", "BUTT", "BUCKET", "BOX"]
     swearnoun = ["DIPSHIT", "FUCKWIT", "DUMBASS", "CORNHOLE", "LIMPDICK", "PIGSHIT"]
@@ -14,8 +13,7 @@ def generate_vulgarity(adjective=True):
         vulgarity = random.choice(swearnoun)
     else:
         vulgarity = random.choice(swears) + random.choice(nouns)
-    if random.random() < 0.12 and adjective:
-        vulgarity = random.choice(adjectives) + " " + vulgarity
+
     return vulgarity
 
 class AddGame(object):
@@ -41,13 +39,13 @@ class AddGame(object):
         bot.register("privmsg", self.trigger)
         bot.register("privmsg", self.subtract)
 
-    @cb.command("subtract decrement multiply times halve double divide modulo tetrate power exponentiate factorial".split(), public=".", private="")
+    @cb.command("subtract decrement multiply times halve double divide modulo tetrate power exponentiate factorial negate".split(), public=".", private="")
     def subtract(self, msg):
         msged = msg.context
         if msged in self.msged and time.time() - self.msged[msged] < 600:
-            return "WHAT DID I FUCKING SAY, %s?" % generate_vulgarity(False)
+            return "WHAT DID I FUCKING SAY, %s?" % generate_vulgarity()
         self.msged[msged] = time.time()
-        return "YOU CAN ONLY ADD, YOU %s." % generate_vulgarity()
+        return "YOU CAN ONLY ADD, %s." % generate_vulgarity()
 
     @cb.command("add increment".split(), public=".", private="")
     def trigger(self, msg):
@@ -60,11 +58,11 @@ class AddGame(object):
             self.history[nick] = [(time.time(), 0)]
         
         if sum(i[0] for i in self.history[nick]) / len(self.history[nick]) < 1.5 or (len(self.history[nick]) - 1 and sum(abs(self.history[nick][i][-1] - self.history[nick][i-1][-1]) for i in range(1, len(self.history[nick]))) / len(self.history[nick]) < 2):
-            self.printer.message("hey %s, fuck off and let others have a go" % generate_vulgarity(False).lower(), msg.address.nick, "NOTICE")
+            self.printer.message("hey %s, fuck off and let others have a go" % generate_vulgarity().lower(), msg.address.nick, "NOTICE")
         else:
             self.num += 1
             open(self.addfile, 'w').write(str(self.num))
 
-            return "02Thanks for that %s, 03%s"%(msg.address.nick, "The Number has been increased to %s."%self.num)
+            return "02Thanks %s, 03%s"%(msg.address.nick, "the number has been increased to %s."%self.num)
 
 __initialise__ = AddGame
