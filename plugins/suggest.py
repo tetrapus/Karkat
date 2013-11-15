@@ -20,7 +20,7 @@ def complete_trigger(message, query):
     if result:
         table = namedtable(result, 
                            size    = 72, 
-                           rowmax  = 3 if message.text.startswith("@") else None, 
+                           rowmax  = 4 if message.text.startswith("@") else None, 
                            header  = "12G04o08o12g03l04e12 suggest  ", 
                            rheader = "'%s'" % query)
         for line in table:
