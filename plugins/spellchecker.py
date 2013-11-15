@@ -196,7 +196,8 @@ def __initialise__(name, server, printer):
             match = newword or notword
 
             if not server.is_admin(x[0]) and match.group(2).lower() in self.locked:
-                return "FUCK OFF."
+                printer.message("FUCK OFF.", x[2] if x[2][0] == "#" else Address(x[0]).nick) 
+                return
 
             if newword:
                 word = newword.group(2)
