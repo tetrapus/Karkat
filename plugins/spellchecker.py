@@ -17,23 +17,31 @@ def __initialise__(name, server, printer):
     cb.initialise(name, server, printer)
     class SpellChecker(object):
         DBFILE = "spellchecker.db"
+        LOCKFILE = "ircwords_locked"
         users = {}
         os.makedirs(server.get_config_dir(), exist_ok=True)
         dictionary = enchant.DictWithPWL("en_US", 
                                          pwl=server.get_config_dir("ircwords"))
         alternate = enchant.Dict("en_GB")
-        threshhold = 2
         reset_at = 1500
         reset_to = int(round(math.log(reset_at)))
         last = None
         last_correction = None
-        wordsep = "/.:^&*|+=-?,_"
+        threshhold = 2
 
-        literalprefixes = ".!/@<`~"
+        wordsep = "/.:^&*|+=-?,_()"
+
+        literalprefixes = ".!/@<`~=+"
         dataprefixes = "#$<[/"
         contractions = ["s", "d", "ve", "nt", "m"]
 
         def __init__(self):
+            try:
+                self.locked = [open(server.get_config_dir(self.LOCKFILE)).read().split("\n")]
+            except:
+                self.locked = []
+                open(server.get_config_dir(self.LOCKFILE), "w")
+
             self.db = server.get_config_dir(self.DBFILE)
             if not os.path.exists(self.db):
                 os.makedirs(server.get_config_dir(), exist_ok=True)
@@ -183,12 +191,18 @@ def __initialise__(name, server, printer):
         
         def updateKnown(self, y):
             x = y.split(" ")
-            newword = re.match(r":(%s[^\a]?\s*)?([^\s]+)( i|')s a( real)? word.*" % server.nick, " ".join(x[3:]), flags=re.IGNORECASE)
-            notword = re.match(r":(%s[^\a]?\s*)?([^\s]+) is(n't| not) a( real)? word.*" % server.nick, " ".join(x[3:]), flags=re.IGNORECASE)
+            newword = re.match(r":(%s[^\a]?\s*)?([^\s]+)( i|')s a( real)? word(!| FORCE| LOCK)?.*" % server.nick, " ".join(x[3:]), flags=re.IGNORECASE)
+            notword = re.match(r":(%s[^\a]?\s*)?([^\s]+)( isn't| is not|'s not) a( real)? word(!| FORCE| LOCK)?.*" % server.nick, " ".join(x[3:]), flags=re.IGNORECASE)
+            match = newword or notword
+
+            if not server.is_admin(x[0]) and match.group(2).lower() in self.locked:
+                return "FUCK OFF."
 
             if newword:
                 word = newword.group(2)
-                
+                if server.is_admin(x[0]) and newword.group(5):
+                    self.locked.append(word.lower())
+                    self.saveLocked()
                 if word.lower() == "that":
                     word = self.last
                 if not word:
@@ -201,6 +215,9 @@ def __initialise__(name, server, printer):
                     self.last_correction = word
             if notword:
                 word = notword.group(2)
+                if server.is_admin(x[0]) and notword.group(5):
+                    self.locked.append(word.lower())
+                    self.saveLocked()
                 if word.lower() == "that":
                     word = self.last_correction
                 if self.dictionary.is_added(word):
@@ -209,6 +226,11 @@ def __initialise__(name, server, printer):
                 else:
                     printer.message("I DON'T CARE.", x[2] if x[2][0] == "#" else Address(x[0]).nick)
         
+        def saveLocked(self):
+            with open(server.get_config_dir(self.LOCKFILE), "w") as f:
+                f.write("\n".join(self.locked))
+
+
         @cb.command("spellchecker", "(on|off|\d+)")
         def correctChannel(self, msg, threshhold):
             if threshhold == "off":
