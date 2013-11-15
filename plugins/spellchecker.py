@@ -31,7 +31,7 @@ def __initialise__(name, server, printer):
 
         wordsep = "/.:^&*|+=-?,_()"
 
-        literalprefixes = ".!/@<`~=+"
+        literalprefixes = ".!/@<`:~=+"
         dataprefixes = "#$<[/"
         contractions = ["s", "d", "ve", "nt", "m"]
 
