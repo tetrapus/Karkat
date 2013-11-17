@@ -3,6 +3,7 @@ import os
 import math
 import re
 import sqlite3
+import difflib
 import time
 from util.text import ircstrip, strikethrough
 from util.irc import Address, Message, Callback
@@ -133,6 +134,7 @@ def __initialise__(name, server, printer):
             if wrong or append: 
                 wrong = {i: cls.alternate.suggest(i) for i in wrong}
                 wrong.update(append)
+                wrong = {k: v for k, v in wrong.items() if difflib.SequenceMatcher(cls.isWord, k, v).ratio() > 0.6}
                 return wrong # Give a dictionary of words : [suggestions]
         
         @Callback.background
@@ -201,11 +203,11 @@ def __initialise__(name, server, printer):
 
             if newword:
                 word = newword.group(2)
+                if word.lower() == "that":
+                    word = self.last
                 if server.is_admin(x[0]) and newword.group(5):
                     self.locked.append(word.lower())
                     self.saveLocked()
-                if word.lower() == "that":
-                    word = self.last
                 if not word:
                     printer.message("What is?", x[2] if x[2][0] == "#" else Address(x[0]).nick)
                 elif self.dictionary.check(word):
@@ -216,11 +218,11 @@ def __initialise__(name, server, printer):
                     self.last_correction = word
             if notword:
                 word = notword.group(2)
+                if word.lower() == "that":
+                    word = self.last_correction
                 if server.is_admin(x[0]) and notword.group(5):
                     self.locked.append(word.lower())
                     self.saveLocked()
-                if word.lower() == "that":
-                    word = self.last_correction
                 if self.dictionary.is_added(word):
                     self.dictionary.remove(word)
                     printer.message("Okay then.", x[2] if x[2][0] == "#" else Address(x[0]).nick) 
