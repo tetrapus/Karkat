@@ -134,7 +134,7 @@ def __initialise__(name, server, printer):
             if wrong or append: 
                 wrong = {i: cls.alternate.suggest(i) for i in wrong}
                 wrong.update(append)
-                wrong = {k: v for k, v in wrong.items() if difflib.SequenceMatcher(cls.isWord, k, v).ratio() > 0.6}
+                wrong = {k: v for k, v in wrong.items() if difflib.SequenceMatcher(None, k, v).ratio() > 0.6}
                 return wrong # Give a dictionary of words : [suggestions]
         
         @Callback.background
