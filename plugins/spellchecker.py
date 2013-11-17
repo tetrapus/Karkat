@@ -3,7 +3,6 @@ import os
 import math
 import re
 import sqlite3
-import difflib
 import time
 from util.text import ircstrip, strikethrough
 from util.irc import Address, Message, Callback
@@ -134,7 +133,7 @@ def __initialise__(name, server, printer):
             if wrong or append: 
                 wrong = {i: cls.alternate.suggest(i) for i in wrong}
                 wrong.update(append)
-                wrong = {k: [i for i in v if difflib.SequenceMatcher(None, k, i).quick_ratio() > 0.6] for k, v in wrong.items()}
+                # wrong = {k: [i for i in v if difflib.SequenceMatcher(None, k, i).quick_ratio() > 0.6] for k, v in wrong.items()}
                 return wrong # Give a dictionary of words : [suggestions]
         
         @Callback.background
