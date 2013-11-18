@@ -335,7 +335,7 @@ def graph_vertical_DOS(values, minheight=3):
 
     return ["".join(x) for x in data + [start]]
 
-def graph_horizontal(values, filled=False, minheight=3):
+def graph_horizontal(values, filled=False, minheight=3, height=None):
     """
     >>> print(graph_horizontal([8, 1, 12, 3, 0, 22]))
     ┍━━━╸       
@@ -379,7 +379,8 @@ def graph_horizontal(values, filled=False, minheight=3):
     values = [i-1 for i in values]
 
     # Create the graph
-    height = max(math.ceil(max(values) / 2), minheight)
+    if not height:
+        height = max(math.ceil(max(values) / 2), minheight)
     data = [[start[i]] 
             + [[CHALF, CEMPTY, CFULL][cmp(y, (x-1) / 2)] 
                for y in range(height)] 

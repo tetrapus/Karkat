@@ -3,6 +3,7 @@ import threading
 from . import services
 from . import irc
 from . import text
+from . import dcc
 
 # Taken straight from the xchat source. Thanks, xchat!
 rfc_tolowertab = [0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa,
@@ -65,4 +66,4 @@ def parallelise(jobs):
 
 def average(x): return float(sum(x))/len(x) if x else 0.00
 
-__all__ = ["services", "irc", "text", "parallelise", "cmp", "rfc_nickkey", "average"]
+__all__ = ["services", "irc", "text", "parallelise", "cmp", "rfc_nickkey", "average", "dcc"]
