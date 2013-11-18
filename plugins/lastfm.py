@@ -129,19 +129,19 @@ else:
                 username = message.address.nick
             self.users[nick] = username
             self.savefile()
-            return "04Last.FM⎟ Associated %s with Last.FM user %s." % (message.address.nick, username)
+            return "04Last.FM│ Associated %s with Last.FM user %s." % (message.address.nick, username)
 
         @cb.threadsafe
         @cb.command("listens", r"((?:\d+[dhms])*)\s*(.*)",
-                    usage="04Last.FM⎟ Usage: [.@]listens [(\d+[dhms])+] [user]",
-                    error="04Last.FM⎟ Couldn't retrieve Last.FM playing history.",)
+                    usage="04Last.FM│ Usage: [.@]listens [(\d+[dhms])+] [user]",
+                    error="04Last.FM│ Couldn't retrieve Last.FM playing history.",)
         def listenHistory(self, message, period, username):
             timevals = {"d": 24 * 60 * 60, 
                         "h": 60 * 60, 
                         "m": 60, 
                         "s": 1}
             nick = message.address.nick
-            cb.stream.message("\x0304⎟\x03 Fetching Last.FM listen history, please wait...", message.address.nick, "NOTICE")
+            cb.stream.message("\x0304│\x03 Fetching Last.FM listen history, please wait...", message.address.nick, "NOTICE")
             if not username:
                 username = nick
             user = username
@@ -192,8 +192,8 @@ else:
 
         @cb.threadsafe
         @cb.command("np", "(-\d+)?\s*([^ ]*)", 
-                    usage="04Last.FM⎟ Usage: [.!@]np [-d] [user]",
-                    error="04Last.FM⎟ Couldn't retrieve Last.FM playing history.",
+                    usage="04Last.FM│ Usage: [.!@]np [-d] [user]",
+                    error="04Last.FM│ Couldn't retrieve Last.FM playing history.",
                     private="!",
                     public=".@")
         def now_playing(self, message, lastnum, username):
@@ -234,10 +234,10 @@ else:
 
             if message.prefix in "!@":
                 # Provide full template
-                template = "04Last.FM⎟ %(loved)s%(artist)s%(album)s · %(title)s\n"\
-                           "04Last.FM⎟ %(listens)s%(timeago)s%(duration)s %(link)s"
+                template = "04Last.FM│ %(loved)s%(artist)s%(album)s · %(title)s\n"\
+                           "04Last.FM│ %(listens)s%(timeago)s%(duration)s %(link)s"
             else:
-                template = "04⎟ %(loved)s%(artist)s · %(title)s (%(duration)s) %(tad)s%(dotlink)s"
+                template = "04│ %(loved)s%(artist)s · %(title)s (%(duration)s) %(tad)s%(dotlink)s"
             difftime["template"] = time.time()
             for i in util.parallelise(jobs):
                 trackdata.update(i)
@@ -248,8 +248,8 @@ else:
 
         @cb.threadsafe
         @cb.command("compare", "([^ ]+)(?:\s+([^ ]+))?",
-                    usage="04Last.FM⎟ Usage: [.@]compare user1 [user2]",
-                    error="04Last.FM⎟ Couldn't retrieve Last.FM user data.")
+                    usage="04Last.FM│ Usage: [.@]compare user1 [user2]",
+                    error="04Last.FM│ Couldn't retrieve Last.FM user data.")
         def compare(self, message, user1, user2):
             if not user2:
                 users = (message.address.nick, user1)
@@ -274,8 +274,8 @@ else:
                 else:
                     overflow = (" and %d more" % len(artists)) * bool(len(artists))
 
-            yield "04Last.FM⎟ %s ⟺ %s: %.2d%.1f%% compatible" % (users_display[0], users_display[1], [4, 7, 8, 9, 3][int(tasteometer * 4.95)], tasteometer * 100)
-            yield "04Last.FM⎟ %s%s in common." % (common, overflow)
+            yield "04Last.FM│ %s ⟺ %s: %.2d%.1f%% compatible" % (users_display[0], users_display[1], [4, 7, 8, 9, 3][int(tasteometer * 4.95)], tasteometer * 100)
+            yield "04Last.FM│ %s%s in common." % (common, overflow)
 
 
         def savefile(self):

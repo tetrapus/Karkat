@@ -48,12 +48,12 @@ class AutoJoin(object):
             if self.server.isIn(msg.context, self.chans):
                 self.chans.remove(self.server.lower(msg.context))
                 self.sync()
-                return "12Auto-join⎟ Channel removed."
+                return "12Auto-join│ Channel removed."
             else:
                 self.chans.append(self.server.lower(msg.context))
 
                 self.sync()
-                return "12Auto-join⎟ Channel added."
+                return "12Auto-join│ Channel added."
 
 
 __initialise__ = AutoJoin

@@ -124,9 +124,9 @@ else:
                         # Single line: Shorten output
                         catname = list(results.keys())[0]
                         if catname in self.results:
-                            output = ["08⎟ %s " % list(results.values())[0][0]]
+                            output = ["08│ %s " % list(results.values())[0][0]]
                         else:
-                            output = [spacepad("08⎟ %s " % list(results.values())[0][0], "07%s" % catname, t_max)]
+                            output = [spacepad("08│ %s " % list(results.values())[0][0], "07%s" % catname, t_max)]
                     else:
                         for category in results:
                             lines = [x.rstrip() for x in results[category]]

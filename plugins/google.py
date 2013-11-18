@@ -8,9 +8,9 @@ from util.text import unescape
 
 cb = Callback()
 
-templates = {"@": "%(color).2d⎟ 02%(title)s\n%(color).2d⎟ 03↗ %(url)s\n%(color).2d⎟ %(description)s",
-             ".": "%(color).2d⎟ %(title)s 12↗ %(url)s",
-             "!": "%(color).2d⎟ %(title)s 12↗ %(url)s"}
+templates = {"@": "%(color).2d│ 02%(title)s\n%(color).2d⎟ 03↗ %(url)s\n%(color).2d⎟ %(description)s",
+             ".": "%(color).2d│ %(title)s 12↗ %(url)s",
+             "!": "%(color).2d│ %(title)s 12↗ %(url)s"}
 
 maxlines = {"@": 1,
             ".": 4,
@@ -21,8 +21,8 @@ deflines = {"@": 1,
 
 @cb.threadsafe
 @cb.command(["google", "search"], "(-\d\s+)?(.+)", private="!", public=".@",
-            usage="12Google⎟ Usage: !google [-NUM_RESULTS] <query>",
-            error="04Google⎟ Error: Could not fetch google results.")
+            usage="12Google│ Usage: !google [-NUM_RESULTS] <query>",
+            error="04Google│ Error: Could not fetch google results.")
 def google(message, nresults, query):
     if nresults:
         nresults = min(-int(nresults.strip()), maxlines[message.prefix])
@@ -44,7 +44,7 @@ def google(message, nresults, query):
                                           unescape(result["content"].replace("<b>", "").replace("</b>", "")))}
             yield templates[message.prefix] % data
     else:
-        yield "05Google⎟ No results found."
+        yield "05Google│ No results found."
 
 
 __initialise__ = cb.initialise

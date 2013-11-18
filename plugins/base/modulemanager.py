@@ -47,26 +47,26 @@ class ModManager(object):
 
     @cb.inline
     @cb.command("disable", "([^ ]+)", private="", public=":", admin=True,
-                usage="12Module Manager⎟ Usage: :disable <modname>")
+                usage="12Module Manager│ Usage: :disable <modname>")
     def disable_module(self, message, module):
         blacklisted = self.bot.blacklist.setdefault(self.bot.lower(message.context), self.bot.blacklist[None])
         if module not in blacklisted:
             blacklisted.append(module)
-            return "12Module Manager⎟ Module %s disabled." % module
+            return "12Module Manager│ Module %s disabled." % module
         else:
-            return "12Module Manager⎟ %s is already blacklisted." % module
+            return "12Module Manager│ %s is already blacklisted." % module
         self.sync()
 
     @cb.inline
     @cb.command("enable", "([^ ]+)", private="", public=":", admin=True,
-                usage="12Module Manager⎟ Usage: :enable <modname>")
+                usage="12Module Manager│ Usage: :enable <modname>")
     def enable_module(self, message, module):
         blacklisted = self.bot.blacklist.setdefault(self.bot.lower(message.context), self.bot.blacklist[None])
         if module in blacklisted:
             blacklisted.remove(module)
-            return "12Module Manager⎟ Module %s re-enabled." % module
+            return "12Module Manager│ Module %s re-enabled." % module
         else:
-            return "12Module Manager⎟ %s is not blacklisted." % module
+            return "12Module Manager│ %s is not blacklisted." % module
         self.sync()
 
     @cb.command("disabled")
@@ -77,7 +77,7 @@ class ModManager(object):
             for i in table:
                 yield
         else:
-            yield "12Module Manager⎟ Blacklist is empty."
+            yield "12Module Manager│ Blacklist is empty."
 
     # Module management plugins
 
@@ -105,13 +105,13 @@ class ModManager(object):
     @cb.inline
     @cb.command("unload", "(.+)", 
                 admin=True, 
-                usage="12Module Manager⎟ Usage: [!@]unload <module>")
+                usage="12Module Manager│ Usage: [!@]unload <module>")
     def unregister_modules(self, message, module):
         removed = {x.module for x in self.remove_modules(module)}
         if not removed:
-            yield "05Module Manager⎟ Module not found."
+            yield "05Module Manager│ Module not found."
         elif len(removed) == 1:
-            yield "12Module Manager⎟ %s unloaded." % (list(removed)[0])
+            yield "12Module Manager│ %s unloaded." % (list(removed)[0])
         else:
             table = namedtable(removed,
                                size=72,
@@ -122,8 +122,8 @@ class ModManager(object):
     @cb.inline
     @cb.command("reload", "(.+)", 
                 admin=True, 
-                usage="12Module Manager⎟ Usage: [!@]reload <module>",
-                error="12Module Manager⎟ Module failed to load.")
+                usage="12Module Manager│ Usage: [!@]reload <module>",
+                error="12Module Manager│ Module failed to load.")
     def reload_modules(self, message, module):
         # Find and remove all callbacks
         removed = self.remove_modules(module)
@@ -140,7 +140,7 @@ class ModManager(object):
                 loadplugin(mod, self.name, self.bot, self.stream)
                 reloaded.append(mod.__name__)
             if len(reloaded) == 1:
-                yield "12Module Manager⎟ %s reloaded." % (list(reloaded)[0])
+                yield "12Module Manager│ %s reloaded." % (list(reloaded)[0])
             else:
                 table = namedtable(reloaded,
                                    size=72,
@@ -148,13 +148,13 @@ class ModManager(object):
                 for i in table:
                     yield i
         else:
-            yield "05Module Manager⎟ Module not found."
+            yield "05Module Manager│ Module not found."
 
     @cb.inline
     @cb.command("load", "(.+)", 
                 admin=True, 
-                usage="12Module Manager⎟ Usage: [!@]load <module>",
-                error="12Module Manager⎟ Module failed to load.")
+                usage="12Module Manager│ Usage: [!@]load <module>",
+                error="12Module Manager│ Module failed to load.")
     def load_modules(self, message, module):
         path = module.split(".")
         try:
@@ -162,10 +162,10 @@ class ModManager(object):
             for i in path[1:]:
                 module = module.__dict__[i]
         except:
-            return "05Module Manager⎟ Module failed to load."
+            return "05Module Manager│ Module failed to load."
         else:
             loadplugin(module, self.name, self.bot, self.stream)
-            return "12Module Manager⎟ %s loaded." % module.__name__
+            return "12Module Manager│ %s loaded." % module.__name__
 
 
 __initialise__ = ModManager

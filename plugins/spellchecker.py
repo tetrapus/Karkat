@@ -188,7 +188,7 @@ def __initialise__(name, server, printer):
                 return "%s, %s is spelt correctly." % (msg.address.nick, query)
             else:
                 suggestions = self.alternate.suggest(query)[:6]
-                return "Possible correct spellings: %s" % ("/".join(suggestions))
+                return "Suggestions: %s" % ("/".join(suggestions))
         
         def updateKnown(self, y):
             x = y.split(" ")
