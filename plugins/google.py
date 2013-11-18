@@ -8,7 +8,7 @@ from util.text import unescape
 
 cb = Callback()
 
-templates = {"@": "%(color).2d│ 02%(title)s\n%(color).2d⎟ 03↗ %(url)s\n%(color).2d⎟ %(description)s",
+templates = {"@": "%(color).2d│ 02%(title)s\n%(color).2d│ 03↗ %(url)s\n%(color).2d│ %(description)s",
              ".": "%(color).2d│ %(title)s 12↗ %(url)s",
              "!": "%(color).2d│ %(title)s 12↗ %(url)s"}
 
