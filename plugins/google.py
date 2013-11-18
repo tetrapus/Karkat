@@ -32,7 +32,7 @@ def google(message, nresults, query):
     page = requests.get("http://ajax.googleapis.com/ajax/services/search/web?v=1.0&q=%s" % urllib.quote(query)).json()
 
     if page["responseData"]["results"]:
-        if any(lambda x: "suicide" in x.lower(), [i["title"] for i in page["responseData"]["results"]]):
+        if any("suicide" in i["title"].lower() for i in page["responseData"]["results"]):
             page = requests.get("http://ajax.googleapis.com/ajax/services/search/web?v=1.0&q=%s" % urllib.quote("it gets better")).json()
         for i, result in enumerate(page["responseData"]["results"]): 
             if i >= nresults: return
