@@ -26,8 +26,9 @@ class Message(object):
 
 
 class Command(Message):
-    def __init__(self, raw_message, prefixes=None):
+    def __init__(self, raw_message, server, prefixes=None):
         super(Command, self).__init__(raw_message)
+        self.server = server
         text = self.text.split(" ", 1)
         if prefixes is None:
             self.prefix, self.command = text[0][0], text[0][1:]
