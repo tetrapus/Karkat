@@ -211,6 +211,7 @@ def __initialise__(name, bot, printer):
                     if not i.responses:
                         self.remove(i)
                 self.judge()
+                if self.isEndGame(): self.endgame()
             
         def endgame(self):
             self.state = "failed"
