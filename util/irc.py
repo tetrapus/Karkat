@@ -22,6 +22,7 @@ class Message(object):
         if not target.startswith("#"):
             self.context = self.address.nick
         self.text = message
+        self.words = message.split(" ")
         self.message = raw_message
 
 

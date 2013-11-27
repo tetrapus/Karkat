@@ -7,7 +7,7 @@ import sys
 import os
 
 from util.text import ordinal
-from util.irc import Callback, Address
+from util.irc import Callback, Address, Message
 
 
 def __initialise__(name, bot, printer):
@@ -62,10 +62,6 @@ def __initialise__(name, bot, printer):
                 for i, card in enumerate(self.hand):
                     buffer += "00,01 15,14 01,15  %d. %s" % (i+1, card[0].upper() + card[1:])
                 buffer += "00,01 15,14 01,15  You have %d points." % self.points
-        
-    class CAHDeck(object):
-        def __init__(self):
-            pass
 
     class CardsAgainstHumanity(object):
         black = [i.strip() for i in open(datadir + "/black.txt").read().split("\n")]
@@ -361,6 +357,27 @@ def __initialise__(name, bot, printer):
         lock = threading.Lock()
         
         @Callback.threadsafe
+        def custom_cards(self, server, line):
+            msg = Message(line)
+            if len(msg.words) < 2:
+                return
+            if msg.words[0] == "!Q.":
+                data = re.sub("_+", "_______", msg.text.split(" ", 1)[-1])
+                # TODO: Probably not locking the right resource.
+                with self.lock:
+                    CardsAgainstHumanity.expansionqs.append(data)
+                    CardsAgainstHumanity.savecards()
+                printer.message("00,01 15,14 01,15  Added: 00,01 %s " % (data), msg.context)
+            elif msg.words[0] == "!A.":
+                data = msg.text.split(" ", 1)[-1]
+                data = data.strip()
+                if re.search("[^.?!]$", data): data += "."                
+                with self.lock:
+                    CardsAgainstHumanity.expansionas.append(data)
+                    CardsAgainstHumanity.savecards()
+                printer.message("00,01 15,14 01,15  Added: 01,00 %s " % (data), msg.context)
+
+        @Callback.threadsafe
         def trigger(self, sdata):
             x = sdata.split()
             channel = x[2].lower()
@@ -368,22 +385,6 @@ def __initialise__(name, bot, printer):
             if not channel.startswith("#"):
                 return
                 
-            elif x[3] in [":!Q.", ":!A."]:
-                if x[3][2] == "Q":
-                    data = " ".join(x[4:])
-                    data = re.sub("_+", "_______", data)
-                    with self.lock:
-                        CardsAgainstHumanity.expansionqs.append(data)
-                        CardsAgainstHumanity.savecards()
-                    printer.message("00,01 15,14 01,15  Added: 00,01 %s " % (data), channel)
-                else:
-                    data = " ".join(x[4:])
-                    data = data.strip()
-                    if re.search("[^.?!]$", data): data += "."                
-                    with self.lock:
-                        CardsAgainstHumanity.expansionas.append(data)
-                        CardsAgainstHumanity.savecards()
-                    printer.message("00,01 15,14 01,15  Added: 01,00 %s " % (data), channel)
             elif channel in self.games and not self.games[channel].failed():
                 game = self.games[channel]
                 with game.lock:
@@ -498,3 +499,5 @@ def __initialise__(name, bot, printer):
 
     cah = CAHBot()
     bot.register("privmsg", cah.trigger)
+    bot.register("privmsg", cah.custom_cards)
+
