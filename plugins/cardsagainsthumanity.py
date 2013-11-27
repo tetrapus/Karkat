@@ -4,13 +4,22 @@ import re
 import sqlite3
 import time
 import sys
+import os
 
 from util.text import ordinal
 from util.irc import Callback, Address
 
 
 def __initialise__(name, bot, printer):
-        
+    datadir = "data/CardsAgainstHumanity"
+    expansiondir = bot.get_config_dir("CardsAgainstHumanity")
+    if not os.path.exists(expansiondir):
+        os.makedirs(expansiondir, exist_ok=True)
+    if not os.path.exists(expansiondir + "/statistics.db"):
+        # Initialise the db
+        with sqlite3.connect(expansiondir + "/statistics.db") as db:
+            db.execute("CREATE TABLE white (timestamp int, nick text, channel text, round int, czar text, prompt text, cards text, bet int, rank int);")
+
     class CAHPlayer(object):
         def __init__(self, nick):
             self.nick = nick
@@ -59,11 +68,17 @@ def __initialise__(name, bot, printer):
             pass
 
     class CardsAgainstHumanity(object):
-        black = [i.strip() for i in open("old_data/cah/black.txt").read().split("\n")]
-        white = [i.strip() for i in open("old_data/cah/white.txt").read().split("\n")]
-        expansionqs = [i.strip() for i in open("old_data/cah/questions.txt").read().split("\n")]
-        expansionas = [i.strip() for i in open("old_data/cah/answers.txt").read().split("\n")]
-        
+        black = [i.strip() for i in open(datadir + "/black.txt").read().split("\n")]
+        white = [i.strip() for i in open(datadir + "/white.txt").read().split("\n")]
+
+        try:
+            expansionqs = [i.strip() for i in open(expansiondir + "/questions.txt").read().split("\n")]
+            expansionas = [i.strip() for i in open(expansiondir + "/answers.txt").read().split("\n")]
+        except IOError:
+            open(expansiondir + "/questions.txt", "w")
+            open(expansiondir + "/answers.txt", "w")
+            expansionas, expansionqs = [], []
+
         def __init__(self, channel, rounds=None, black=[], white=[], rando=False, numcards=10, minplayers=3, bets=True, firstto=None, ranked=False):
             self.lock = threading.Lock()
             self.questions = self.black[:] + black[:]
@@ -204,10 +219,10 @@ def __initialise__(name, bot, printer):
                 players = sorted(self.allplayers, key=CAHPlayer.score)[::-1]
                 for i, player in enumerate(players):
                     if i and players[i-1].score() == player.score():
-                        rank = "   "
+                        rank = "    "
                     else:
-                        rank = ordinal(i+1)
-                    buffer += "00,01 15,14 01,15  %s: %s - %d points" % (rank, player.nick, player.score())
+                        rank = ordinal(i+1) + ":"
+                    buffer += "00,01 15,14 01,15  %s %s - %d points" % (rank, player.nick, player.score())
      
         def isEndGame(self):
             return not (self.questions) or (self.rounds and self.round >= self.rounds) or len(self.players) < self.minplayers or (self.firstto and any(i.score() >= self.firstto for i in self.players))
@@ -258,7 +273,7 @@ def __initialise__(name, bot, printer):
                 self.state = "judge"
 
         def logwinner(self, wins):
-            with sqlite3.connect("old_data/cah/statistics.db") as logdata:
+            with sqlite3.connect(expansiondir + "/statistics.db") as logdata:
                 timestamp = time.time()
                 visited = set()
                 for player in self.order:
@@ -332,12 +347,12 @@ def __initialise__(name, bot, printer):
             return self.state == "failed"
 
     def savecards():
-        with open("old_data/cah/questions.txt", "w") as f: f.write("\n".join(CardsAgainstHumanity.expansionqs))
-        with open("old_data/cah/answers.txt", "w") as f: f.write("\n".join(CardsAgainstHumanity.expansionas))
+        with open(expansiondir + "/questions.txt", "w") as f: f.write("\n".join(CardsAgainstHumanity.expansionqs))
+        with open(expansiondir + "/answers.txt", "w") as f: f.write("\n".join(CardsAgainstHumanity.expansionas))
 
     def loadcards():
-        CardsAgainstHumanity.expansionqs = [i.strip() for i in open("old_data/cah/questions.txt").read().split("\n")]
-        CardsAgainstHumanity.expansionas = [i.strip() for i in open("old_data/cah/answers.txt").read().split("\n")]
+        CardsAgainstHumanity.expansionqs = [i.strip() for i in open(expansiondir + "/questions.txt").read().split("\n")]
+        CardsAgainstHumanity.expansionas = [i.strip() for i in open(expansiondir + "/answers.txt").read().split("\n")]
         
     class CAHBot(object):
         games = {}
@@ -357,7 +372,7 @@ def __initialise__(name, bot, printer):
                     data = re.sub("_+", "_______", data)
                     with self.lock:
                         CardsAgainstHumanity.expansionqs.append(data)
-                        with open("old_data/cah/questions.txt", "w") as f: f.write("\n".join(CardsAgainstHumanity.expansionqs))
+                        savecards()
                     printer.message("00,01 15,14 01,15  Added: 00,01 %s " % (data), channel)
                 else:
                     data = " ".join(x[4:])
@@ -365,7 +380,7 @@ def __initialise__(name, bot, printer):
                     if re.search("[^.?!]$", data): data += "."                
                     with self.lock:
                         CardsAgainstHumanity.expansionas.append(data)
-                        with open("old_data/cah/answers.txt", "w") as f: f.write("\n".join(CardsAgainstHumanity.expansionas))
+                        savecards()
                     printer.message("00,01 15,14 01,15  Added: 01,00 %s " % (data), channel)
             elif channel in self.games and not self.games[channel].failed():
                 game = self.games[channel]
