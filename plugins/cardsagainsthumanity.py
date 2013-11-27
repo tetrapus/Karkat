@@ -71,15 +71,14 @@ def __initialise__(name, bot, printer):
         black = [i.strip() for i in open(datadir + "/black.txt").read().split("\n")]
         white = [i.strip() for i in open(datadir + "/white.txt").read().split("\n")]
 
-        try:
-            expansionqs = [i.strip() for i in open(expansiondir + "/questions.txt").read().split("\n")]
-            expansionas = [i.strip() for i in open(expansiondir + "/answers.txt").read().split("\n")]
-        except IOError:
-            open(expansiondir + "/questions.txt", "w")
-            open(expansiondir + "/answers.txt", "w")
-            expansionas, expansionqs = [], []
-
         def __init__(self, channel, rounds=None, black=[], white=[], rando=False, numcards=10, minplayers=3, bets=True, firstto=None, ranked=False):
+            try:
+                self.loadcards()
+            except IOError:
+                open(expansiondir + "/questions.txt", "w")
+                open(expansiondir + "/answers.txt", "w")
+                self.expansionas, self.expansionqs = [], []
+
             self.lock = threading.Lock()
             self.questions = self.black[:] + black[:]
             random.shuffle(self.questions)
@@ -109,6 +108,16 @@ def __initialise__(name, bot, printer):
                 self.addRando()
             else: self.rando = None
             
+        @classmethod
+        def savecards(cls):
+            with open(expansiondir + "/questions.txt", "w") as f: f.write("\n".join(cls.expansionqs))
+            with open(expansiondir + "/answers.txt", "w") as f: f.write("\n".join(cls.expansionas))
+
+        @classmethod
+        def loadcards(cls):
+            cls.expansionqs = [i.strip() for i in open(expansiondir + "/questions.txt").read().split("\n") if i.strip()]
+            cls.expansionas = [i.strip() for i in open(expansiondir + "/answers.txt").read().split("\n") if i.strip()]
+
         def addPlayer(self, player):
             if player in [x.nick for x in self.players]:
                 return False
@@ -346,14 +355,6 @@ def __initialise__(name, bot, printer):
             
         def failed(self): 
             return self.state == "failed"
-
-    def savecards():
-        with open(expansiondir + "/questions.txt", "w") as f: f.write("\n".join(CardsAgainstHumanity.expansionqs))
-        with open(expansiondir + "/answers.txt", "w") as f: f.write("\n".join(CardsAgainstHumanity.expansionas))
-
-    def loadcards():
-        CardsAgainstHumanity.expansionqs = [i.strip() for i in open(expansiondir + "/questions.txt").read().split("\n")]
-        CardsAgainstHumanity.expansionas = [i.strip() for i in open(expansiondir + "/answers.txt").read().split("\n")]
         
     class CAHBot(object):
         games = {}
@@ -373,7 +374,7 @@ def __initialise__(name, bot, printer):
                     data = re.sub("_+", "_______", data)
                     with self.lock:
                         CardsAgainstHumanity.expansionqs.append(data)
-                        savecards()
+                        CardsAgainstHumanity.savecards()
                     printer.message("00,01 15,14 01,15  Added: 00,01 %s " % (data), channel)
                 else:
                     data = " ".join(x[4:])
@@ -381,7 +382,7 @@ def __initialise__(name, bot, printer):
                     if re.search("[^.?!]$", data): data += "."                
                     with self.lock:
                         CardsAgainstHumanity.expansionas.append(data)
-                        savecards()
+                        CardsAgainstHumanity.savecards()
                     printer.message("00,01 15,14 01,15  Added: 01,00 %s " % (data), channel)
             elif channel in self.games and not self.games[channel].failed():
                 game = self.games[channel]
