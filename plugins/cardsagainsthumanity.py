@@ -411,7 +411,7 @@ def __initialise__(name, bot, printer):
                         if x[3].lower() == ":!discard" and player.points:
                             args = " ".join(x[4:])
                             args = args.replace(",", " ")
-                            cards = sorted(list(set(map(int, list(filter(str.isdigit and 1 <= int(x) <= len(player.hand), args.split()))))))[::-1]
+                            cards = sorted(list(set(map(int, list(filter(lambda x: x.isdigit() and 1 <= int(x) <= len(player.hand), args.split()))))))[::-1]
                             if len(cards) > game.maxcards / 2:
                                 printer.message("00,01 15,14 01,15  You can't discard more than half your hand at once.", nick, "NOTICE")
                             else:
