@@ -20,7 +20,7 @@ import subprocess
 
 import docopt
 
-from bot.threads import StatefulBot, loadplugin, Printer
+from bot.threads import StatefulBot, Printer
 from util.irc import Callback
 
 __version__ = 2.0
@@ -42,14 +42,13 @@ def main():
         server.restart = True
     server.connect()
 
-    servername = args["<config>"].split(".")[0]
-
     modules = args["--plugins"].split(",")
     for mod in modules:
         try: 
             __import__(mod)
         except ImportError:
-            pass
+            print("Warning: %s not loaded." % (mod))
+            modules.remove(mod)
 
     modules = [sys.modules[i] for i in modules]
 
@@ -64,10 +63,10 @@ def main():
                 modules.append(submodule)
 
         print("Loading %s" % mod.__name__)
-        loadplugin(mod, servername, server, server.printer)
+        server.loadplugin(mod)
 
     if args["--identify"]:
-        def authenticate(line):
+        def authenticate(server, line):
             """ Sends nickserv credentials after the server preamble. """
             if args["--auth"]:
                 cmd = "nickserv AUTH %s"
@@ -78,7 +77,7 @@ def main():
         server.register("376", authenticate)
     if args["--debug"]:
         @Callback.inline
-        def log(line):
+        def log(server, line):
             """ Prints all inbound irc messages. """
             print("%s → %s" % (server.server[0], line))
         server.printer.verbosity = Printer.FULL_MESSAGE | Printer.QUEUE_STATE

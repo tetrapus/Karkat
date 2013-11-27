@@ -81,11 +81,12 @@ class Callback(object):
         Generates the xchat version of funct's args.
         """
         @functools.wraps(funct)
-        def _(line):
+        def _(server, line):
             word_eol = [line.split(" ", n)[-1] for n in range(line.count(" ") + 1)]
             return funct(line.split(), word_eol)
         return _
 
+    ''' !!DEPRECATED!!
     @staticmethod
     def msghandler(funct):
         """
@@ -100,80 +101,75 @@ class Callback(object):
             fargs = args[:-1] + (message.address, message.context, message)
             return funct(*fargs)
         return _
-
-    def __init__(self):
-        self.callbacks = {}
-
-    def initialise(self, name, bot, printer):
-        self.stream = printer
-        self.bot = bot
-        self.id = name
+    '''
 
 
-    def command(self, triggers, args=None, key=str.lower, usage=None, error=None, admin=False, private=".", public="@"):
-        if type(triggers) == str:
-            triggers = [triggers]
-        triggers = [key(i) for i in triggers]
-        def decorator(funct):
-            @functools.wraps(funct)
-            def _(*argv):
-                try:
-                    message = Command(argv[-1])
-                    user = message.address
+def command(triggers, args=None, key=str.lower, usage=None, error=None, admin=False, private=".", public="@"):
+    if type(triggers) == str:
+        triggers = [triggers]
+    triggers = [key(i) for i in triggers]
+    def decorator(funct):
+        @functools.wraps(funct)
+        def _(*argv):
+            try:
+                message = Command(argv[-1])
+                server = argv[-2]
+                user = message.address
 
-                    # Check admin permissions
-                    if admin and not self.bot.is_admin(user.hostmask):
-                        return
-
-                    if len(argv) == 2:
-                        fargs = [argv[0], message]
-                    else:
-                        fargs = [message]
-                except IndexError:
-                    return
+                if len(argv) == 3:
+                    fargs = [argv[0], server, message]
                 else:
-                    if message.prefix in private + public and key(message.command) in triggers:
-                        # Triggered.
-                        # Set up output
-                        if message.prefix in private:
-                            output = self.stream.buffer(user.nick, "NOTICE")
-                        else:
-                            output = self.stream.buffer(message.context, "PRIVMSG")
+                    fargs = [server, message]
 
-                        # Check arguments
-                        if args is not None:
-                            try:
-                                argument = message.text.split(" ", 1)
-                                if len(argument) == 1:
-                                    argument = ""
-                                else:
-                                    argument = argument[1]
-                                if callable(args):
-                                    fargs.extend(list(args(argument)))
-                                else:
-                                    fargs.extend(list(re.match(args, argument).groups()))
-                            except (AttributeError, IndexError):
-                                if usage is not None:
-                                    with output as out:
-                                        out += usage
-                                return
+                # Check admin permissions
+                if admin and not server.is_admin(user.hostmask):
+                    return
+
+            except IndexError:
+                return
+            else:
+                if message.prefix in private + public and key(message.command) in triggers:
+                    # Triggered.
+                    # Set up output
+                    if message.prefix in private:
+                        output = server.printer.buffer(user.nick, "NOTICE")
+                    else:
+                        output = server.printer.buffer(message.context, "PRIVMSG")
+
+                    # Check arguments
+                    if args is not None:
                         try:
-                            if inspect.isgeneratorfunction(funct):
-                                with output as out:
-                                    for line in funct(*fargs):
-                                        out += line
+                            argument = message.text.split(" ", 1)
+                            if len(argument) == 1:
+                                argument = ""
                             else:
-                                rval = funct(*fargs)
-                                if rval is not None:
-                                    with output as out:
-                                        out += rval
-                        except:
-                            if error is not None:
+                                argument = argument[1]
+                            if callable(args):
+                                fargs.extend(list(args(argument)))
+                            else:
+                                fargs.extend(list(re.match(args, argument).groups()))
+                        except (AttributeError, IndexError):
+                            if usage is not None:
                                 with output as out:
-                                    out += error
-                            raise
-            return _
-        return decorator
+                                    out += usage
+                            return
+                    try:
+                        if inspect.isgeneratorfunction(funct):
+                            with output as out:
+                                for line in funct(*fargs):
+                                    out += line
+                        else:
+                            rval = funct(*fargs)
+                            if rval is not None:
+                                with output as out:
+                                    out += rval
+                    except:
+                        if error is not None:
+                            with output as out:
+                                out += error
+                        raise
+        return _
+    return decorator
 
 
 '''

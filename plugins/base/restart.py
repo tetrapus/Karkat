@@ -1,10 +1,7 @@
-from util.irc import Callback
+from util.irc import command
 
-def __initialise__(name, bot, printer):
-    cb = Callback()
-    cb.initialise(name, bot, printer)
-    @cb.command("restart", public=":", private="", admin=True)
-    def set_restart(message):
-        bot.restart = True
-        printer.raw_message("QUIT :Restarting...")
-    bot.register("privmsg", set_restart)
+@command("restart", public=":", private="", admin=True)
+def set_restart(server, message):
+    server.restart = True
+    server.printer.raw_message("QUIT :Restarting...")
+__callbacks__ = {"privmsg": [set_restart]}

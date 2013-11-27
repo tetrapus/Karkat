@@ -6,7 +6,8 @@ from util.irc import Message
 
 REPLYFILE = "config/ctcp.yaml"
 
-def __initialise__(name, bot, stream):
+def __initialise__(server):
+	name, bot, stream = server.name, server, server.printer
 	replies = {}
 	if os.path.exists(REPLYFILE):
 		replies.update(yaml.safe_load(open(REPLYFILE)))
@@ -17,7 +18,7 @@ def __initialise__(name, bot, stream):
 	if replies:
 		replies = {key.upper(): value for key, value in replies.items()}
 
-		def ctcpreply(line):
+		def ctcpreply(server, line):
 			msg = Message(line)
 			text = msg.text
 			if len(text) > 1 and text[0] == text[-1] == "\x01":

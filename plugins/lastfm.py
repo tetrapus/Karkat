@@ -13,7 +13,7 @@ import yaml
 import util
 
 from util.services import url
-from util.irc import Callback
+from util.irc import Callback, command
 from util.text import pretty_date, graph
 
 try:
@@ -33,19 +33,18 @@ else:
         print("Warning: Youtube module not loaded, using slow heuristic version.")
     else:
         yt = youtube.youtube
-    cb = Callback()
 
     class LastFM(object):
 
         FILENAME = "lastfm_users.json"
 
-        def __init__(self, name, bot, printer):
-            self.userfile = bot.get_config_dir(self.FILENAME)
+        def __init__(self, server):
+            self.userfile = server.get_config_dir(self.FILENAME)
             try:
                 self.users = json.load(open(self.userfile))
             except:
                 # File doesn't exist or is corrupt
-                os.makedirs(bot.get_config_dir(), exist_ok=True)
+                os.makedirs(server.get_config_dir(), exist_ok=True)
                 self.users = {}
                 self.savefile()
 
@@ -53,12 +52,11 @@ else:
                 api_key    = apikeys["key"],
                 api_secret = apikeys["secret"]
             )
-            cb.initialise(name, bot, printer)
 
-            bot.register("privmsg", self.now_playing)
-            bot.register("privmsg", self.compare)
-            bot.register("privmsg", self.setlfm)
-            bot.register("privmsg", self.listenHistory)
+            server.register("privmsg", self.now_playing)
+            server.register("privmsg", self.compare)
+            server.register("privmsg", self.setlfm)
+            server.register("privmsg", self.listenHistory)
 
         @staticmethod
         def get_youtube(query):
@@ -122,31 +120,31 @@ else:
                 trackdata["album"] = " · %s" % album.get_name()
             return trackdata
 
-        @cb.command("setlfm savelfm".split(), "([^ ]*)")
-        def setlfm(self, message, username):
-            nick = cb.bot.lower(message.address.nick)
+        @command("setlfm savelfm".split(), "([^ ]*)")
+        def setlfm(self, server, message, username):
+            nick = server.lower(message.address.nick)
             if not username:
                 username = message.address.nick
             self.users[nick] = username
             self.savefile()
             return "04Last.FM│ Associated %s with Last.FM user %s." % (message.address.nick, username)
 
-        @cb.threadsafe
-        @cb.command("listens", r"((?:\d+[dhms])*)\s*(.*)",
-                    usage="04Last.FM│ Usage: [.@]listens [(\d+[dhms])+] [user]",
-                    error="04Last.FM│ Couldn't retrieve Last.FM playing history.",)
-        def listenHistory(self, message, period, username):
+        @Callback.threadsafe
+        @command("listens", r"((?:\d+[dhms])*)\s*(.*)",
+                 usage="04Last.FM│ Usage: [.@]listens [(\d+[dhms])+] [user]",
+                 error="04Last.FM│ Couldn't retrieve Last.FM playing history.",)
+        def listenHistory(self, server, message, period, username):
             timevals = {"d": 24 * 60 * 60, 
                         "h": 60 * 60, 
                         "m": 60, 
                         "s": 1}
             nick = message.address.nick
-            cb.stream.message("\x0304│\x03 Fetching Last.FM listen history, please wait...", message.address.nick, "NOTICE")
+            server.printer.message("\x0304│\x03 Fetching Last.FM listen history, please wait...", message.address.nick, "NOTICE")
             if not username:
                 username = nick
             user = username
 
-            lowername = cb.bot.lower(username)
+            lowername = server.lower(username)
             if lowername in self.users:
                 user = self.users[lowername]
 
@@ -190,13 +188,13 @@ else:
             for i in data:
                 yield i
 
-        @cb.threadsafe
-        @cb.command("np", "(-\d+)?\s*([^ ]*)", 
-                    usage="04Last.FM│ Usage: [.!@]np [-d] [user]",
-                    error="04Last.FM│ Couldn't retrieve Last.FM playing history.",
-                    private="!",
-                    public=".@")
-        def now_playing(self, message, lastnum, username):
+        @Callback.threadsafe
+        @command("np", "(-\d+)?\s*([^ ]*)", 
+                 usage="04Last.FM│ Usage: [.!@]np [-d] [user]",
+                 error="04Last.FM│ Couldn't retrieve Last.FM playing history.",
+                 private="!",
+                 public=".@")
+        def now_playing(self, server, message, lastnum, username):
             difftime = collections.OrderedDict()
             difftime["start"] = time.time()
             colors = [1, 14, 15]
@@ -206,7 +204,7 @@ else:
             if lastnum:
                 lastnum = -int(lastnum)
 
-            lowername = cb.bot.lower(username)
+            lowername = server.lower(username)
             if lowername in self.users:
                 username = self.users[lowername]
 
@@ -246,17 +244,17 @@ else:
                 print("[Last.FM] %s: %f" % (i, final - difftime[i]))
             return template % trackdata
 
-        @cb.threadsafe
-        @cb.command("compare", "([^ ]+)(?:\s+([^ ]+))?",
+        @Callback.threadsafe
+        @command("compare", "([^ ]+)(?:\s+([^ ]+))?",
                     usage="04Last.FM│ Usage: [.@]compare user1 [user2]",
                     error="04Last.FM│ Couldn't retrieve Last.FM user data.")
-        def compare(self, message, user1, user2):
+        def compare(self, server, message, user1, user2):
             if not user2:
                 users = (message.address.nick, user1)
             else:
                 users = (user1, user2)
-            users_display = ["%s (%s)" % (i, self.users[cb.bot.lower(i)]) if cb.bot.lower(i) in self.users else i for i in users]
-            users = [self.users[cb.bot.lower(i)] if cb.bot.lower(i) in self.users else i for i in users]
+            users_display = ["%s (%s)" % (i, self.users[server.lower(i)]) if server.lower(i) in self.users else i for i in users]
+            users = [self.users[server.lower(i)] if server.lower(i) in self.users else i for i in users]
             first = self.network.get_user(users[0])
             tasteometer, artists = first.compare_with_user(users[1])
             tasteometer = float(tasteometer)
@@ -272,7 +270,7 @@ else:
                 if len(artists) == 1:
                     common += " and %s" % artists.pop(0).name
                 else:
-                    overflow = (" and %d more" % len(artists)) * bool(len(artists))
+                    overflow = (" and %d+ more" % len(artists)) * bool(len(artists))
 
             yield "04Last.FM│ %s ⟺ %s: %.2d%.1f%% compatible" % (users_display[0], users_display[1], [4, 7, 8, 9, 3][int(tasteometer * 4.95)], tasteometer * 100)
             yield "04Last.FM│ %s%s in common." % (common, overflow)

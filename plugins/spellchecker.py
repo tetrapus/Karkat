@@ -5,16 +5,18 @@ import re
 import sqlite3
 import time
 from util.text import ircstrip, strikethrough
-from util.irc import Address, Message, Callback
+from util.irc import Address, Message, Callback, command
 try:
     import enchant
 except ImportError:
     print("Enchant dependancy found, spellchecker not loaded.", file=sys.stderr)
-    raise
+    noload = True
+else:
+    noload = False
 
-def __initialise__(name, server, printer):
-    cb = Callback()
-    cb.initialise(name, server, printer)
+def __initialise__(server):
+    name, bot, printer = server.name, server, server.printer
+
     class SpellChecker(object):
         DBFILE = "spellchecker.db"
         LOCKFILE = "ircwords_locked"
@@ -137,7 +139,7 @@ def __initialise__(name, server, printer):
                 return wrong # Give a dictionary of words : [suggestions]
         
         @Callback.background
-        def passiveCorrector(self, line):
+        def passiveCorrector(self, server, line):
             msg = Message(line)
             nick = msg.address.nick
             if not self.dictionary.check(nick):
@@ -182,19 +184,20 @@ def __initialise__(name, server, printer):
                         self.last = None
                 
         @Callback.threadsafe
-        @cb.command("spell spellcheck".split(), "(.+)")
-        def activeCorrector(self, msg, query):
+        @command("spell spellcheck".split(), "(.+)")
+        def activeCorrector(self, server, msg, query):
             if (self.dictionary.check(query) or self.alternate.check(query)):
                 return "%s, %s is spelt correctly." % (msg.address.nick, query)
             else:
                 suggestions = self.alternate.suggest(query)[:6]
                 return "Suggestions: %s" % ("/".join(suggestions))
         
-        def updateKnown(self, y):
+        def updateKnown(self, server, y):
             x = y.split(" ")
             newword = re.match(r":(%s[^\a]?\s*)?([^\s]+)( i|')s a( real)? word(!| FORCE| LOCK)?.*" % server.nick, " ".join(x[3:]), flags=re.IGNORECASE)
             notword = re.match(r":(%s[^\a]?\s*)?([^\s]+)( isn't| is not|'s not) a( real)? word(!| FORCE| LOCK)?.*" % server.nick, " ".join(x[3:]), flags=re.IGNORECASE)
             match = newword or notword
+            if not match: return
 
             if not server.is_admin(x[0]) and match.group(2).lower() in self.locked:
                 printer.message("FUCK OFF.", x[2] if x[2][0] == "#" else Address(x[0]).nick) 
@@ -233,8 +236,8 @@ def __initialise__(name, server, printer):
                 f.write("\n".join(self.locked))
 
 
-        @cb.command("spellchecker", "(on|off|\d+)")
-        def correctChannel(self, msg, threshhold):
+        @command("spellchecker", "(on|off|\d+)")
+        def correctChannel(self, server, msg, threshhold):
             if threshhold == "off":
                 if self.getSettings(msg.context) is not None:
                     self.setThreshhold(msg.context, None)
@@ -255,3 +258,6 @@ def __initialise__(name, server, printer):
     server.register("privmsg", spellchecker.activeCorrector)
     server.register("privmsg", spellchecker.passiveCorrector)
     # TODO: Reintegrate spellchecker callbacks that update the nicklist.
+
+if noload:
+    del __initialise__

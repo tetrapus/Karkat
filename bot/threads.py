@@ -257,9 +257,9 @@ class ColourPrinter(Printer):
 
 class InlineQueue(object):
     @staticmethod
-    def queue(handler, line):
+    def queue(handler, args):
         try:
-            handler(line)
+            handler(*args)
         except BaseException:
             print("Error in inline function " + handler.name, file=sys.stderr)
             sys.excepthook(*sys.exc_info())
@@ -317,12 +317,12 @@ class Caller(WorkerThread):
         self.work.put(Work.TERM)
 
     def run(self):
-        for funct, arg in self.work:
+        for funct, args in self.work:
             self.last = time.time()
             try:
-                funct(arg)
+                funct(*args)
             except BaseException:
-                print("Error in function %s%s" % (funct.name, arg))
+                print("Error in function %s%s" % (funct.name, args))
                 sys.excepthook(*sys.exc_info())
             self.last = None
         assert self.work.qsize() == 0
@@ -466,8 +466,8 @@ class EventHandler(object):
         else:
             self.cbtype = self.GENERAL
 
-    def __call__(self, line):
-        return self.funct(line)
+    def __call__(self, *args):
+        return self.funct(*args)
 
 
 class Bot(Connection):
@@ -485,7 +485,7 @@ class Bot(Connection):
         return os.path.join(directory, *subdirs)
 
     @Callback.inline
-    def pong(self, line):
+    def pong(self, server, line):
         self.sendline("PONG " + line.split(" ", 1)[1])
 
     def makeCallers(self, callers=2):
@@ -574,7 +574,7 @@ class Bot(Connection):
         else:
             handlerq = self.caller[handler.cbtype]
 
-        handlerq.queue(handler, line)
+        handlerq.queue(handler, (self, line))
 
     def dispatch(self, line):
         """
@@ -589,6 +589,30 @@ class Bot(Connection):
         for funct in self.callbacks["ALL"] + self.callbacks.get(msgType.lower(), []):
             self.execute(funct, line)
 
+    def loadplugin(self, mod):
+        """ The following can optionally be defined to hook into karkat:
+        __callbacks__: A mapping of callbacks.
+        __icallbacks__:  A mapping of inline callbacks.
+        __initialise__(name, botobj, printer) : A function to initialise the module.
+        __destroy__(): A function triggered on bot death.
+        """
+        if "__initialise__" in dir(mod):
+            mod.__initialise__(self)
+            print("    Initialised %s." % mod.__name__)
+        if "__callbacks__" in dir(mod):
+            for trigger in mod.__callbacks__:
+                for callback in mod.__callbacks__[trigger]:
+                    self.register(trigger, callback)
+                    print("        Registered callback: %s" % callback.__name__)
+        if "__icallbacks__" in dir(mod):
+            for trigger in mod.__icallbacks__:
+                for callback in mod.__icallbacks__[trigger]:
+                    self.register(Callback.inline(trigger), callback)
+                    print("        Registered inline callback: %s" % callback.__name__)
+        if "__destroy__" in dir(mod):
+            self.register("DIE", mod.__destroy__)
+            print("        Registered destructor: %s" % mod.__destroy__.__name__)
+
 class SelectiveBot(Bot):
     def __init__(self, conf):
         super().__init__(conf)
@@ -602,29 +626,6 @@ class SelectiveBot(Bot):
         if data[1] != "PRIVMSG" or handler.module.__name__ not in self.blacklist.get(data[2].lower(), self.blacklist[None]): 
             super().execute(handler, line)
 
-def loadplugin(mod, name, bot, stream):
-    """ The following can optionally be defined to hook into karkat:
-    __callbacks__: A mapping of callbacks.
-    __icallbacks__:  A mapping of inline callbacks.
-    __initialise__(name, botobj, printer) : A function to initialise the module.
-    __destroy__(): A function triggered on bot death.
-    """
-    if "__initialise__" in dir(mod):
-        mod.__initialise__(name, bot, stream)
-        print("    Initialised %s." % mod.__name__)
-    if "__callbacks__" in dir(mod):
-        for trigger in mod.__callbacks__:
-            for callback in mod.__callbacks__[trigger]:
-                bot.register(trigger, callback)
-                print("        Registered callback: %s" % callback.__name__)
-    if "__icallbacks__" in dir(mod):
-        for trigger in mod.__icallbacks__:
-            for callback in mod.__icallbacks__[trigger]:
-                bot.register_i(trigger, callback)
-                print("        Registered inline callback: %s" % callback.__name__)
-    if "__destroy__" in dir(mod):
-        bot.register("DIE", mod.__destroy__)
-        print("        Registered destructor: %s" % mod.__destroy__.__name__)
 
 class StatefulBot(SelectiveBot):
     """ Beware of thread safety when manipulating server state. If a callback
@@ -676,26 +677,26 @@ class StatefulBot(SelectiveBot):
         return any(fnmatch.fnmatch(address, i) for i in self.admins) or any(address.endswith("@" + i) for i in self.admins)
 
     @Callback.inline
-    def went_away(self, line):
+    def went_away(self, server, line):
         assert self.eq(line.split()[2], self.nick)
         # Get away message
         self.sendline("WHOIS %s" % self.nick)
 
 
     @Callback.inline
-    def came_back(self, line):
+    def came_back(self, server, line):
         assert self.eq(line.split()[2], self.nick)
         assert self.away
         self.away = None
 
     @Callback.inline
-    def user_awaymsg(self, line):
+    def user_awaymsg(self, server, line):
         server, code, me, user, reason = line.split(" ", 4)
         if self.eq(me, self.nick):
             self.away = reason[1:]
 
     @Callback.inline
-    def onServerSettings(self, line):
+    def onServerSettings(self, server, line):
         """ Implements server settings on connect """
         for i in line.split()[2:]:
             if "=" not in i:
@@ -705,7 +706,7 @@ class StatefulBot(SelectiveBot):
                 self.server_settings[key] = value
 
     @Callback.inline
-    def user_left(self, line):
+    def user_left(self, server, line):
         """ Handles PARTs """
         words = line.split()
         nick = Address(words[0]).nick
@@ -716,7 +717,7 @@ class StatefulBot(SelectiveBot):
             self.channels[channel].remove(nick)
 
     @Callback.inline
-    def user_quit(self, line):
+    def user_quit(self, server, line):
         """ Handles QUITs"""
         words = line.split()
         nick = Address(words[0]).nick
@@ -725,7 +726,7 @@ class StatefulBot(SelectiveBot):
                 self.channels[i].remove(nick) # Note: May error. This might indicate a logic error or a bastard server.
 
     @Callback.inline
-    def user_join(self, line):
+    def user_join(self, server, line):
         """ Handles JOINs """
         words = line.split()
         nick = Address(words[0]).nick
@@ -737,13 +738,13 @@ class StatefulBot(SelectiveBot):
             self.channels[channel].add(nick)
 
     @Callback.inline
-    def joined_channel(self, line):
+    def joined_channel(self, server, line):
         """ Handles 352s (WHOs) """
         words = line.split()
         self.channels.setdefault(self.lower(words[3]), set()).add(words[7])
 
     @Callback.inline
-    def user_nickchange(self, line):
+    def user_nickchange(self, server, line):
         """ Handles NICKs """
         words = line.split()
         nick = Address(words[0]).nick
@@ -756,7 +757,7 @@ class StatefulBot(SelectiveBot):
             self.nick = newnick
 
     @Callback.inline
-    def user_kicked(self, line):
+    def user_kicked(self, server, line):
         """ Handles KICKs """
         words = line.split()
         nick = words[3]

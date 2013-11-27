@@ -3,10 +3,8 @@ import urllib.parse as urllib
 
 import requests
 
-from util.irc import Callback
+from util.irc import Callback, command
 from util.text import unescape
-
-cb = Callback()
 
 templates = {"@": "%(color).2d│ 02%(title)s\n%(color).2d│ 03↗ %(url)s\n%(color).2d│ %(description)s",
              ".": "%(color).2d│ %(title)s 12↗ %(url)s",
@@ -19,11 +17,11 @@ deflines = {"@": 1,
             ".": 1,
             "!": 4}
 
-@cb.threadsafe
-@cb.command(["google", "search"], "(-\d\s+)?(.+)", private="!", public=".@",
+@Callback.threadsafe
+@command(["google", "search"], "(-\d\s+)?(.+)", private="!", public=".@",
             usage="12Google│ Usage: !google [-NUM_RESULTS] <query>",
             error="04Google│ Error: Could not fetch google results.")
-def google(message, nresults, query):
+def google(server, message, nresults, query):
     if nresults:
         nresults = min(-int(nresults.strip()), maxlines[message.prefix])
     else:
@@ -47,5 +45,4 @@ def google(message, nresults, query):
         yield "05Google│ No results found."
 
 
-__initialise__ = cb.initialise
 __callbacks__  = {"privmsg": [google]}

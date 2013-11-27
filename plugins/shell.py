@@ -28,19 +28,18 @@ class Process(threading.Thread):
 
 class Shell(object):
 
-    def __init__(self, name, bot, printer):
+    def __init__(self, server):
+        self.stream = server.printer
         self.activeShell = False
         self.shellThread = None
-        self.stream = printer
-        self.bot = bot
 
-        bot.register("privmsg", self.trigger)
+        server.register("privmsg", self.trigger)
 
     @Callback.inline
-    def trigger(self, line):
+    def trigger(self, server, line):
         message = Message(line)
         user, target, text = message.address, message.context, message.text
-        if self.bot.is_admin(user.hostmask) and message.text.split()[0] == "$":
+        if server.is_admin(user.hostmask) and message.text.split()[0] == "$":
             args = text.split(" ", 1)[-1]
 
             if not self.activeShell:
@@ -52,7 +51,7 @@ class Shell(object):
                                              shell=True, 
                                              preexec_fn=os.setsid)
                 except OSError:
-                    self.stream.message("05bash│ Command failed.", target)
+                    server.stream.message("05bash│ Command failed.", target)
                     return
                 self.activeShell = True
                 self.shellThread = Process(shell, target, self)

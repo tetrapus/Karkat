@@ -3,75 +3,68 @@ import json
 import os
 import sys
 
-from util.irc import Callback
+from util.irc import Callback, command
 from util.text import namedtable
-from bot.threads import loadplugin, SelectiveBot
-
-
-cb = Callback()
+from bot.threads import SelectiveBot
 
 
 class ModManager(object):
 
     BLACKLIST = "blacklist.json"
 
-    def __init__(self, name, bot, stream):
-        self.bot = bot
-        self.stream = stream
-        self.name = name
-        cb.initialise(name, bot, stream)
-        bot.register("privmsg", self.list_modules)
-        bot.register("privmsg", self.unregister_modules)
-        bot.register("privmsg", self.reload_modules)
-        bot.register("privmsg", self.load_modules)
-        if isinstance(bot, SelectiveBot):
-            self.bfile = bot.get_config_dir(self.BLACKLIST)
+    def __init__(self, server):
+        server.register("privmsg", self.list_modules)
+        server.register("privmsg", self.unregister_modules)
+        server.register("privmsg", self.reload_modules)
+        server.register("privmsg", self.load_modules)
+        if isinstance(server, SelectiveBot):
+            self.bfile = server.get_config_dir(self.BLACKLIST)
             try:
-                bot.blacklist.update(json.load(open(self.bfile, "r")))
+                server.blacklist.update(json.load(open(self.bfile, "r")))
             except:
                 # File doesn't exist
-                os.makedirs(bot.get_config_dir(), exist_ok=True)
-            self.sync()
+                os.makedirs(server.get_config_dir(), exist_ok=True)
+            self.sync(server)
 
-            bot.register("privmsg", self.enable_module)
-            bot.register("privmsg", self.disable_module)
-            bot.register("privmsg", self.list_disabled)
+            server.register("privmsg", self.enable_module)
+            server.register("privmsg", self.disable_module)
+            server.register("privmsg", self.list_disabled)
         else:
             print("[Module Manager] Warning: This bot architecture does not support blacklists. Add the SelectiveBot mixin to enable blacklist support.", file=sys.stderr)
 
     # Disable/Enable plugins
 
-    def sync(self):
-        with open(self.bot.get_config_dir(self.BLACKLIST), "w") as f:
-            f.write(json.dumps(self.bot.blacklist))
+    def sync(self, server):
+        with open(self.bfile, "w") as f:
+            f.write(json.dumps(server.blacklist))
 
-    @cb.inline
-    @cb.command("disable", "([^ ]+)", private="", public=":", admin=True,
+    @Callback.inline
+    @command("disable", "([^ ]+)", private="", public=":", admin=True,
                 usage="12Module Manager│ Usage: :disable <modname>")
-    def disable_module(self, message, module):
-        blacklisted = self.bot.blacklist.setdefault(self.bot.lower(message.context), self.bot.blacklist[None])
+    def disable_module(self, server, message, module):
+        blacklisted = server.blacklist.setdefault(server.lower(message.context), server.blacklist[None])
         if module not in blacklisted:
             blacklisted.append(module)
             return "12Module Manager│ Module %s disabled." % module
         else:
             return "12Module Manager│ %s is already blacklisted." % module
-        self.sync()
+        self.sync(server)
 
-    @cb.inline
-    @cb.command("enable", "([^ ]+)", private="", public=":", admin=True,
+    @Callback.inline
+    @command("enable", "([^ ]+)", private="", public=":", admin=True,
                 usage="12Module Manager│ Usage: :enable <modname>")
-    def enable_module(self, message, module):
-        blacklisted = self.bot.blacklist.setdefault(self.bot.lower(message.context), self.bot.blacklist[None])
+    def enable_module(self, server, message, module):
+        blacklisted = server.blacklist.setdefault(server.lower(message.context), server.blacklist[None])
         if module in blacklisted:
             blacklisted.remove(module)
             return "12Module Manager│ Module %s re-enabled." % module
         else:
             return "12Module Manager│ %s is not blacklisted." % module
-        self.sync()
+        self.sync(server)
 
-    @cb.command("disabled")
-    def list_disabled(self, message):
-        blacklisted = self.bot.blacklist.get(self.bot.lower(message.context), [])
+    @command("disabled")
+    def list_disabled(self, server, message):
+        blacklisted = server.blacklist.get(server.lower(message.context), [])
         if blacklisted:
             table = namedtable(blacklisted, size=72, header="Disabled modules ")
             for i in table:
@@ -81,20 +74,20 @@ class ModManager(object):
 
     # Module management plugins
 
-    def remove_modules(self, module):
+    def remove_modules(self, server, module):
         removed = []
-        for i in self.bot.callbacks:
-            for cb in [x for x in self.bot.callbacks[i] if x.name.startswith(module)]:
+        for i in server.callbacks:
+            for cb in [x for x in server.callbacks[i] if x.name.startswith(module)]:
                 removed.append(cb)
-                self.bot.callbacks[i].remove(cb)
+                server.callbacks[i].remove(cb)
         return removed
 
 
-    @cb.command(["modules", "plugins"], "(.*)", 
+    @command(["modules", "plugins"], "(.*)", 
                 admin=True) # NTS: Figure out how this function signature works
-    def list_modules(self, message, filter):
+    def list_modules(self, server, message, filter):
         modules = set()
-        for key, ls in list(self.bot.callbacks.items()):
+        for key, ls in list(server.callbacks.items()):
             modules |= {i.module.__name__ for i in ls}
         table = namedtable([i for i in modules if i.startswith(filter)] or ["No matches."],
                            size=72,
@@ -102,12 +95,12 @@ class ModManager(object):
         for i in table:
             yield i
 
-    @cb.inline
-    @cb.command("unload", "(.+)", 
+    @Callback.inline
+    @command("unload", "(.+)", 
                 admin=True, 
                 usage="12Module Manager│ Usage: [!@]unload <module>")
-    def unregister_modules(self, message, module):
-        removed = {x.module for x in self.remove_modules(module)}
+    def unregister_modules(self, server, message, module):
+        removed = {x.module for x in self.remove_modules(server, module)}
         if not removed:
             yield "05Module Manager│ Module not found."
         elif len(removed) == 1:
@@ -119,14 +112,14 @@ class ModManager(object):
             for i in table:
                 yield i
 
-    @cb.inline
-    @cb.command("reload", "(.+)", 
+    @Callback.inline
+    @command("reload", "(.+)", 
                 admin=True, 
                 usage="12Module Manager│ Usage: [!@]reload <module>",
                 error="12Module Manager│ Module failed to load.")
-    def reload_modules(self, message, module):
+    def reload_modules(self, server, message, module):
         # Find and remove all callbacks
-        removed = self.remove_modules(module)
+        removed = self.remove_modules(server, module)
         reloaded = []
 
         if removed:
@@ -137,7 +130,7 @@ class ModManager(object):
                 if "__destroy__" in dir(mod):
                     mod.__destroy__()
                 imp.reload(mod)
-                loadplugin(mod, self.name, self.bot, self.stream)
+                server.loadplugin(mod)
                 reloaded.append(mod.__name__)
             if len(reloaded) == 1:
                 yield "12Module Manager│ %s reloaded." % (list(reloaded)[0])
@@ -150,12 +143,12 @@ class ModManager(object):
         else:
             yield "05Module Manager│ Module not found."
 
-    @cb.inline
-    @cb.command("load", "(.+)", 
+    @Callback.inline
+    @command("load", "(.+)", 
                 admin=True, 
                 usage="12Module Manager│ Usage: [!@]load <module>",
                 error="12Module Manager│ Module failed to load.")
-    def load_modules(self, message, module):
+    def load_modules(self, server, message, module):
         path = module.split(".")
         try:
             module = __import__(path[0])
@@ -164,7 +157,7 @@ class ModManager(object):
         except:
             return "05Module Manager│ Module failed to load."
         else:
-            loadplugin(module, self.name, self.bot, self.stream)
+            server.loadplugin(module)
             return "12Module Manager│ %s loaded." % module.__name__
 
 

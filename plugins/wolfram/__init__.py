@@ -12,7 +12,7 @@ import yaml
 from . import parser
 
 from util.services import url as URL
-from util.irc import Callback
+from util.irc import Callback, command, Message
 from util.text import striplen, spacepad, justifiedtable
 
 try:
@@ -21,9 +21,8 @@ except:
     print("Warning: Wolfram module not loaded: invalid or nonexistant api key.", file=sys.stderr)
     print("Request an apikey at https://developer.wolframalpha.com/portal/apisignup.html and place in apikeys.conf as wolfram.key.<key>")
 else:
-    def __initialise__(name, bot, printer):
-        cb = Callback()
-        cb.initialise(name, bot, printer)
+    def __initialise__(server):
+        name, bot, printer = server.name, server, server.printer
 
         class WolframAlpha(object):
 
@@ -150,9 +149,10 @@ else:
                     else:
                         return self.h_max
 
-            @cb.threadsafe
-            @Callback.msghandler
-            def shorthand_trigger(self, user, context, message):
+            @Callback.threadsafe
+            def shorthand_trigger(self, server, line):
+                message = Message(line)
+                user, context = message.address, message.context
                 pattern = re.match(r"([~`])(.*?\1 ?|([\"']).*?\3 ?|[^ ]+ )(.+)", message.text)
                 if pattern:
                     prefix, category, quoted, query = pattern.groups()
@@ -167,10 +167,10 @@ else:
 
                     printer.message(self.wolfram_format(query, category, h_max=self.getoutputsettings(target)), target, msgtype)
 
-            @cb.threadsafe
-            @cb.command(["wa", "wolfram"], "(.+)",
+            @Callback.threadsafe
+            @command(["wa", "wolfram"], "(.+)",
                         usage="05Wolfram08Alpha04⎟ Usage: [.@](wa|wolfram) 03query")
-            def trigger(self, message, query):
+            def trigger(self, server, message, query):
                 return self.wolfram_format(query, h_max=self.getoutputsettings(message.context))
 
         wa = WolframAlpha()

@@ -1,6 +1,6 @@
 from util.services.youtube import youtube as yt
 
-from util.irc import Callback
+from util.irc import Callback, command
 
 templates = {"@": "You04Tube│ %(title)s\nYou04Tube⎟ 15by %(channel)s 12↗ http://youtu.be/%(url)s",
              ".": "04│ %(title)s 12↗ http://youtu.be/%(url)s",
@@ -10,19 +10,18 @@ lines = {"@": 1,
          ".": 3,
          "!": 6}
 
-def __initialise__(name, bot, stream):
-    cb = Callback()
-    cb.initialise(name, bot, stream)
+def __initialise__(server):
+    name, bot, stream = server.name, server, server.printer
 
-    @cb.background
-    def refresh_tokens(line):
+    @Callback.background
+    def refresh_tokens(server, line):
         if yt.tokensExpired():
             yt.refresh_tokens()
 
-    @cb.command(["youtube", "yt"], "(-\d\s+)?(.+)", public=".@", private="!",
+    @command(["youtube", "yt"], "(-\d\s+)?(.+)", public=".@", private="!",
                 usage="You04Tube│ Usage: [.@]youtube [-NUM_RESULTS] <query>",
                 error="You04Tube│ Failed to get search results.")
-    def youtube(message, nresults, query):
+    def youtube(server, message, nresults, query):
         if nresults:
             nresults = min(-int(nresults.strip()), lines[message.prefix])
         else:

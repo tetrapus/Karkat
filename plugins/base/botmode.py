@@ -1,4 +1,3 @@
-def __initialise__(name, bot, stream):
-	def set_botmode(line):
-		stream.raw_message("MODE %s +B" % bot.nick)
-	bot.register("376", set_botmode)
+def set_botmode(server, line):
+	server.printer.raw_message("MODE %s +B" % server.nick)
+__callbacks__ = {"376": [set_botmode]}

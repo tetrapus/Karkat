@@ -15,26 +15,24 @@ class Allbots:
         return Allbots(self.bots, self.args + " " + d)
 
 class Interpreter(object):
-    def __init__(self, name, bot, stream):
+    def __init__(self, server):
         self.curcmd = []
         self.codeReact = 0
-        self.stream = stream
-        self.bot = bot
-        self.namespace = {"server": bot, "printer": stream, "print": stream.message, "karkat": Allbots([bot]), "main":__import__("__main__")}
+        self.namespace = {"server": server, "printer": server.printer, "print": server.printer.message, "karkat": Allbots([server]), "main":__import__("__main__")}
         self.namespace.update(sys.modules)
-        bot.register("privmsg", self.trigger)
+        server.register("privmsg", self.trigger)
 
     @Callback.inline
-    def trigger(self, line):
+    def trigger(self, server, line):
         msg = Message(line)
         args = msg.text.split(" ", 1)
-        if self.bot.is_admin(msg.address.hostmask):
+        if server.is_admin(msg.address.hostmask):
             # TODO: modify passed in namespace's stdout.
             evaluate = False
-            if msg.text == ("%s, undo" % self.bot.nick):
+            if msg.text == ("%s, undo" % server.nick):
                 # Delete the last command off the buffer
                 self.curcmd.pop()
-                self.stream.message("oh, sure", Message(line).context)
+                server.stream.message("oh, sure", Message(line).context)
             elif self.codeReact:
                 # Code is being added to the buffer.
                 # Keep building
@@ -71,12 +69,12 @@ class Interpreter(object):
                     assert "\n" not in code
                     output = eval(code, self.namespace)
                     if output != None: 
-                        self.stream.message(str(output), msg.context)
+                        server.stream.message(str(output), msg.context)
                 except:
                     try:
                         exec(code, self.namespace)
                     except BaseException as e:
-                        self.stream.message("\x02「\x02\x0305 oh wow\x0307 \x0315%s \x03\x02」\x02 "%(repr(e)[:repr(e).find("(")]) + str(e), msg.context)
+                        server.stream.message("\x02「\x02\x0305 oh wow\x0307 \x0315%s \x03\x02」\x02 "%(repr(e)[:repr(e).find("(")]) + str(e), msg.context)
                 self.curcmd = []
 
 __initialise__ = Interpreter

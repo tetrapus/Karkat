@@ -10,7 +10,8 @@ from util.text import ordinal
 from util.irc import Callback, Address, Message
 
 
-def __initialise__(name, bot, printer):
+def __initialise__(server):
+    name, bot, printer = server.name, server, server.printer
     datadir = "data/CardsAgainstHumanity"
     expansiondir = bot.get_config_dir("CardsAgainstHumanity")
     if not os.path.exists(expansiondir):
@@ -66,14 +67,16 @@ def __initialise__(name, bot, printer):
     class CardsAgainstHumanity(object):
         black = [i.strip() for i in open(datadir + "/black.txt").read().split("\n")]
         white = [i.strip() for i in open(datadir + "/white.txt").read().split("\n")]
+        try:
+            expansionqs = [i.strip() for i in open(expansiondir + "/questions.txt").read().split("\n") if i.strip()]
+            expansionas = [i.strip() for i in open(expansiondir + "/answers.txt").read().split("\n") if i.strip()]
+        except IOError:
+            open(expansiondir + "/questions.txt", "w")
+            open(expansiondir + "/answers.txt", "w")
+            expansionas, expansionqs = [], []
+
 
         def __init__(self, channel, rounds=None, black=[], white=[], rando=False, numcards=10, minplayers=3, bets=True, firstto=None, ranked=False):
-            try:
-                self.loadcards()
-            except IOError:
-                open(expansiondir + "/questions.txt", "w")
-                open(expansiondir + "/answers.txt", "w")
-                self.expansionas, self.expansionqs = [], []
 
             self.lock = threading.Lock()
             self.questions = self.black[:] + black[:]
@@ -378,8 +381,8 @@ def __initialise__(name, bot, printer):
                 printer.message("00,01 15,14 01,15  Added: 01,00 %s " % (data), msg.context)
 
         @Callback.threadsafe
-        def trigger(self, sdata):
-            x = sdata.split()
+        def trigger(self, server, line):
+            x = line.split()
             channel = x[2].lower()
             nick = Address(x[0]).nick
             if not channel.startswith("#"):
@@ -429,7 +432,7 @@ def __initialise__(name, bot, printer):
                             player.printHand()
                         elif x[3].lower() in [":!choose", ":!pick"]:
                             if player != game.czar and game.state == "collect":
-                                args = sdata.split(" ", 4)[-1]
+                                args = line.split(" ", 4)[-1]
                                 if "," in args and game.bets:
                                     if player.points:
                                         args, bet = args.split(",")
@@ -473,7 +476,7 @@ def __initialise__(name, bot, printer):
                         elif x[3].lower() == ":!score":
                             game.printplayers()
             elif x[3].lower() in [":!cah", ":!cards"]:
-                args = self.parseSettings(sdata.split(" ", 4)[-1])
+                args = self.parseSettings(line.split(" ", 4)[-1])
                 self.games[channel] = CardsAgainstHumanity(channel, **args)
                 printer.message("00,01 Cards Against Humanity  will begin in a minute. Want to !join us?", channel)
                 threading.Timer(150, self.games[channel].start).start()

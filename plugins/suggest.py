@@ -1,17 +1,15 @@
 import requests
 
-from util.irc import Callback
+from util.irc import Callback, command
 from util.text import namedtable
-
-cb = Callback()
 
 def suggest(query):
     return requests.get("http://suggestqueries.google.com/complete/search?output=firefox&client=firefox&hl=en&q=%(searchTerms)s"%{"searchTerms":query}).json()[1]
 
-@cb.threadsafe
-@cb.command(["complete", "suggest"], "(.+)", 
-            usage = "12Google suggest│  Usage: [!@](complete|suggest) <query>")
-def complete_trigger(message, query):
+@Callback.threadsafe
+@command(["complete", "suggest"], "(.+)", 
+         usage = "12Google suggest│  Usage: [!@](complete|suggest) <query>")
+def complete_trigger(server, message, query):
     """
     - Syntax: [!@](complete|suggest) 03query
     - Description: Ask Google for similar search queries.
@@ -28,5 +26,4 @@ def complete_trigger(message, query):
     else:
         yield "05Google suggest│  No results."
 
-__initialise__ = cb.initialise
 __callbacks__ = {"privmsg": [complete_trigger]}
