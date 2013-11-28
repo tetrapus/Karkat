@@ -7,6 +7,7 @@ import time
 import math
 from datetime import timedelta
 import html.entities
+import random
 
 
 def lineify(data, max_size=400):
@@ -441,3 +442,15 @@ def strikethrough(text):
 
 def underline(text):
     return "\u0332".join(text) + "\u0332"
+
+swears = open("data/Vulgarities/first.txt").read().split()
+nouns = open("data/Vulgarities/second.txt").read().split()
+insults = open("data/Vulgarities/full.txt").read().split()
+
+def generate_vulgarity():
+    if random.random() < 0.05:
+        vulgarity = random.choice(insults)
+    else:
+        vulgarity = random.choice(swears) + random.choice(nouns)
+
+    return vulgarity

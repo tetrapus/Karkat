@@ -1,20 +1,8 @@
 import os
 import time
-import random
 
 from util.irc import command
-
-
-def generate_vulgarity():
-    swears = ["FUCK", "SHIT", "DICK", "TWAT", "CUNT", "FISH", "CRAP", "ASS", "TIT", "PUSSY", "COCK", "DOUCHE", "CUM", "PISS", "MAN", "CRUD"]
-    nouns = ["STAIN", "BAG", "FUCKER", "TARD", "WAFFLE", "NIPPLE", "BOOB", "BURGER", "EATER", "HOLE", "PONY", "NUTS", "JUICE", "CHODE", "SLUT", "BREATH", "WHORE", "DONKEY", "GOBBLER", "NUGGET", "BRAIN", "MUNCHER", "SUCKER", "STICK", "FACE", "TOOL", "WAGON", "WAD", "BUTT", "BUCKET", "BOX", "FLAP"]
-    swearnoun = ["DIPSHIT", "FUCKWIT", "DUMBASS", "CORNHOLE", "LIMPDICK", "PIGSHIT", "MOUTHBREATHER"]
-    if random.random() < 0.05:
-        vulgarity = random.choice(swearnoun)
-    else:
-        vulgarity = random.choice(swears) + random.choice(nouns)
-
-    return vulgarity
+from util.text import generate_vulgarity
 
 class AddGame(object):
 
