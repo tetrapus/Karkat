@@ -70,7 +70,9 @@ def ordinal(value):
 
 def ircstrip(data):
     """ Strip irc control characters from a string """
-    return re.sub(r"(\x03(\d{0,2}(,\d{1,2})?)?|\x1f|\x0f|\x16|\x02|\u0305)", "", data)
+    return re.sub(r"(\x03(\d{0,2}(,\d{1,2})?)?|\x1f|\x0f|\x16|\x02|\u0305)",
+                  "",
+                  data)
 
 def unescape(text):
     """ Parse html encoded characters """

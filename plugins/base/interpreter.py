@@ -32,7 +32,7 @@ class Interpreter(object):
             if msg.text == ("%s, undo" % server.nick):
                 # Delete the last command off the buffer
                 self.curcmd.pop()
-                server.stream.message("oh, sure", Message(line).context)
+                server.printer.message("oh, sure", Message(line).context)
             elif self.codeReact:
                 # Code is being added to the buffer.
                 # Keep building
@@ -69,12 +69,12 @@ class Interpreter(object):
                     assert "\n" not in code
                     output = eval(code, self.namespace)
                     if output != None: 
-                        server.stream.message(str(output), msg.context)
+                        server.printer.message(str(output), msg.context)
                 except:
                     try:
                         exec(code, self.namespace)
                     except BaseException as e:
-                        server.stream.message("\x02「\x02\x0305 oh wow\x0307 \x0315%s \x03\x02」\x02 "%(repr(e)[:repr(e).find("(")]) + str(e), msg.context)
+                        server.printer.message("\x02「\x02\x0305 oh wow\x0307 \x0315%s \x03\x02」\x02 "%(repr(e)[:repr(e).find("(")]) + str(e), msg.context)
                 self.curcmd = []
 
 __initialise__ = Interpreter
