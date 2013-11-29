@@ -10,32 +10,27 @@ lines = {"@": 1,
          ".": 3,
          "!": 6}
 
-def __initialise__(server):
-    name, bot, stream = server.name, server, server.printer
+@Callback.background
+def refresh_tokens(server, line):
+    if yt.tokensExpired():
+        yt.refresh_tokens()
 
-    @Callback.background
-    def refresh_tokens(server, line):
-        if yt.tokensExpired():
-            yt.refresh_tokens()
+@command(["youtube", "yt"], "(-\d\s+)?(.+)", public=".@", private="!",
+            usage="You04Tube│ Usage: [.@]youtube [-NUM_RESULTS] <query>",
+            error="You04Tube│ Failed to get search results.")
+def youtube(server, message, nresults, query):
+    if nresults:
+        nresults = min(-int(nresults.strip()), lines[message.prefix])
+    else:
+        nresults = lines[message.prefix]
 
-    @command(["youtube", "yt"], "(-\d\s+)?(.+)", public=".@", private="!",
-                usage="You04Tube│ Usage: [.@]youtube [-NUM_RESULTS] <query>",
-                error="You04Tube│ Failed to get search results.")
-    def youtube(server, message, nresults, query):
-        if nresults:
-            nresults = min(-int(nresults.strip()), lines[message.prefix])
-        else:
-            nresults = lines[message.prefix]
+    results = yt.search(query, results=nresults)
 
-        results = yt.search(query, results=nresults)
+    for i in results:
+        data = {"title": i["snippet"]["title"],
+                "channel": i["snippet"]["channelTitle"],
+                "url": i["id"]["videoId"]}
+        yield templates[message.prefix] % data
 
-        for i in results:
-            data = {"title": i["snippet"]["title"],
-                    "channel": i["snippet"]["channelTitle"],
-                    "url": i["id"]["videoId"]}
-            yield templates[message.prefix] % data
-
-        
-
-    bot.register("privmsg", youtube)
-    bot.register("ALL", refresh_tokens) # keep tokens current
+__callbacks__ = {"privmsg": [youtube],
+                 "ALL": [refresh_tokens]}
