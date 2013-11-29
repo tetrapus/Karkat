@@ -1,9 +1,14 @@
+"""
+Interprets python statements.
+"""
+
 import sys
 
 from util.irc import Message, Callback
 
 
-class Allbots:
+class Allbots(object):
+    """ Construct IRC messages from python dot syntax. """
     def __init__(self, bots, args = ""):
         self.bots = bots
         self.args = args
@@ -11,41 +16,52 @@ class Allbots:
         pref = self.args + (" " * bool(self.args))
         for i in self.bots:
             i.sendline(pref + (" ".join(data)))
-    def __getattr__(self, d):
-        return Allbots(self.bots, self.args + " " + d)
+    def __getattr__(self, word):
+        return Allbots(self.bots, self.args + " " + word)
 
 class Interpreter(object):
+    """ Builds chunks of python code to execute. """
+
     def __init__(self, server):
         self.curcmd = []
-        self.codeReact = 0
-        self.namespace = {"server": server, "printer": server.printer, "print": server.printer.message, "karkat": Allbots([server]), "main":__import__("__main__")}
+        self.building = 0
+        self.namespace = {"server": server, 
+                          "printer": server.printer, 
+                          "print": server.printer.message, 
+                          "karkat": Allbots([server]), 
+                          "main":__import__("__main__")}
         self.namespace.update(sys.modules)
         server.register("privmsg", self.trigger)
+
+    def get_stdout(self, server, target):
+        def message(text):
+            server.printer.message(text, target)
+        return message
 
     @Callback.inline
     def trigger(self, server, line):
         msg = Message(line)
         args = msg.text.split(" ", 1)
         if server.is_admin(msg.address.hostmask):
-            # TODO: modify passed in namespace's stdout.
+            self.namespace["print"] = self.get_stdout(server, msg.context)
             evaluate = False
             if msg.text == ("%s, undo" % server.nick):
                 # Delete the last command off the buffer
                 self.curcmd.pop()
                 server.printer.message("oh, sure", Message(line).context)
-            elif self.codeReact:
+            elif self.building:
                 # Code is being added to the buffer.
                 # Keep building
                 if '"""' in msg.text:
                     # Is the end of the input somewhere in the text?
-                    self.codeReact = 0
+                    self.building = 0
                     evaluate = True
                 self.curcmd.append(msg.text.split('"""', 1)[0])
                 
             elif '"""' in msg.text:
                 # Enable code building.
                 #TODO: Generalise
-                self.codeReact = 1
+                self.building = 1
                 act = msg.text.split('"""', 1)[-1]
                 if act:
                     self.curcmd = [act]
@@ -61,7 +77,7 @@ class Interpreter(object):
                     self.curcmd.append(act)
                     evaluate = True
             if evaluate:
-                code = "\n".join(self.curcmd)#"\n".join([re.sub("\x02(.+?)(\x02|\x0f|$)", "self.stream.message(\\1, %r)" % msg.context, i) for i in self.curcmd])
+                code = "\n".join(self.curcmd)
                 print("-------- Executing code --------")
                 print(code)
                 print("--------------------------------")
@@ -70,11 +86,17 @@ class Interpreter(object):
                     output = eval(code, self.namespace)
                     if output != None: 
                         server.printer.message(str(output), msg.context)
-                except:
+                except BaseException:
                     try:
                         exec(code, self.namespace)
-                    except BaseException as e:
-                        server.printer.message("\x02「\x02\x0305 oh wow\x0307 \x0315%s \x03\x02」\x02 "%(repr(e)[:repr(e).find("(")]) + str(e), msg.context)
+                    except BaseException as err:
+                        # TODO: Clean this.
+                        server.printer.message(
+                            "\x02「\x02\x0305 "
+                            "oh wow"
+                            "\x0307 \x0315%s \x03\x02」\x02"
+                            % (repr(err)[:repr(err).find("(")]) + str(err), 
+                               msg.context)
                 self.curcmd = []
 
 __initialise__ = Interpreter

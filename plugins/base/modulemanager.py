@@ -30,36 +30,40 @@ class ModManager(object):
             server.register("privmsg", self.disable_module)
             server.register("privmsg", self.list_disabled)
         else:
-            print("[Module Manager] Warning: This bot architecture does not support blacklists. Add the SelectiveBot mixin to enable blacklist support.", file=sys.stderr)
+            print("[Module Manager] Warning: This bot architecture does not "
+                  "support blacklists. Add the SelectiveBot mixin to enable "
+                  "blacklist support.", file=sys.stderr)
 
     # Disable/Enable plugins
 
     def sync(self, server):
-        with open(self.bfile, "w") as f:
-            f.write(json.dumps(server.blacklist))
+        with open(self.bfile, "w") as bf:
+            bf.write(json.dumps(server.blacklist))
 
     @Callback.inline
     @command("disable", "([^ ]+)", private="", public=":", admin=True,
                 usage="12Module Manager│ Usage: :disable <modname>")
-    def disable_module(self, server, message, module):
-        blacklisted = server.blacklist.setdefault(server.lower(message.context), server.blacklist[None])
-        if module not in blacklisted:
-            blacklisted.append(module)
-            return "12Module Manager│ Module %s disabled." % module
+    def disable_module(self, server, message, mod):
+        blacklisted = server.blacklist.setdefault(server.lower(message.context), 
+                                                  server.blacklist[None])
+        if mod not in blacklisted:
+            blacklisted.append(mod)
+            return "12Module Manager│ Module %s disabled." % mod
         else:
-            return "12Module Manager│ %s is already blacklisted." % module
+            return "12Module Manager│ %s is already blacklisted." % mod
         self.sync(server)
 
     @Callback.inline
     @command("enable", "([^ ]+)", private="", public=":", admin=True,
                 usage="12Module Manager│ Usage: :enable <modname>")
-    def enable_module(self, server, message, module):
-        blacklisted = server.blacklist.setdefault(server.lower(message.context), server.blacklist[None])
-        if module in blacklisted:
-            blacklisted.remove(module)
-            return "12Module Manager│ Module %s re-enabled." % module
+    def enable_module(self, server, message, mod):
+        blacklisted = server.blacklist.setdefault(server.lower(message.context), 
+                                                  server.blacklist[None])
+        if mod in blacklisted:
+            blacklisted.remove(mod)
+            return "12Module Manager│ Module %s re-enabled." % mod
         else:
-            return "12Module Manager│ %s is not blacklisted." % module
+            return "12Module Manager│ %s is not blacklisted." % mod
         self.sync(server)
 
     @command("disabled")
@@ -68,28 +72,29 @@ class ModManager(object):
         if blacklisted:
             table = namedtable(blacklisted, size=72, header="Disabled modules ")
             for i in table:
-                yield
+                yield i
         else:
             yield "12Module Manager│ Blacklist is empty."
 
     # Module management plugins
 
-    def remove_modules(self, server, module):
+    def remove_modules(self, bot, mod):
         removed = []
-        for i in server.callbacks:
-            for cb in [x for x in server.callbacks[i] if x.name.startswith(module)]:
+        for i in bot.callbacks:
+            for cb in [x for x in bot.callbacks[i] if x.name.startswith(mod)]:
                 removed.append(cb)
-                server.callbacks[i].remove(cb)
+                bot.callbacks[i].remove(cb)
         return removed
 
 
     @command(["modules", "plugins"], "(.*)", 
                 admin=True) # NTS: Figure out how this function signature works
-    def list_modules(self, server, message, filter):
+    def list_modules(self, server, message, mask):
         modules = set()
         for key, ls in list(server.callbacks.items()):
             modules |= {i.module.__name__ for i in ls}
-        table = namedtable([i for i in modules if i.startswith(filter)] or ["No matches."],
+        table = namedtable([i for i in modules 
+                              if i.startswith(mask)] or ["No matches."],
                            size=72,
                            header="Loaded modules ")
         for i in table:
@@ -133,7 +138,7 @@ class ModManager(object):
                 server.loadplugin(mod)
                 reloaded.append(mod.__name__)
             if len(reloaded) == 1:
-                yield "12Module Manager│ %s reloaded." % (list(reloaded)[0])
+                yield "12Module Manager│ %s reloaded." % (reloaded[0])
             else:
                 table = namedtable(reloaded,
                                    size=72,
