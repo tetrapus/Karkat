@@ -34,7 +34,7 @@ def __initialise__(server):
         wordsep = "/.:^&*|+=-?,_()"
 
         literalprefixes = ".!/@<`:~=+"
-        dataprefixes = "#$<[/"
+        dataprefixes = list("#$<[/") + ["r/", "u/", "http://"]
         contractions = ["s", "d", "ve", "nt", "m"]
 
         def __init__(self):
@@ -79,7 +79,7 @@ def __initialise__(server):
                 return False
 
             # words prefixed with the following are not real words
-            if word[0] in cls.dataprefixes:
+            if any(word.startswith(i) for i in cls.dataprefixes):
                 return False
 
             # words with unicode in them are not words
@@ -90,7 +90,7 @@ def __initialise__(server):
 
         @classmethod
         def isLiteral(cls, sentence):
-            return not sentence or sentence[0] in cls.literalprefixes
+            return not any(sentence.startswith(i) for i in cls.literalprefixes)
 
         @classmethod
         def spellcheck(cls, sentence):
