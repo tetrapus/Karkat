@@ -17,6 +17,7 @@ Options:
 import socket
 import sys
 import subprocess
+from collections import deque
 
 import docopt
 
@@ -42,28 +43,28 @@ def main():
         server.restart = True
     server.connect()
 
-    modules = args["--plugins"].split(",")
-    for mod in modules:
-        try: 
-            __import__(mod)
+    plugins = deque(args["--plugins"].split(","))
+    loaded = []
+
+    while plugins:
+        plugin = plugins.popleft()
+        try:
+            __import__(plugin)
+            module = sys.modules[plugin]
         except ImportError:
-            print("Warning: %s not loaded." % (mod))
-            modules.remove(mod)
+            print("Warning: %s not loaded." % (plugin))
+        else:
+            if "__modules__" in dir(module):
+                plugins.extend("%s.%s" % (plugin, i) for i in module.__modules__)
+            loaded.append(module)
 
-    modules = [sys.modules[i] for i in modules]
-
-    while modules:
-        mod = modules.pop()
-        if mod.__name__ in exclude:
-            print("Skipping %s" % mod.__name__)
+    for module in loaded:
+        if module.__name__ in exclude:
+            print("Skipping %s" % module.__name__)
             continue
-        if "__modules__" in dir(mod):
-            # Subpackage. Import submodules.
-            for submodule in mod.__modules__:
-                modules.append(submodule)
 
-        print("Loading %s" % mod.__name__)
-        server.loadplugin(mod)
+        print("Loading %s" % module.__name__)
+        server.loadplugin(module)
 
     if args["--identify"]:
         def authenticate(server, line):
