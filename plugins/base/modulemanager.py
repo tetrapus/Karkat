@@ -93,7 +93,7 @@ class ModManager(object):
         modules = set()
         for key, ls in list(server.callbacks.items()):
             modules |= {i.module.__name__ for i in ls}
-        table = namedtable([i for i in modules 
+        table = namedtable([i.split(".")[-1] for i in modules 
                               if i.startswith(mask)] or ["No matches."],
                            size=72,
                            header="Loaded modules ")

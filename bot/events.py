@@ -151,7 +151,7 @@ def command(name=None,
                                     if rval is not None:
                                         with output as out:
                                             out += rval
-                    except Callback.ERROR as e:
+                    except tuple(errors.keys()) as e:
                         for error in errors:
                             if issubclass(e, error):
                                 with output as out:

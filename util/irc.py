@@ -47,7 +47,9 @@ class Command(Message):
             self.arg, self.argv = None, None
 
 class Callback(object):
-    # TODO: shuffle methods with EventHandler
+    """ This class defines decorators for callbacks. """
+    # TODO: turn into a module.
+
     @staticmethod
     def threadsafe(funct):
         funct.isThreadsafe = True

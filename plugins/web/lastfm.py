@@ -5,7 +5,7 @@ import os
 import re
 import sys
 import time
-import urllib.parse as urllib
+from urllib.parse import quote_plus, urlencode
 
 import requests
 import yaml
@@ -21,16 +21,41 @@ try:
     apikeys = yaml.safe_load(open("config/apikeys.conf"))["last.fm"]
 
 except ImportError:
-    print("[%s] Error: pylast is a dependency, install with\n$ pip install pylast" % __name__, file=sys.stderr)
+    print("[%s] Error: pylast is a dependency, install with\n"
+          "$ pip install pylast" % __name__, 
+          file=sys.stderr)
     raise
 except:
     print("Error: invalid or nonexistant last.fm api key.", file=sys.stderr)
     raise ImportError("Could not load module.")
 
+class YTFallback(object):
+    API_URL = "https://gdata.youtube.com/feeds/api/videos?q=%s&alt=json"
+
+    @staticmethod
+    def get_music_video(query):
+        data = requests.get(YTFallback.API_URL % quote_plus(query)).json()
+        title = data["feed"]["entry"][0]["title"]["$t"]
+        link = data["feed"]["entry"][0]["link"][0]["href"]
+        link = re.findall("v=(.+)&", link)[0]
+
+        if YTFallback.is_match(query, title):
+            return (title, link)
+
+    @staticmethod
+    def is_match(query, result):
+        # Quick heuristic: test if there are common words between the titles
+        query, title = query.split(), result.split()
+        qfilter = {"".join(filter(str.isalpha, i)).lower() for i in query}
+        qtfilter = {"".join(filter(str.isalpha, i)).lower() for i in query}
+        tfilter = {"".join(filter(str.isalpha, i)).lower() for i in title}
+        common = len({i for i in qfilter & tfilter if len(i) > 2})
+        return common >= 2 and qtfilter & tfilter
+
 try:
     from util.services import youtube
 except ImportError:
-    yt = None
+    yt = YTFallback
     print("Warning: Youtube module not loaded, using slow heuristic version.")
 else:
     yt = youtube.youtube
@@ -38,6 +63,8 @@ else:
 class LastFM(object):
 
     FILENAME = "lastfm_users.json"
+    COMPARE_FILE = "lastfm_compare.json"
+    API_URL = "http://ws.audioscrobbler.com/2.0/?"
 
     def __init__(self, server):
         self.userfile = server.get_config_dir(self.FILENAME)
@@ -61,20 +88,7 @@ class LastFM(object):
 
     @staticmethod
     def get_youtube(query):
-        if yt is None:
-            data  = requests.get("https://gdata.youtube.com/feeds/api/videos?q=%s&alt=json" % urllib.quote_plus(query)).text
-            data  = json.loads(data)
-            title = data["feed"]["entry"][0]["title"]["$t"]
-            data  = data["feed"]["entry"][0]["link"][0]["href"]
-            data  = re.findall("v=(.+)&", data)[0]
-            # Quick heuristic: test if there are common words between the titles
-            qfilter = {"".join(filter(str.isalpha, i)).lower() for i in query.split()}
-            qtfilter = {"".join(filter(str.isalpha, i)).lower() for i in query.split()}
-            tfilter = {"".join(filter(str.isalpha, i)).lower() for i in title.split()}
-            if len({i for i in qfilter & tfilter if len(i) > 2}) >= 2 and qtfilter & tfilter:
-                return url.format("http://youtu.be/" + data)
-        else:
-            return url.format("http://youtu.be/" + yt.get_music_video(query)[1]) # Don't check title for now.
+        return url.format("http://youtu.be/" + yt.get_music_video(query)[1])
 
     @staticmethod
     def get_listens(username, mbid):
@@ -82,12 +96,12 @@ class LastFM(object):
         trackdata = {}
         colors = [1, 14, 15]
         try:
-            args = urllib.urlencode({"method": "track.getInfo",
-                                     "api_key": apikeys["key"],
-                                     "mbid": mbid,
-                                     "username": username,
-                                     "format": "json"})
-            extradata = requests.get("http://ws.audioscrobbler.com/2.0/?" + args).json()["track"]
+            args = urlencode({"method": "track.getInfo",
+                              "api_key": apikeys["key"],
+                              "mbid": mbid,
+                              "username": username,
+                              "format": "json"})
+            extradata = requests.get(LastFM.API_URL + args).json()["track"]
             
             trackdata["loved"] = "04♥ · " * int(extradata["userloved"])
             listens, listeners, scrobbled = [int(extradata[x]) for x in ("userplaycount", "listeners", "playcount")]
@@ -272,6 +286,12 @@ class LastFM(object):
                 common += " and %s" % artists.pop(0).name
             else:
                 overflow = (" and %d+ more" % len(artists)) * bool(len(artists))
+
+        # Cache results.
+        with open(server.get_config_dir(self.COMPARE_FILE), "rw") as compfile:
+            data = json.load(compfile)
+            data.update({sorted(users): tasteometer})
+            json.dump(data, compfile)
 
         yield "04Last.FM│ %s ⟺ %s: %.2d%.1f%% compatible" % (users_display[0], users_display[1], [4, 7, 8, 9, 3][int(tasteometer * 4.95)], tasteometer * 100)
         yield "04Last.FM│ %s%s in common." % (common, overflow)
