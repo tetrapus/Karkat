@@ -34,14 +34,14 @@ class AutoJoin(object):
     def join(self, server, line):
         """ Joins all saved channels on connect. """
         if self.chans:
-            server.printer.raw_message("JOIN :%s" % (",".join(self.chans)))
+            server.sendline("JOIN :%s" % (",".join(self.chans)))
 
     @Callback.threadsafe
     def invited(self, server, line):
         """ Joins a channel when invited by an admin. """
         words = line.split()
         if server.is_admin(words[0]) or server.isIn(words[3][1:], self.chans):
-            server.printer.raw_message("JOIN %s" % words[3])
+            server.sendline("JOIN %s" % words[3])
 
     @command("autojoin", public=":", private="")
     def trigger(self, server, msg):

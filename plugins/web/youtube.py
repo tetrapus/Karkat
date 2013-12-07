@@ -2,13 +2,13 @@ from util.services.youtube import youtube as yt
 
 from util.irc import Callback, command
 
-templates = {"@": "You04Tube│ %(title)s\nYou04Tube⎟ 15by %(channel)s 12↗ http://youtu.be/%(url)s",
+templates = {"@": "You04Tube│ %(title)s\nYou04Tube│ 15by %(channel)s 12↗ http://youtu.be/%(url)s",
              ".": "04│ %(title)s 12↗ http://youtu.be/%(url)s",
-             "!": "You04Tube│ %(title)s\nYou04Tube⎟ 15by %(channel)s 12↗ http://youtu.be/%(url)s"}
+             "!": "You04Tube│ %(title)s\nYou04Tube│ 15by %(channel)s 12↗ http://youtu.be/%(url)s"}
 
 lines = {"@": 1,
-         ".": 3,
-         "!": 6}
+         ".": 1,
+         "!": 3}
 
 @Callback.background
 def refresh_tokens(server, line):

@@ -130,6 +130,7 @@ class Printer(WorkerThread):
         self.flush = False
         self.bot = connection
         self.verbosity = self.TYPE_ONLY | self.QUEUE_STATE
+        self.servername = connection.server[0]
 
     def send(self, message):
         """
@@ -162,7 +163,7 @@ class Printer(WorkerThread):
                     output = data.split()[0]
                 else:
                     output = ircstrip(data)
-                sys.stdout.write("%s ← %s" % (self.bot.server[0], output))
+                sys.stdout.write("%s ← %s" % (self.servername, output))
             if self.work.qsize() and self.verbosity & self.QUEUE_STATE:
                 sys.stdout.write(" ⬩ %d messages queued." % self.work.qsize())
             print()
@@ -255,6 +256,27 @@ class ColourPrinter(Printer):
         return msg
 
 
+class MultiPrinter(ColourPrinter):
+    def __init__(self, bot):
+        super().__init__(bot)
+        self.bots = [bot]
+        self.outmap = {}
+
+    def send(self, message):
+        words = message.split(" ", 2)
+        if words[0].lower() not in ["notice", "privmsg"] or len(words) != 3 or words[1].startswith("#") or len(self.bots) == 1:
+            bot = 0
+        elif words[1] in self.outmap:
+            bot = self.outmap[words[1]]
+        else:
+            bot = min(range(len(self.bots)), key=lambda x: list(self.outmap.values()).count(x))
+            self.outmap[words[1]] = bot
+        sys.stdout.write("[%d] " % bot)
+        self.bots[bot].sendline(message)
+
+    def add(self, bot):
+        self.bots.append(bot)
+
 class InlineQueue(object):
     @staticmethod
     def queue(handler, args):
@@ -328,7 +350,7 @@ class Caller(WorkerThread):
         assert self.work.qsize() == 0
 
 class Connection(threading.Thread, object):
-    def __init__(self, conf):
+    def __init__(self, conf, debug=None):
         super().__init__()
         config = yaml.safe_load(open(conf))
         self.sock = None
@@ -347,14 +369,10 @@ class Connection(threading.Thread, object):
         self.connected = False
         self.restart = False
 
-        # TODO: replace with options
-        if "-d" in sys.argv:
-            flag = sys.argv.index("-d")
-            try:
-                thresh = float(sys.argv[flag+1])
-            except (IndexError, ValueError):
-                thresh = 0.15
-            self.buff = TimerBuffer(thresh)
+        self.printer = MultiPrinter(self)
+
+        if debug is not None:
+            self.buff = TimerBuffer(debug)
         else:
             self.buff = Buffer()
 
@@ -393,7 +411,6 @@ class Connection(threading.Thread, object):
                 continue
             break
         self.connected = True
-        self.printer = ColourPrinter(self)
         self.printer.start()
         print("Connected.")
 
@@ -472,8 +489,8 @@ class EventHandler(object):
 
 class Bot(Connection):
 
-    def __init__(self, conf):
-        super().__init__(conf)
+    def __init__(self, conf, **kwargs):
+        super().__init__(conf, **kwargs)
         self.callbacks = {"ALL": [], "DIE":[]}
         self.register("ping", self.pong)
 
@@ -518,7 +535,7 @@ class Bot(Connection):
     def cleanup(self):
         super().cleanup()
         for funct in self.callbacks["DIE"]:
-            funct()
+            funct(self)
         print("Cleaned up.")
 
         for c in self.callers: c.terminate()
@@ -614,8 +631,8 @@ class Bot(Connection):
             print("        Registered destructor: %s" % mod.__destroy__.__name__)
 
 class SelectiveBot(Bot):
-    def __init__(self, conf):
-        super().__init__(conf)
+    def __init__(self, conf, **kwargs):
+        super().__init__(conf, **kwargs)
         self.blacklist = {None:[]}
 
     def execute(self, handler, line):
@@ -638,8 +655,8 @@ class StatefulBot(SelectiveBot):
     #       See xchat docs for interface ideas.
     # TODO: Fix nickname case rules and do sanity checking
 
-    def __init__(self, conf):
-        super().__init__(conf)
+    def __init__(self, conf, **kwargs):
+        super().__init__(conf, **kwargs)
         self.channels = {}
         self.server_settings = {}
         self.away = None

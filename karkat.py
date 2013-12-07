@@ -12,6 +12,7 @@ Options:
     -i PASSWORD, --identify=PASSWORD    Identify with the given password
     -a --auth                           Auth instead of identify
     -r --restart                        Restart on disconnect
+    -c NUM, --connections=NUM           Number of output connections [default: 1]
 """
 
 import socket
@@ -21,7 +22,7 @@ from collections import deque
 
 import docopt
 
-from bot.threads import StatefulBot, Printer
+from bot.threads import StatefulBot, Printer, Bot
 from util.irc import Callback
 
 __version__ = 2.0
@@ -38,7 +39,26 @@ def main():
     """
     args = docopt.docopt(__doc__ % {"name": sys.argv[0]}, version=__version__)
     exclude = args["--exclude"].split(",") if args["--exclude"] else []
-    server = StatefulBot(args["<config>"])
+
+    if args["--debug"]:
+        debug = 0.15
+    else:
+        debug = None
+
+    server = StatefulBot(args["<config>"], debug=debug)
+
+    if int(args["--connections"]) > 1:
+        def cleanup(output):
+            output.connected = False
+            output.cleanup()
+
+        outputs = [Bot(args["<config>"]) for i in range(int(args["--connections"])-1)]
+        for output in outputs:
+            output.connect()
+            server.printer.add(output)
+            server.register("DIE", cleanup)
+            output.start()
+
     if args["--restart"]:
         server.restart = True
     server.connect()

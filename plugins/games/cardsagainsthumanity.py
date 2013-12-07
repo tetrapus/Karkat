@@ -7,13 +7,15 @@ import sys
 import os
 
 from util.text import ordinal
-from util.irc import Callback, Address, Message
+from util.irc import Callback, Address, Message, command
 
+CAHPREFIX = "00,01 15,14 01,15  "
+instances = []
 
 def __initialise__(server):
-    name, bot, printer = server.name, server, server.printer
+    printer = server.printer
     datadir = "data/CardsAgainstHumanity"
-    expansiondir = bot.get_config_dir("CardsAgainstHumanity")
+    expansiondir = server.get_config_dir("CardsAgainstHumanity")
     if not os.path.exists(expansiondir):
         os.makedirs(expansiondir, exist_ok=True)
     if not os.path.exists(expansiondir + "/statistics.db"):
@@ -60,9 +62,15 @@ def __initialise__(server):
         
         def printHand(self):
             with printer.buffer(self.nick, "NOTICE") as buffer:
-                for i, card in enumerate(self.hand):
-                    buffer += "00,01 15,14 01,15  %d. %s" % (i+1, card[0].upper() + card[1:])
-                buffer += "00,01 15,14 01,15  You have %d points." % self.points
+                for i in self.getHand():
+                    buffer += i
+
+        def getHand(self):
+            lines = []
+            for i, card in enumerate(self.hand):
+                lines.append(CAHPREFIX + "%d. %s" % (i+1, card[0].upper() + card[1:]))
+            lines.append(CAHPREFIX + "You have %d point%s." % (self.points, "" if self.points == 1 else "s"))
+            return lines
 
     class CardsAgainstHumanity(object):
         black = [i.strip() for i in open(datadir + "/black.txt").read().split("\n")]
@@ -93,7 +101,7 @@ def __initialise__(server):
             self.maxcards = numcards
             self.minplayers = minplayers
             self.bets = not ranked or bets
-            self.firstto = None
+            self.firstto = firstto
             self.ranked = ranked
             
             self.players = []
@@ -165,7 +173,7 @@ def __initialise__(server):
                 try:
                     card = self.answers.pop()
                 except IndexError:
-                    printer.message("00,01 15,14 01,15  Reshuffling deck...", self.channel)
+                    printer.message(CAHPREFIX + "Reshuffling deck...", self.channel)
                     self.answers = self.usedanswers[:]
                     self.usedanswers = []
                     random.shuffle(self.answers)
@@ -186,7 +194,7 @@ def __initialise__(server):
             elif x.group(1) == "^":
                 return sub.upper()
             elif x.group(1) == "*":
-                return "" + (" ".join(i[0].upper() + i[1:] for i in sub[1:].split()))
+                return "" + (" ".join(i[0].upper() + i[1:] for i in sub[1:].split())) + ""
             else:
                 return x.group(1) + sub[:2].upper() + sub[2:]
                
@@ -204,7 +212,7 @@ def __initialise__(server):
             else: return len(re.findall("_+", self.question))
                 
         def printplayers(self):
-            printer.message("00,01 15,14 01,15  Scores: " + (", ".join("%s - %s"%(i.nick if i != self.czar else "%s"%i.nick, i.score()) for i in sorted(self.players, key=CAHPlayer.score)[::-1])), self.channel)
+            printer.message(CAHPREFIX + "Scores: " + (", ".join("%s - %s"%(i.nick if i != self.czar else "%s"%i.nick, i.score()) for i in sorted(self.players, key=CAHPlayer.score)[::-1])), self.channel)
             
         def chooseprompt(self, rnum, forcenext=False): 
             if self.state == "collect" and self.round == rnum:
@@ -219,9 +227,9 @@ def __initialise__(server):
                     if not i.responses:
                         self.remove(i)
                 self.judge()
-                if self.isEndGame(): self.endgame()
             
         def endgame(self):
+            if self.state == "failed": return
             self.state = "failed"
             with printer.buffer(self.channel) as buffer:
                 buffer += "00,01 Cards Against Humanity  is over!"
@@ -231,7 +239,7 @@ def __initialise__(server):
                         rank = "    "
                     else:
                         rank = ordinal(i+1) + ":"
-                    buffer += "00,01 15,14 01,15  %s %s - %d points" % (rank, player.nick, player.score())
+                    buffer += CAHPREFIX + "%s %s - %d points" % (rank, player.nick, player.score())
      
         def isEndGame(self):
             return not (self.questions) or (self.rounds and self.round >= self.rounds) or len(self.players) < self.minplayers or (self.firstto and any(i.score() >= self.firstto for i in self.players))
@@ -250,10 +258,11 @@ def __initialise__(server):
             self.round += 1
             
             self.printplayers()
-            printer.message("00,01 15,14 01,15  %s will be the Card Czar for Round %d." % (self.czar.nick, self.round), self.channel)
+            time.sleep(2.5)
+            printer.message(CAHPREFIX + "%s will be the Card Czar for Round %d%s." % (self.czar.nick, self.round, "of %d" % self.rounds if self.rounds else ""), self.channel)
             self.question = self.questions.pop()
             printer.message("00,01 %s " % re.sub("[*^]_+", "_______", self.question), self.channel)
-            
+            time.sleep(1)
             numanswers = self.numcards()
             numanswers = "a card" if numanswers == 1 else ("%d cards" % numanswers)
 
@@ -262,10 +271,10 @@ def __initialise__(server):
                 if player == self.rando:
                     player.setResponses(random.sample(list(range(1, len(player.hand)+1)), self.numcards()))
                 elif player != self.czar:
-                    printer.message("00,01 15,14 01,15  Please !choose %s." % numanswers, player.nick, "NOTICE")
+                    printer.message(CAHPREFIX + "Please !choose %s." % numanswers, player.nick, "NOTICE")
                     player.printHand()
                 else:
-                    printer.message("00,01 15,14 01,15  You're the Card Czar! Once all the responses to come in, you can pick the best.", player.nick, "NOTICE")
+                    printer.message(CAHPREFIX + "You're the Card Czar! Once all the responses to come in, you can pick the best.", player.nick, "NOTICE")
 
             threading.Timer(75, self.chooseprompt, args=(self.round,)).start()
 
@@ -275,7 +284,7 @@ def __initialise__(server):
                 random.shuffle(self.order)
                 
                 with printer.buffer(self.channel) as buffer:
-                    buffer += "00,01 15,14 01,15  All cards are in. %s, please pick the best %s" % (self.czar.nick, "response." if not self.ranked or len(self.players) < 4 else "%d responses." % min(len(self.players) - 2, 3))
+                    buffer += CAHPREFIX + "All cards are in. %s, please pick the best %s" % (self.czar.nick, "response." if not self.ranked or len(self.players) < 4 else "%d responses." % min(len(self.players) - 2, 3))
                     for i, player in enumerate(self.order):
                         response = player.responses if self.order.index(player) == i else player.bets
                         buffer += "00,01 15,14 01,15  %d. %s" % (i+1, self.substitute(response))
@@ -310,7 +319,7 @@ def __initialise__(server):
             try:
                 self.logwinner([number-1] if type(number) == int else [i-1 for i in number])
             except sqlite3.ProgrammingError:
-                sys.__stdout__.write("sqlite3 error\n")
+                sys.stderr.write("sqlite3 error\n")
 
             with printer.buffer(self.channel) as buff:
                 if self.ranked:
@@ -318,7 +327,7 @@ def __initialise__(server):
                     for i, choice in enumerate(number):
                         player = self.order[choice - 1]
                         response = player.popResponses() if self.order.index(player) == choice - 1 else player.popBets()
-                        buff += "00,01 15,14 01,15  %s. %s: 00,01 %s " % (ordinal(i+1), player.nick, self.substitute(response))
+                        buff += CAHPREFIX + "%s. %s: 00,01 %s " % (ordinal(i+1), player.nick, self.substitute(response))
                         player.addPoints(points)
                         points -= 1
                 else:
@@ -329,16 +338,16 @@ def __initialise__(server):
                     winner = self.order[number - 1]
                     winning = winner.popResponses() if self.order.index(winner) == number - 1 else winner.popBets()
                     winner.addPoints(points)
-                    buff += "00,01 15,14 01,15  %s picked %s's response: 00,01 %s " % (self.czar.nick, winner.nick, self.substitute(winning))
+                    buff += CAHPREFIX + "%s picked %s's response: 00,01 %s " % (self.czar.nick, winner.nick, self.substitute(winning))
                 for i in self.order:
                     response = i.popResponses() or i.popBets()
                     if response:
-                        buff += "00,01 15,14 01,15  %s: %s" % (i.nick, self.substitute(response))
+                        buff += CAHPREFIX + "%s: %s" % (i.nick, self.substitute(response))
             self.next()
         
         def remove(self, player):
             self.players.remove(player)
-            if self.state == "collect" and self.isEndGame():
+            if self.isEndGame():
                 self.endgame()
 
         
@@ -356,11 +365,26 @@ def __initialise__(server):
             return self.state == "failed"
         
     class CAHBot(object):
-        games = {}
-        lock = threading.Lock()
         
+        def __init__(self, server):
+            self.games = {}
+            self.lock = threading.Lock()
+            server.register("privmsg", self.trigger)
+            server.register("privmsg", self.custom_cards)
+            server.register("privmsg", self.remove_player)
+
+        @command("remove", "(.+)", admin=True, error="No such player.")
+        def remove_player(self, server, message, player):
+            game = self.games[message.context]
+            player = game.getPlayer(server)
+            game.remove(player)
+            yield "Removed."
+            if game.isEndGame(): game.endgame()
+            game.judge()
+
         @Callback.threadsafe
         def custom_cards(self, server, line):
+            printer = server.printer
             msg = Message(line)
             if len(msg.words) < 2:
                 return
@@ -370,7 +394,7 @@ def __initialise__(server):
                 with self.lock:
                     CardsAgainstHumanity.expansionqs.append(data)
                     CardsAgainstHumanity.savecards()
-                printer.message("00,01 15,14 01,15  Added: 00,01 %s " % (data), msg.context)
+                printer.message(CAHPREFIX + "Added: 00,01 %s " % (data), msg.context)
             elif msg.words[0] == "!A.":
                 data = msg.text.split(" ", 1)[-1]
                 data = data.strip()
@@ -378,10 +402,11 @@ def __initialise__(server):
                 with self.lock:
                     CardsAgainstHumanity.expansionas.append(data)
                     CardsAgainstHumanity.savecards()
-                printer.message("00,01 15,14 01,15  Added: 01,00 %s " % (data), msg.context)
+                printer.message(CAHPREFIX + "Added: 01,00 %s " % (data), msg.context)
 
         @Callback.threadsafe
         def trigger(self, server, line):
+            printer = server.printer
             x = line.split()
             channel = x[2].lower()
             nick = Address(x[0]).nick
@@ -393,25 +418,25 @@ def __initialise__(server):
                 with game.lock:
                     if x[3].lower() == ":!join":
                         if game.addPlayer(nick):
-                            printer.message("00,01 15,14 01,15  %s is our %s player." % (nick, ordinal(len(game.players) - bool(game.rando))), channel)
+                            printer.message(CAHPREFIX + "%s is our %s player." % (nick, ordinal(len(game.players) - bool(game.rando))), channel)
                         else:
-                            printer.message("00,01 15,14 01,15  %s is already in the game." % nick, channel)
+                            printer.message(CAHPREFIX + "%s is already in the game." % nick, channel)
                     elif x[3].lower() == ":!score":
                         game.printplayers()
                     elif x[3].lower() == ":!rando":
                         if game.rando:
-                            printer.message("00,01 15,14 01,15  Rando Cardrissian is now out of the game.", channel)
+                            printer.message(CAHPREFIX + "Rando Cardrissian is now out of the game.", channel)
                             game.removeRando()
                         else:
-                            printer.message("00,01 15,14 01,15  Rando Cardrissian is now playing.", channel)
+                            printer.message(CAHPREFIX + "Rando Cardrissian is now playing.", channel)
                             game.addRando()
                     elif game.state == "signups" and x[3][1:].lower() in ["!start", "!go", "!begin"]:
                         if len(game.players) > 2 and nick in [i.nick for i in game.players]:
                             game.start()
                         elif len(game.players) > 2:
-                            printer.message("00,01 15,14 01,15  I don't care what you think.", channel)
+                            printer.message(CAHPREFIX + "I don't care what you think.", channel)
                         else:
-                            printer.message("00,01 15,14 01,15  The game can't begin without at least 3 players.", channel)
+                            printer.message(CAHPREFIX + "The game can't begin without at least 3 players.", channel)
                     elif nick in [i.nick for i in game.players]:
                         player = game.getPlayer(nick)
                         if x[3].lower() == ":!discard" and player.points:
@@ -419,7 +444,7 @@ def __initialise__(server):
                             args = args.replace(",", " ")
                             cards = sorted(list(set(map(int, list(filter(lambda x: x.isdigit() and 1 <= int(x) <= len(player.hand), args.split()))))))[::-1]
                             if len(cards) > game.maxcards / 2:
-                                printer.message("00,01 15,14 01,15  You can't discard more than half your hand at once.", nick, "NOTICE")
+                                printer.message(CAHPREFIX + "You can't discard more than half your hand at once.", nick, "NOTICE")
                             else:
                                 for i in cards:
                                     game.answers.append(player.hand.pop(i-1))
@@ -438,7 +463,7 @@ def __initialise__(server):
                                         args, bet = args.split(",")
                                         bet = [int(i) for i in bet.strip().split()]
                                     else:
-                                        printer.message("00,01 15,14 01,15  Not enough points to bet, sorry.", nick, "NOTICE")
+                                        printer.message(CAHPREFIX + "Not enough points to bet, sorry.", nick, "NOTICE")
                                 else:
                                     bet = []
                                 args = [int(i) for i in args.split()]
@@ -449,7 +474,7 @@ def __initialise__(server):
                                     if bet:
                                         printer.message("       Backup: 00,01 %s " % game.substitute(player.bets), nick, "NOTICE")
                                 else:
-                                    printer.message("00,01 15,14 01,15  Invalid arguments.", nick, "NOTICE")
+                                    printer.message(CAHPREFIX + "Invalid arguments.", nick, "NOTICE")
                                 if not [i for i in game.players if i.responses is None and i != game.czar]:
                                     game.judge()
                             elif player == game.czar and game.state == "judge":
@@ -458,16 +483,17 @@ def __initialise__(server):
                                 elif len(x[4:]) == min(len(game.players) - 2, 3) and all([str.isdigit and 1 <= int(n) <= len(game.order) and x[4:].count(n) == 1 for n in x[4:]]) and game.ranked == True:
                                     game.pick([int(i) for i in x[4:]])
                                 else:
-                                    printer.message("00,01 15,14 01,15  Invalid arguments.", nick, "NOTICE")
+                                    printer.message(CAHPREFIX + "Invalid arguments.", nick, "NOTICE")
                                     
-                        elif x[3].lower() == ":!leave":
+                        elif x[3].lower() in [":!leave", ":!quit"]:
                             if player == game.czar and game.state == "judge":
-                                printer.message("00,01 15,14 01,15  HEY GODDAMNIT COME BACK %s" % player.nick.upper(), channel)
+                                printer.message(CAHPREFIX + "HEY GODDAMNIT COME BACK %s" % player.nick.upper(), channel)
                             else:
-                                printer.message("00,01 15,14 01,15  %s is quitting the game, quitter." % player.nick, channel)
+                                printer.message(CAHPREFIX + "%s is quitting the game, quitter." % player.nick, channel)
                                 game.remove(player)
                                 if game.state != 'failed':
                                     if player == game.czar:
+                                        # TODO: Just change the czar.
                                         for i in game.players:
                                             i.responses = None
                                             i.bets = None
@@ -488,7 +514,7 @@ def __initialise__(server):
             rounds, cards, firstto = re.search(r"\b([1-9]\d*) rounds\b", args), re.search(r"\b([5-9]|[1-9]\d+) cards\b", args), re.search(r"\bfirst to ([1-9]\d*)\b", args)
 
             if  rounds: kwargs["rounds"]  = int(rounds.group(1))
-            if   cards: kwargs["cards"]   = int(cards.group(1))
+            if   cards: kwargs["numcards"]   = int(cards.group(1))
             if firstto: kwargs["firstto"] = int(firstto.group(1))
             if "rando"       in words: kwargs["rando"]  = True
             if "ranked"      in words: kwargs["ranked"] = True
@@ -499,8 +525,6 @@ def __initialise__(server):
 
             return kwargs
 
-
-    cah = CAHBot()
-    bot.register("privmsg", cah.trigger)
-    bot.register("privmsg", cah.custom_cards)
+    global instances
+    instances.append(CAHBot(server))
 
