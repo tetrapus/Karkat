@@ -456,3 +456,7 @@ def generate_vulgarity():
         vulgarity = random.choice(swears) + random.choice(nouns)
 
     return vulgarity
+
+"""
+"▁▂▃▄▅▆▇█"
+"""

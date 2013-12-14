@@ -76,6 +76,10 @@ class LastFM(object):
             self.users = {}
             self.savefile()
 
+        if not os.path.exists(server.get_config_dir(self.COMPARE_FILE)):
+            with open(server.get_config_dir(self.COMPARE_FILE)) as conf:
+                conf.write("{}")
+
         self.network = pylast.LastFMNetwork(
             api_key    = apikeys["key"],
             api_secret = apikeys["secret"]
@@ -288,7 +292,7 @@ class LastFM(object):
                 overflow = (" and %d+ more" % len(artists)) * bool(len(artists))
 
         # Cache results.
-        with open(server.get_config_dir(self.COMPARE_FILE), "rw") as compfile:
+        with open(server.get_config_dir(self.COMPARE_FILE), "r+") as compfile:
             data = json.load(compfile)
             data.update({sorted(users): tasteometer})
             json.dump(data, compfile)
@@ -301,3 +305,5 @@ class LastFM(object):
         json.dump(self.users, open(self.userfile, "w"))
 
 __initialise__ = LastFM
+
+"▁▂▃▄▅▆▇█"

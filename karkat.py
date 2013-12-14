@@ -50,7 +50,6 @@ def main():
     if int(args["--connections"]) > 1:
         def cleanup(output):
             output.connected = False
-            output.cleanup()
 
         outputs = [Bot(args["<config>"]) for i in range(int(args["--connections"])-1)]
         for output in outputs:
