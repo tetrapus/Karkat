@@ -45,7 +45,7 @@ class ModManager(object):
                 usage="12Module Manager│ Usage: :disable <modname>")
     def disable_module(self, server, message, mod):
         blacklisted = server.blacklist.setdefault(server.lower(message.context), 
-                                                  server.blacklist[None])
+                                                  list(server.blacklist[None]))
         if mod not in blacklisted:
             blacklisted.append(mod)
             return "12Module Manager│ Module %s disabled." % mod
@@ -58,7 +58,7 @@ class ModManager(object):
                 usage="12Module Manager│ Usage: :enable <modname>")
     def enable_module(self, server, message, mod):
         blacklisted = server.blacklist.setdefault(server.lower(message.context), 
-                                                  server.blacklist[None])
+                                                  list(server.blacklist[None]))
         if mod in blacklisted:
             blacklisted.remove(mod)
             return "12Module Manager│ Module %s re-enabled." % mod
