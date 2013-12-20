@@ -77,7 +77,7 @@ class LastFM(object):
             self.savefile()
 
         if not os.path.exists(server.get_config_dir(self.COMPARE_FILE)):
-            with open(server.get_config_dir(self.COMPARE_FILE)) as conf:
+            with open(server.get_config_dir(self.COMPARE_FILE), "w") as conf:
                 conf.write("{}")
 
         self.network = pylast.LastFMNetwork(
@@ -305,5 +305,3 @@ class LastFM(object):
         json.dump(self.users, open(self.userfile, "w"))
 
 __initialise__ = LastFM
-
-"▁▂▃▄▅▆▇█"
