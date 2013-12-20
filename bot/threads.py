@@ -640,7 +640,7 @@ class SelectiveBot(Bot):
         # TODO: replace queues with something more generic.
         # Check if PRIVMSG:
         data = line.split()
-        if data[1] != "PRIVMSG" or handler.module.__name__ not in self.blacklist.get(data[2].lower(), self.blacklist[None]): 
+        if data[1] != "PRIVMSG" or not any(handler.module.__name__.startswith(i) for i in self.blacklist.get(data[2].lower(), self.blacklist[None])):
             super().execute(handler, line)
 
 

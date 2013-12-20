@@ -180,7 +180,10 @@ class CardsAgainstHumanity(object):
                 buffer += CAHPREFIX + "%s %s - %d points" % (rank, player.nick, player.score())
  
     def isEndGame(self):
-        return not (self.questions) or (self.rounds and self.round >= self.rounds) or len(self.players) < self.minplayers or (self.firstto and any(i.score() >= self.firstto for i in self.players))
+        return (not (self.questions) 
+                or (self.rounds and self.round >= self.rounds) 
+                or len(self.players) < self.minplayers 
+                or (self.firstto and any(i.score() >= self.firstto for i in self.players)))
  
     def next(self):
         if self.isEndGame():
