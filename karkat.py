@@ -67,6 +67,9 @@ def main():
 
     while plugins:
         plugin = plugins.popleft()
+        if plugin.__name__ in exclude:
+            print("Skipping %s" % plugin.__name__)
+            continue
         try:
             __import__(plugin)
             module = sys.modules[plugin]
@@ -78,9 +81,6 @@ def main():
             loaded.append(module)
 
     for module in loaded:
-        if module.__name__ in exclude:
-            print("Skipping %s" % module.__name__)
-            continue
 
         print("Loading %s" % module.__name__)
         server.loadplugin(module)
