@@ -106,7 +106,7 @@ class Callback(object):
     '''
 
 
-def command(triggers, args=None, key=str.lower, usage=None, error=None, admin=False, private=".🎄", public="@🎅"):
+def command(triggers, args=None, key=str.lower, usage=None, error=None, admin=False, private=".", public="@"):
     if type(triggers) == str:
         triggers = [triggers]
     triggers = [key(i) for i in triggers]
