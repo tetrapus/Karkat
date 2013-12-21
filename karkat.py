@@ -67,8 +67,8 @@ def main():
 
     while plugins:
         plugin = plugins.popleft()
-        if plugin.__name__ in exclude:
-            print("Skipping %s" % plugin.__name__)
+        if plugin in exclude:
+            print("Skipping %s" % plugin)
             continue
         try:
             __import__(plugin)
