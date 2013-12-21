@@ -155,6 +155,9 @@ def command(triggers, args=None, key=str.lower, usage=None, error=None, admin=Fa
                                 with output as out:
                                     out += usage
                             return
+                        except NotImplementedError:
+                            with output as out:
+                                out += "".join("\x03%s\x02 %s " %(("08,01", "01,08")[i%2], v) for i, v in enumerate("🚧 UNDER CONSTRUCTION 🚧")) + "\x03"
                     try:
                         if inspect.isgeneratorfunction(funct):
                             with output as out:

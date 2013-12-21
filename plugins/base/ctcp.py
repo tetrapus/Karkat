@@ -30,7 +30,7 @@ def __initialise__(server):
                 command = text[0].upper()
                 if command in replies:
                     stream.raw_message("NOTICE %s :\x01%s %s\x01" 
-                                        % (msg.context, 
+                                        % (msg.address.nick, 
                                            command, 
                                            replies[command].format(*text)))
 
