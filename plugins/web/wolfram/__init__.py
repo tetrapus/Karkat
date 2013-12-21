@@ -5,7 +5,6 @@ import re
 import sys
 import urllib.parse
 import urllib.request
-from functools import lru_cache
 
 import yaml 
 
@@ -61,7 +60,6 @@ class WolframAlpha(object):
 
         return data
         
-    @lru_cache(maxsize=4096)
     def wolfram(self, query):
         response = urllib.request.urlopen("http://api.wolframalpha.com/v2/query?"+urllib.parse.urlencode({"appid": apikeys["key"], "input":query, "scantimeout":str(self.timeout)}), timeout=self.timeout)
         response = etree.parse(response)
