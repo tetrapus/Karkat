@@ -1,10 +1,11 @@
 import os
 import time
 
+from bot.events import Callback
 from util.irc import command
 from util.text import generate_vulgarity
 
-class AddGame(object):
+class AddGame(Callback):
 
     ADDFILE = "addgame.txt" 
 
