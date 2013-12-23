@@ -24,6 +24,7 @@ class AddGame(Callback):
         self.history = {}
         server.register("privmsg", self.trigger)
         server.register("privmsg", self.subtract)
+        super().__init__()
 
     @command("subtract decrement multiply times halve double divide modulo tetrate power exponentiate factorial negate".split(), public=".", private="")
     def subtract(self, server, msg):
