@@ -85,7 +85,7 @@ class WolframAlpha(object):
             if self.last is not None:
                 query = query.replace("$_", self.last)
             answer = self.wolfram(query)
-            if "Result" in answer:
+            if "Result" in answer and "(" not in answer["Result"]:
                 self.last = answer["Result"]
             else:
                 self.last = "(%s)" % query
