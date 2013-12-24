@@ -1,8 +1,7 @@
 import os
 import time
 
-from bot.events import Callback
-from util.irc import command
+from bot.events import Callback, command
 from util.text import generate_vulgarity
 
 class AddGame(Callback):
@@ -22,11 +21,10 @@ class AddGame(Callback):
             open(self.addfile, "w").write(str(self.num))
 
         self.history = {}
-        server.register("privmsg", self.trigger)
-        server.register("privmsg", self.subtract)
+
         super().__init__(server)
 
-    @command("subtract decrement multiply times halve double divide modulo tetrate power exponentiate factorial negate".split(), public=".", private="")
+    @command("subtract decrement multiply times halve double divide modulo tetrate power exponentiate factorial negate".split(), prefixes=("","."))
     def subtract(self, server, msg):
         msged = msg.context
         if msged in self.msged and time.time() - self.msged[msged] < 600:
@@ -34,7 +32,7 @@ class AddGame(Callback):
         self.msged[msged] = time.time()
         return "YOU CAN ONLY ADD, %s." % generate_vulgarity()
 
-    @command("add increment".split(), public=".", private="")
+    @command("add increment".split(), prefixes=("","."))
     def trigger(self, server, msg):
         nick = server.lower(msg.address.nick)
         if nick in self.history:

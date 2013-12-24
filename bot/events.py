@@ -16,10 +16,38 @@ class Callback(object):
 
     __instances__ = []
 
-    ERROR = BaseException
-    class InvalidUsage(Exception):
+    @staticmethod
+    def threadsafe(funct):
+        funct.isThreadsafe = True
+        return funct
+
+    @staticmethod
+    def inline(funct):
+        funct.isInline = True
+        return funct
+
+    @staticmethod
+    def isInline(funct):
+        return hasattr(funct, "isInline") and funct.isInline 
+    
+    @staticmethod
+    def isThreadsafe(funct):
+        return hasattr(funct, "isThreadsafe") and funct.isThreadsafe
+    
+    @staticmethod
+    def background(funct):
+        funct.isBackground = True
+        return funct
+    
+    @staticmethod
+    def isBackground(funct):
+        return hasattr(funct, "isBackground") and funct.isBackground
+    
+
+    ERROR = Exception
+    class InvalidUsage(BaseException):
         def __init__(self, msg):
-            Exception.__init__("Arguments do not match the usage pattern.")
+            BaseException.__init__(self, "Arguments do not match the usage pattern.")
             self.msg = msg
     USAGE = InvalidUsage
 
@@ -69,8 +97,8 @@ def split_templates(templates):
     for prefix in templates:
         formatter = templates[prefix]
         if not callable(formatter):
-            formatter = lambda x: formatter % x
-        if issubclass(prefix, Callback.ERROR):
+            formatter = formatter.format
+        if issubclass(prefix, BaseException):
             errors[prefix] = formatter
         else:
             prefixes[prefix] = formatter
@@ -79,7 +107,7 @@ def split_templates(templates):
 
 def command(name=None, 
             args=None, 
-            prefixes=("!", "@"), 
+            prefixes=("!", "@."), 
             templates=None, 
             admin=None):
     if callable(name):
@@ -95,24 +123,24 @@ def command(name=None,
         elif type(name) == str:
             triggers = [name]
         else:
-            triggers = []
+            triggers = name
 
         triggers = [i.lower() for i in triggers]
 
         @functools.wraps(funct)
-        def _(*argv) -> "privmsg": 
+        def _(*argv): 
             try:
                 bot = argv[-2]
-                msg = Command(argv[-1], bot)
+                msg = Command(argv[-1])
                 user = msg.address
             except IndexError:
                 return
             else:
                 # Check if we're a bound method.
                 if len(argv) == 3:
-                    fargs = [argv[0], msg]
+                    fargs = [argv[0], bot, msg]
                 else:
-                    fargs = [msg]
+                    fargs = [bot, msg]
 
                 # Check admin permissions
                 if not (admin is None or bot.is_admin(user.hostmask) == admin):
@@ -125,11 +153,10 @@ def command(name=None,
                         output = bot.printer.buffer(user.nick, "NOTICE")
                     else:
                         output = bot.printer.buffer(msg.context, "PRIVMSG")
-
                     # Check arguments
                     try:
-                        if args is not None:
-                            try:
+                        try:
+                            if args is not None:
                                 arg = msg.text.split(" ", 1)
                                 if len(arg) == 1:
                                     arg = ""
@@ -139,25 +166,25 @@ def command(name=None,
                                     fargs.extend(list(args(arg)))
                                 else:
                                     fargs.extend(re.match(args, arg).groups())
-                            except (AttributeError, IndexError):
-                                raise Callback.InvalidUsage(bot, msg)
+                        except (AttributeError, IndexError):
+                            print(errors.keys())
+                            raise Callback.InvalidUsage(msg)
+                        else:
+                            if inspect.isgeneratorfunction(funct):
+                                with output as out:
+                                    for line in funct(*fargs):
+                                        out += line
                             else:
-                                if inspect.isgeneratorfunction(funct):
+                                rval = funct(*fargs)
+                                if rval is not None:
                                     with output as out:
-                                        for line in funct(*fargs):
-                                            out += line
-                                else:
-                                    rval = funct(*fargs)
-                                    if rval is not None:
-                                        with output as out:
-                                            out += rval
+                                        out += rval
                     except tuple(errors.keys()) as e:
                         for error in errors:
-                            if issubclass(e, error):
+                            if issubclass(e.__class__, error):
                                 with output as out:
-                                    for line in errors[error]:
-                                        out += line
+                                    out += errors[error](e)
                                 break
-
+        _.__annotations__["return"] = "privmsg"
         return _
     return decorator

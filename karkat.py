@@ -24,6 +24,7 @@ import docopt
 
 from bot.threads import StatefulBot, Printer, Bot
 from util.irc import Callback
+import util.text
 
 __version__ = 2.0
 
@@ -99,7 +100,7 @@ def main():
         @Callback.inline
         def log(server, line):
             """ Prints all inbound irc messages. """
-            print("%s → %s" % (server.server[0], line))
+            print("%s → %s" % (server.server[0], util.text.ircstrip(line)))
         server.printer.verbosity = Printer.FULL_MESSAGE | Printer.QUEUE_STATE
         server.register("ALL", log)
 

@@ -3,6 +3,7 @@ import collections
 import difflib
 import re
 import sys
+import time
 import urllib.parse
 import urllib.request
 
@@ -36,6 +37,8 @@ class WolframAlpha(object):
     def __init__(self, server):
         self.server = server
         self.printer = server.printer
+        self.last = None
+        self.cache = {}
 
         server.register("privmsg", self.shorthand_trigger)
         server.register("privmsg", self.trigger)
@@ -61,6 +64,10 @@ class WolframAlpha(object):
         return data
         
     def wolfram(self, query):
+        # Cache results for 5 minutes
+        if query in self.cache and time.time() - self.cache[query][0] > 300:
+            return self.cache[query][1]
+
         response = urllib.request.urlopen("http://api.wolframalpha.com/v2/query?"+urllib.parse.urlencode({"appid": apikeys["key"], "input":query, "scantimeout":str(self.timeout)}), timeout=self.timeout)
         response = etree.parse(response)
         data = collections.OrderedDict()
@@ -69,11 +76,19 @@ class WolframAlpha(object):
             data[title] = "\n".join([i.findtext("plaintext") or i.find("img").get("src") for i in pod.findall("subpod")])
             if not data[title].strip(): 
                 del data[title]
+        self.cache[query] = [time.time(), data]
+
         return data
         
     def wolfram_format(self, query, category=None, h_max=None):
         try:
+            if self.last is not None:
+                query = query.replace("$_", self.last)
             answer = self.wolfram(query)
+            if "Result" in answer:
+                self.last = answer["Result"]
+            else:
+                self.last = "(%s)" % query
         except urllib.error.URLError:
             return "05Wolfram08Alpha failed to respond. Try again later or go to " + URL.format(URL.shorten("http://www.wolframalpha.com/input/?i=%s" % urllib.parse.quote_plus(query)))
             

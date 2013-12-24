@@ -457,6 +457,14 @@ def generate_vulgarity():
 
     return vulgarity
 
-"""
-"▁▂▃▄▅▆▇█"
-"""
+def graph_thick(values):
+    symbols = [' ', '▁', '▂', '▃', '▄', '▅', '▆', '▇', '█', '\x16 \x16']
+    values = [round(i*len(symbols)) for i in values]
+    output = []
+
+    while any(values):
+        output.append("".join(symbols[min(i, len(symbols))] for i in values))
+        values = [i - min(i, len(symbols)) for i in values]
+
+    output = [i.replace("\x16\x16", "") for i in output[::-1]]
+    return output

@@ -13,7 +13,7 @@ import yaml
 import util
 
 from util.services import url
-from util.irc import Callback, command
+from bot.events import Callback, command
 from util.text import pretty_date, graph
 
 try:
@@ -60,7 +60,21 @@ except ImportError:
 else:
     yt = youtube.youtube
 
-class LastFM(object):
+def cut(songs, seconds=20 * 60):
+    if not songs: return []
+    split = [[songs.pop(0)]]
+
+    songs = collections.deque(songs)
+    while songs:
+        song = songs.popleft()
+        if int(split[-1][-1].timestamp) - int(song.timestamp) > seconds:
+            split.append([song])
+        else:
+            split[-1].append(song)
+
+    return split
+
+class LastFM(Callback):
 
     FILENAME = "lastfm_users.json"
     COMPARE_FILE = "lastfm_compare.json"
@@ -85,10 +99,7 @@ class LastFM(object):
             api_secret = apikeys["secret"]
         )
 
-        server.register("privmsg", self.now_playing)
-        server.register("privmsg", self.compare)
-        server.register("privmsg", self.setlfm)
-        server.register("privmsg", self.listenHistory)
+        super().__init__(server)
 
     @staticmethod
     def get_youtube(query):
@@ -139,7 +150,7 @@ class LastFM(object):
             trackdata["album"] = " · %s" % album.get_name()
         return trackdata
 
-    @command("setlfm savelfm".split(), "([^ ]*)")
+    @command("setlfm savelfm save".split(), "([^ ]*)")
     def setlfm(self, server, message, username):
         nick = server.lower(message.address.nick)
         if not username:
@@ -150,8 +161,8 @@ class LastFM(object):
 
     @Callback.threadsafe
     @command("listens", r"((?:\d+[dhms])*)\s*(.*)",
-             usage="04Last.FM│ Usage: [.@]listens [(\d+[dhms])+] [user]",
-             error="04Last.FM│ Couldn't retrieve Last.FM playing history.",)
+             templates={Callback.USAGE: "04Last.FM│ Usage: [.@]listens [(\d+[dhms])+] [user]",
+                        Callback.ERROR: "04Last.FM│ Couldn't retrieve Last.FM playing history."})
     def listenHistory(self, server, message, period, username):
         timevals = {"d": 24 * 60 * 60, 
                     "h": 60 * 60, 
@@ -197,11 +208,15 @@ class LastFM(object):
             average = len(usedtracks) / (int(usedtracks[0].timestamp) - int(usedtracks[-1].timestamp))
         else:
             average = 0
+
+        groups = cut(usedtracks)
+        runs = sum(int(i[0].timestamp) - int(i[-1].timestamp) for i in groups) / len(groups)
+
         meta = ["%s (%s)" % (username, self.users[lowername]) if lowername in self.users else username,
-                " %d songs" % len(usedtracks),
-                " %.1f hours total" % (timespan / (60*60)),
-                " %d minute periods" % (timespan / (60 * values)),
-                " %.2f songs per day" % (average * 24 * 60 * 60)]
+                " %d songs/%.1f hours" % (len(usedtracks), timespan / (60*60)),
+                " %d minutes/bar" % (timespan / (60 * values)),
+                " %.2f songs per day" % (average * 24 * 60 * 60),
+                " %d minutes average listening time" % (runs / 60)]
         data = ["%s04│ %s" % (j, i) for i, j in zip(meta, data)]
 
         for i in data:
@@ -209,10 +224,9 @@ class LastFM(object):
 
     @Callback.threadsafe
     @command("np", "(-\d+)?\s*([^ ]*)", 
-             usage="04Last.FM│ Usage: [.!@]np [-d] [user]",
-             error="04Last.FM│ Couldn't retrieve Last.FM playing history.",
-             private="!",
-             public=".@")
+             templates={Callback.USAGE: "04Last.FM│ Usage: [.!@]np [-d] [user]",
+                        Callback.ERROR: "04Last.FM│ Couldn't retrieve Last.FM playing history."},
+             prefixes=("!", ".@"))
     def now_playing(self, server, message, lastnum, username):
         difftime = collections.OrderedDict()
         difftime["start"] = time.time()
@@ -265,8 +279,8 @@ class LastFM(object):
 
     @Callback.threadsafe
     @command("compare", "([^ ]+)(?:\s+([^ ]+))?",
-                usage="04Last.FM│ Usage: [.@]compare user1 [user2]",
-                error="04Last.FM│ Couldn't retrieve Last.FM user data.")
+     templates={Callback.USAGE: "04Last.FM│ Usage: [.@]compare user1 [user2]",
+                Callback.ERROR: "04Last.FM│ Couldn't retrieve Last.FM user data."})
     def compare(self, server, message, user1, user2):
         if not user2:
             users = (message.address.nick, user1)
@@ -292,13 +306,18 @@ class LastFM(object):
                 overflow = (" and %d+ more" % len(artists)) * bool(len(artists))
 
         # Cache results.
-        with open(server.get_config_dir(self.COMPARE_FILE), "r+") as compfile:
+        with open(server.get_config_dir(self.COMPARE_FILE)) as compfile:
             data = json.load(compfile)
-            data.update({sorted(users): tasteometer})
+            data.update({"%s %s" % tuple(sorted(users)): tasteometer})
+        with open(server.get_config_dir(self.COMPARE_FILE), "w") as compfile:
             json.dump(data, compfile)
 
-        yield "04Last.FM│ %s ⟺ %s: %.2d%.1f%% compatible" % (users_display[0], users_display[1], [4, 7, 8, 9, 3][int(tasteometer * 4.95)], tasteometer * 100)
-        yield "04Last.FM│ %s%s in common." % (common, overflow)
+        if message.prefix == ".":
+            yield "04│ %.2d%.1f%% 04│ %s%s" % ([4, 7, 8, 9, 3][int(tasteometer * 4.95)], tasteometer * 100, common, "..." if overflow else "")
+        else:
+            yield "04Last.FM│ %s ⟺ %s: %.2d%.1f%% compatible" % (users_display[0], users_display[1], [4, 7, 8, 9, 3][int(tasteometer * 4.95)], tasteometer * 100)
+            yield "04Last.FM│ %s%s in common." % (common, overflow)
+
 
 
     def savefile(self):
