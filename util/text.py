@@ -459,12 +459,13 @@ def generate_vulgarity():
 
 def graph_thick(values):
     symbols = [' ', '▁', '▂', '▃', '▄', '▅', '▆', '▇', '█', '\x16 \x16']
-    values = [round(i*len(symbols)) for i in values]
+    symblen = len(symbols) - 1
+    values = [round(i) for i in values]
     output = []
 
     while any(values):
-        output.append("".join(symbols[min(i, len(symbols))] for i in values))
-        values = [i - min(i, len(symbols)) for i in values]
+        output.append("".join(symbols[min(i, symblen)] for i in values))
+        values = [i - min(i, symblen) for i in values]
 
     output = [i.replace("\x16\x16", "") for i in output[::-1]]
     return output

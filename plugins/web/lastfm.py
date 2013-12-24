@@ -14,7 +14,7 @@ import util
 
 from util.services import url
 from bot.events import Callback, command
-from util.text import pretty_date, graph
+from util.text import pretty_date, graph, graph_thick
 
 try:
     import pylast
@@ -202,8 +202,12 @@ class LastFM(Callback):
         largest = max(data)
         if largest:
             data = [round(i * 9 / largest) for i in data]
-        data = graph(data, minheight=4)
-        data = ["%2d %s" % (round(largest/9*(8-2*i)), s) if not i % 2 else "   " + s for i, s in enumerate(data)]
+
+        if message.prefix == ".":
+            data = ["04│" + graph_thick(data)[0]]
+        else:
+            data = graph(data, minheight=4)
+            data = ["%2d %s" % (round(largest/9*(8-2*i)), s) if not i % 2 else "   " + s for i, s in enumerate(data)]
         if len(usedtracks) > 1:
             average = len(usedtracks) / (int(usedtracks[0].timestamp) - int(usedtracks[-1].timestamp))
         else:
