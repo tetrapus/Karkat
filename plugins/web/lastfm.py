@@ -160,7 +160,7 @@ class LastFM(Callback):
         return "04Last.FM│ Associated %s with Last.FM user %s." % (message.address.nick, username)
 
     @Callback.threadsafe
-    @command("listens", r"((-\d+(?:\s+))?(?:\d+[dhms])*)\s*(.*)",
+    @command("listens", r"(-\d+(?:\s+|\b))?((?:\d+[dhms])*)\s*(.*)",
              templates={Callback.USAGE: "04Last.FM│ Usage: [.@]listens [(\d+[dhms])+] [user]",
                         Callback.ERROR: "04Last.FM│ Couldn't retrieve Last.FM playing history."})
     def listenHistory(self, server, message, height, period, username):

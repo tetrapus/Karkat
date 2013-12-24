@@ -98,10 +98,11 @@ def split_templates(templates):
         formatter = templates[prefix]
         if not callable(formatter):
             formatter = formatter.format
-        if issubclass(prefix, BaseException):
-            errors[prefix] = formatter
-        else:
+        if str(prefix) == prefix:
             prefixes[prefix] = formatter
+        else:
+            errors[prefix] = formatter
+
     return errors, prefixes
 
 
@@ -170,6 +171,7 @@ def command(name=None,
                             print(errors.keys())
                             raise Callback.InvalidUsage(msg)
                         else:
+                            # TODO: implement templates
                             if inspect.isgeneratorfunction(funct):
                                 with output as out:
                                     for line in funct(*fargs):
