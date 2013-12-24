@@ -313,7 +313,7 @@ class LastFM(Callback):
             json.dump(data, compfile)
 
         if message.prefix == ".":
-            yield "04│ %.2d%.1f%% 04│ %s%s" % ([4, 7, 8, 9, 3][int(tasteometer * 4.95)], tasteometer * 100, common, "..." if overflow else "")
+            yield "04│ %.2d%.1f%% 04│ %s%s" % ([4, 7, 8, 9, 3][int(tasteometer * 4.95)], tasteometer * 100, common, "..." if overflow else "")
         else:
             yield "04Last.FM│ %s ⟺ %s: %.2d%.1f%% compatible" % (users_display[0], users_display[1], [4, 7, 8, 9, 3][int(tasteometer * 4.95)], tasteometer * 100)
             yield "04Last.FM│ %s%s in common." % (common, overflow)
