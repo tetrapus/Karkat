@@ -160,10 +160,10 @@ class LastFM(Callback):
         return "04Last.FM│ Associated %s with Last.FM user %s." % (message.address.nick, username)
 
     @Callback.threadsafe
-    @command("listens", r"((?:\d+[dhms])*)\s*(.*)",
+    @command("listens", r"((-\d+(?:\s+))?(?:\d+[dhms])*)\s*(.*)",
              templates={Callback.USAGE: "04Last.FM│ Usage: [.@]listens [(\d+[dhms])+] [user]",
                         Callback.ERROR: "04Last.FM│ Couldn't retrieve Last.FM playing history."})
-    def listenHistory(self, server, message, period, username):
+    def listenHistory(self, server, message, height, period, username):
         timevals = {"d": 24 * 60 * 60, 
                     "h": 60 * 60, 
                     "m": 60, 
@@ -199,14 +199,23 @@ class LastFM(Callback):
                 data[int(timeago * values / (timespan+1))] += 1
                 usedtracks.append(track)
 
+        # Formatting
+        if height:
+            height = max(min(-int(height.strip()), 5), 1)
+        else:
+            height = 5 if message.prefix != "." else 1
+
         largest = max(data)
         if largest:
-            data = [round(i * 9 / largest) for i in data]
+            if message.prefix == ".":
+                data = [round(i * 9 * height/largest) for i in data]
+            else:
+                data = [round(i * (2 * height - 1) / largest) for i in data]
 
         if message.prefix == ".":
-            data = ["04│" + graph_thick(data)[0]]
+            data = ["04│" + i for i in graph_thick(data)]
         else:
-            data = graph(data, minheight=4)
+            data = graph(data, minheight=height-1)
             data = ["%2d %s" % (round(largest/9*(8-2*i)), s) if not i % 2 else "   " + s for i, s in enumerate(data)]
         if len(usedtracks) > 1:
             average = len(usedtracks) / (int(usedtracks[0].timestamp) - int(usedtracks[-1].timestamp))
