@@ -2,18 +2,16 @@
 Get definitions from urbandictionary
 A James module.
 """
-from util.irc import command
-from util.services.url import shorten
+from bot.events import command, Callback
+from util.services.url import shorten, format
 import requests
-import traceback
 import random
 
 
-@command(['urban', 'urbandictionary', 'ud'], r"^(.*?)(\s+\d+)?$")
+@command(['urban', 'urbandictionary', 'ud'], r"^(.+?)(\s+\d+)?$",
+         templates={Callback.USAGE: "04urban dictionary│ Usage: urban [phrase] [index?]"})
 def urban_lookup(bot, msg, arg, index):
     ''' UrbanDictionary lookup. '''
-    if not arg:
-        return "Usage: urban [phrase] [index?]"
 
     url = 'http://www.urbandictionary.com/iphone/search/define'
     params = {'term': arg}
@@ -36,38 +34,32 @@ def urban_lookup(bot, msg, arg, index):
 
         output = defs[index]['word'] + ' [' + str(index+1) + ']: ' + defs[index]['definition']
     except:
-        traceback.print_exc()
-        return failmsg() % (nick, params['term'])
+        return failmsg() % params['term']
 
     output = output.strip()
-    output = output.rstrip()
     output = ' '.join(output.split())
 
     if len(output) > 300:
-        tinyurl = shorten(defs[index]['permalink'])
-        output = output[:output.rfind(' ', 0, 180)] + '...\r\nRead more: %s'\
+        tinyurl = format(shorten(defs[index]['permalink']))
+        output = output[:output.rfind(' ', 0, 180)] + '...\r\n15│ Read more: %s'\
             % (tinyurl)
-        return "%s: %s" % (nick, output)
+        return "15│ %s" % output
 
     else:
-        return "%s: %s" % (nick, output)
+        return "15│ %s" % output
 
 def failmsg():
     return random.choice([
-        "%s: No definition found for %s.",
-        "%s: The heck is '%s'?!",
-        "%s: %s. wut.",
-        "%s: %s? I dunno...",
-        "%s: Stop searching weird things. What even is '%s'?",
-        "%s: Computer says no. '%s' not found.",
-        "*sigh* someone tell %s what '%s' means",
-        "%s: This is a family channel. Don't look up '%s'",
-        "%s: Trust me, you don't want to know what '%s' means.",
-        "%s: %s [1]: Something looked up by n00bs.",
-        "%s: %s [1]: An obscure type of fish.",
-        "No %s, no '%s' for you.",
-        "Shh %s, nobody's meant to know about '%s'...",
-        "Really %s? %s?"])
+        "15│ No definition found for %s.",
+        "15│ The heck is '%s'?!",
+        "15│ %s. wut.",
+        "15│ %s? I dunno...",
+        "15│ Stop searching weird things. What even is '%s'?",
+        "15│ Computer says no. '%s' not found.",
+        "15│ This is a family channel. Don't look up '%s'",
+        "15│ Trust me, you don't want to know what '%s' means.",
+        "15│ %s [1]: Something looked up by n00bs.",
+        "15│ %s [1]: An obscure type of fish."])
 
 #@command(['urbanrandom', 'urbandictionaryrandom', 'udr'])
 #def urban_random(server, message):

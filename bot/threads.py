@@ -446,6 +446,13 @@ class Connection(threading.Thread, object):
 
             self.connected = False
 
+    def message(self, *args, **kwargs):
+        return self.printer.message(*args, **kwargs)
+
+    def msg(self, target, message):
+        return self.printer.message(message, target)
+
+
 class EventHandler(object):
     GENERAL = 0
     INLINE = 1
