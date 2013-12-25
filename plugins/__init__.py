@@ -7,4 +7,5 @@ __modules__ = ["games",
                "web",
                "shell",
                "base",
+               "james",
                "spellchecker"]
