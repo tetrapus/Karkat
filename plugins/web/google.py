@@ -25,8 +25,7 @@ def google(query, nresults, retry={}):
     if page["responseData"]["results"]:
         for keyword in retry:
             if any(keyword in i["title"].lower() for i in page["responseData"]["results"]):
-                yield from google(retry[keyword], nresults)
-                return
+                return google(retry[keyword], nresults)
 
         for i, result in enumerate(page["responseData"]["results"]): 
             if i >= nresults: break
