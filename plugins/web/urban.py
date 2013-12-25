@@ -9,7 +9,7 @@ import random
 
 
 @command(['urban', 'urbandictionary', 'ud'], r"^(.+?)(\s+\d+)?$",
-         templates={Callback.USAGE: "04urban dictionary│ Usage: urban [phrase] [index?]"})
+         templates={Callback.USAGE: "04urban dictionary│ Usage: urban <phrase> [index]"})
 def urban_lookup(bot, msg, arg, index):
     ''' UrbanDictionary lookup. '''
 
