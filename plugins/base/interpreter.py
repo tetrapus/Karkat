@@ -6,7 +6,7 @@ import sys
 
 from util.irc import Message, Callback
 
-
+# Magic interpretter objects
 class Allbots(object):
     """ Construct IRC messages from python dot syntax. """
     def __init__(self, bots, args = ""):
@@ -19,11 +19,55 @@ class Allbots(object):
     def __getattr__(self, word):
         return Allbots(self.bots, self.args + " " + word)
 
+class NamespaceStack(object):
+
+    @property
+    def globals(self):
+        return self.namespace[0]
+
+    @property
+    def locals(self):
+        return self.namespace[-1] if len(self.namespace) > 1 else None
+
+    def __init__(self, default):
+        self.namespace = [default]
+
+    def push(self, obj):
+        if type(obj) == dict:
+            namespace = obj
+        else:
+            namespace = obj.__dict__
+
+        self.namespace.append(namespace)
+        if "__name__" in namespace:
+            return "Namespace set to `%s`." % namespace["__name__"]
+        else:
+            return "Namespace set."
+
+    def pop(self):
+        if len(self.namespace) > 1:
+            self.namespace.pop()
+            if "__name__" in self.namespace[-1]:
+                return "Namespace reset to `%s`." % self.namespace[-1]["__name__"]
+            elif len(self.namespace) == 1:
+                return "Using default namespace."
+            else:
+                return "Namespace reset."
+        return "Already using default namespace."
+
+    def __str__(self):
+        return self.pop()
+
+    def __lshift__(self, obj):
+        return self.push(obj)
+
+
 class Interpreter(object):
     """ Builds chunks of python code to execute. """
 
     def __init__(self, server):
         self.curcmd = []
+        self.last = None
         self.building = 0
         self.namespace = {"server": server, 
                           "printer": server.printer, 
@@ -31,6 +75,7 @@ class Interpreter(object):
                           "karkat": Allbots([server]), 
                           "main":__import__("__main__")}
         self.namespace.update(sys.modules)
+        self.namespace = NamespaceStack(self.namespace)
         server.register("privmsg", self.trigger)
 
     def get_stdout(self, server, target):
@@ -43,7 +88,10 @@ class Interpreter(object):
         msg = Message(line)
         args = msg.text.split(" ", 1)
         if server.is_admin(msg.address.hostmask):
-            self.namespace["print"] = self.get_stdout(server, msg.context)
+            self.namespace.globals["print"] = self.get_stdout(server, msg.context)
+            self.namespace.globals["_"] = self.last
+            self.namespace.globals["namespace"] = self.namespace
+            self.namespace.globals["pop"] = self.namespace
             evaluate = False
             if msg.text == ("%s, undo" % server.nick):
                 # Delete the last command off the buffer
@@ -83,12 +131,13 @@ class Interpreter(object):
                 print("--------------------------------")
                 try: 
                     assert "\n" not in code
-                    output = eval(code, self.namespace)
+                    output = eval(code, self.namespace.globals, self.namespace.locals)
+                    self.last = output
                     if output != None: 
                         server.printer.message(str(output), msg.context)
                 except BaseException:
                     try:
-                        exec(code, self.namespace)
+                        exec(code, self.namespace.globals, self.namespace.locals)
                     except BaseException as err:
                         # TODO: Clean this.
                         server.printer.message(
