@@ -20,20 +20,23 @@ deflines = {"@": 1,
 
 def google(query, nresults, retry={}):
     page = requests.get("http://ajax.googleapis.com/ajax/services/search/web?v=1.0&q=%s" % urllib.quote(query)).json()
+    data = []
 
     if page["responseData"]["results"]:
         for keyword in retry:
             if any(keyword in i["title"].lower() for i in page["responseData"]["results"]):
                 yield from google(retry[keyword], nresults)
+                return
 
         for i, result in enumerate(page["responseData"]["results"]): 
-            if i >= nresults: return
-            yield {"color" : [12, 5, 8, 3][i % 4],
+            if i >= nresults: break
+            data.append({"color" : [12, 5, 8, 3][i % 4],
                     "title" : unescape(re.sub("</?b>", "", result["title"])),
                     "url"   : result["unescapedUrl"],
                     "description": re.sub(r"\s+", 
                                           " ", 
-                                          unescape(re.sub("</?b>", "", result["content"])))}
+                                          unescape(re.sub("</?b>", "", result["content"])))})
+    return data
 
 @Callback.threadsafe
 @command(["google", "search"], "(-\d\s+)?(.+)", private="!", public=".@",
@@ -45,9 +48,10 @@ def google_template(server, message, nresults, query):
     else:
         nresults = deflines[message.prefix]
 
-    for data in google(query, nresults, {"suicide": "it gets better"}):
+    response = google(query, nresults, {"suicide": "it gets better"})
+    for data in response:
         yield templates[message.prefix] % data
-    else:
+    if not response:
         yield "05Google│ No results found."
 
 
