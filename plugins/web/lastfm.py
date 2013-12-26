@@ -6,6 +6,7 @@ import re
 import sys
 import time
 from urllib.parse import quote_plus, urlencode
+from functools import partial
 
 import requests
 import yaml
@@ -14,7 +15,7 @@ import util
 
 from util.services import url
 from bot.events import Callback, command
-from util.text import pretty_date, graph, graph_thick
+from util.text import pretty_date, graphs
 
 try:
     import pylast
@@ -79,6 +80,13 @@ class LastFM(Callback):
     FILENAME = "lastfm_users.json"
     COMPARE_FILE = "lastfm_compare.json"
     API_URL = "http://ws.audioscrobbler.com/2.0/?"
+
+    GRAPHS = {".": graphs.GRAPH_DOTS,
+              ":": graphs.GRAPH_FILLED_DOTS,
+              "#": graphs.GRAPH_BLOCK,
+              "+": graphs.GRAPH_DOS,
+              "|": graphs.GRAPH_FILLED_UNICODE,
+              "!": graphs.GRAPH_UNICODE}
 
     def __init__(self, server):
         self.userfile = server.get_config_dir(self.FILENAME)
@@ -160,10 +168,10 @@ class LastFM(Callback):
         return "04Last.FM│ Associated %s with Last.FM user %s." % (message.address.nick, username)
 
     @Callback.threadsafe
-    @command("listens", r"(-\d+(?:\s+|\b))?((?:\d+[dhms])*)\s*(.*)",
-             templates={Callback.USAGE: "04Last.FM│ Usage: [.@]listens [(\d+[dhms])+] [user]",
-                        Callback.ERROR: "04Last.FM│ Couldn't retrieve Last.FM playing history."})
-    def listen_history(self, server, message, height, period, username):
+    @command("listens", r"([-.:#+|!]\d+(?:\s+|\b))?((?:\d+[dhms])*)\s*(.*)",
+             templates={Callback.USAGE: "04Last.FM│ Usage: [.@]listens [(\d+[dhms])+] [user]"})#,
+                        #Callback.ERROR: "04Last.FM│ Couldn't retrieve Last.FM playing history."})
+    def listen_history(self, server, message, size, period, username):
         timevals = {"d": 24 * 60 * 60, 
                     "h": 60 * 60, 
                     "m": 60, 
@@ -189,7 +197,7 @@ class LastFM(Callback):
         else:
             timespan = now - int(tracks[-1].timestamp)
 
-        values = 36
+        values = 36 if message.prefix != "." else 24
 
         data = [0 for i in range(values)]
         usedtracks = []
@@ -199,23 +207,27 @@ class LastFM(Callback):
                 data[int(timeago * values / (timespan+1))] += 1
                 usedtracks.append(track)
 
-        # Formatting
-        if height:
-            height = max(min(-int(height.strip()), 5), 1)
+
+        if message.prefix != ".":
+            height = 5
+            graph = graphs.graph_dos
         else:
-            height = 5 if message.prefix != "." else 1
+            height = 1
+            graph = partial(graphs.graph, symbols=LastFM.GRAPHS["."])
+
+        # Formatting
+        if size:
+            if size[0] in LastFM.GRAPHS:
+                graph = partial(graphs.graph, symbols=LastFM.GRAPHS[size[0]])
+            height = max(min(int(size[1:].strip()), 5), 1)
 
         largest = max(data)
-        if largest:
-            if message.prefix == ".":
-                data = [round(i * 9 * height/largest) for i in data]
-            else:
-                data = [round(i * (2 * height - 1) / largest) for i in data]
+        data = graphs.normalise(data)
 
         if message.prefix == ".":
-            data = ["04│" + i for i in graph_thick(data)]
+            data = ["04│" + i for i in graph(data, height).split("\n")]
         else:
-            data = graph(data, minheight=height-1)
+            data = graph(data, height).split("\n")
             data = ["%2d %s" % (round(largest/9*(8-2*i)), s) if not i % 2 else "   " + s for i, s in enumerate(data)]
         if len(usedtracks) > 1:
             average = len(usedtracks) / (int(usedtracks[0].timestamp) - int(usedtracks[-1].timestamp))
@@ -227,10 +239,10 @@ class LastFM(Callback):
 
         meta = ["%s (%s)" % (username, self.users[lowername]) if lowername in self.users else username,
                 " %d songs/%.1f hours" % (len(usedtracks), timespan / (60*60)),
-                " %d minutes/bar" % (timespan / (60 * values)),
+                " %dm/bar" % (timespan / (60 * values)),
                 " %.2f songs per day" % (average * 24 * 60 * 60),
-                " %d minutes average listening time" % (runs / 60)]
-        data = ["%s04│ %s" % (j, i) for i, j in zip(meta, data)]
+                " %dm average play time" % (runs / 60)]
+        data = ["%s04│ %s" % i for i in zip(data, meta)]
 
         for i in data:
             yield i

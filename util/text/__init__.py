@@ -10,6 +10,8 @@ import html.entities
 import random
 from collections import deque
 
+from . import graphs
+
 class ControlCode:
     ITALICS = "\x1d"
     BOLD = "\x02"
@@ -484,22 +486,3 @@ def graph_horizontal(values, filled=False, minheight=3, height=None):
     return ["".join(x) for x in data]
 
 graph = graph_vertical_DOS
-
-def graph_thick(values, symbols = [' ', '▁', '▂', '▃', '▄', '▅', '▆', '▇', '█', '\x16 \x16']):
-    symblen = len(symbols) - 1
-    values = [round(i) for i in values]
-    output = []
-
-    while any(values):
-        output.append("".join(symbols[min(i, symblen)] for i in values))
-        values = [i - min(i, symblen) for i in values]
-
-    output = [i.replace("\x16\x16", "") for i in output[::-1]]
-    return output
-
-def colordots(values, normalise=True, char="⋅", nums=[0, 15, 14, 1]):
-    if normalise:
-        maxval = max(values)
-        values = [min(i*3/maxval, len(nums)-1) for i in values]
-    val = "".join("\x03%2d⋅\x0f"%nums[round(i)] for i in values).replace("\x0f\x03", "\x03")
-    return re.sub(r"(\x03\d\d)(.)\1", r"\1\2", val)
