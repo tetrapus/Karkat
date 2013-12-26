@@ -169,8 +169,8 @@ class LastFM(Callback):
 
     @Callback.threadsafe
     @command("listens", r"([-.:#+|!]\d+(?:\s+|\b))?((?:\d+[dhms])*)\s*(.*)",
-             templates={Callback.USAGE: "04Last.FM│ Usage: [.@]listens [(\d+[dhms])+] [user]"})#,
-                        #Callback.ERROR: "04Last.FM│ Couldn't retrieve Last.FM playing history."})
+             templates={Callback.USAGE: "04Last.FM│ Usage: [.@]listens [(\d+[dhms])+] [user]",    
+                        Callback.ERROR: "04Last.FM│ Couldn't retrieve Last.FM playing history."})
     def listen_history(self, server, message, size, period, username):
         timevals = {"d": 24 * 60 * 60, 
                     "h": 60 * 60, 
@@ -213,7 +213,7 @@ class LastFM(Callback):
             graph = graphs.graph_dos
         else:
             height = 1
-            graph = partial(graphs.graph, symbols=LastFM.GRAPHS["."])
+            graph = partial(graphs.graph, symbols=LastFM.GRAPHS["#"])
 
         # Formatting
         if size:

@@ -12,7 +12,8 @@ import yaml
 from . import parser
 
 from util.services import url as URL
-from util.irc import Callback, command, Message
+from util.irc import command, Message
+from bot.events import Callback
 from util.text import striplen, spacepad, justifiedtable
 
 try:
@@ -23,7 +24,7 @@ except:
     raise ImportError("Module not loaded.")
 
 
-class WolframAlpha(object):
+class WolframAlpha(Callback):
 
     t_max = 62
     h_max = 7
@@ -42,6 +43,8 @@ class WolframAlpha(object):
 
         server.register("privmsg", self.shorthand_trigger)
         server.register("privmsg", self.trigger)
+
+        super().__init__(server)
 
     def breakdown(self, data, width):
         """
