@@ -163,7 +163,7 @@ class LastFM(Callback):
     @command("listens", r"(-\d+(?:\s+|\b))?((?:\d+[dhms])*)\s*(.*)",
              templates={Callback.USAGE: "04Last.FM│ Usage: [.@]listens [(\d+[dhms])+] [user]",
                         Callback.ERROR: "04Last.FM│ Couldn't retrieve Last.FM playing history."})
-    def listenHistory(self, server, message, height, period, username):
+    def listen_history(self, server, message, height, period, username):
         timevals = {"d": 24 * 60 * 60, 
                     "h": 60 * 60, 
                     "m": 60, 

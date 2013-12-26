@@ -38,7 +38,7 @@ def google(query, nresults, retry={}):
     return data
 
 @Callback.threadsafe
-@command(["google", "search"], "(-\d\s+)?(.+)", private="!", public=".@",
+@command(["google", "search", "g"], "(-\d\s+)?(.+)", private="!", public=".@",
             usage="12Google│ Usage: !google [-NUM_RESULTS] <query>",
             error="04Google│ Error: Could not fetch google results.")
 def google_template(server, message, nresults, query):

@@ -10,6 +10,7 @@ Options:
     -e PLUGINS, --exclude=PLUGINS       Don't load these plugins
     -d --debug                          Turn on debugging
     -i PASSWORD, --identify=PASSWORD    Identify with the given password
+    -s --stdin                          Take password from STDIN
     -a --auth                           Auth instead of identify
     -r --restart                        Restart on disconnect
     -c NUM, --connections=NUM           Number of output connections [default: 1]
@@ -40,6 +41,10 @@ def main():
     """
     args = docopt.docopt(__doc__ % {"name": sys.argv[0]}, version=__version__)
     exclude = args["--exclude"].split(",") if args["--exclude"] else []
+
+    if args["--stdin"]:
+        args["--identify"] = input("Password: ")
+        sys.argv.extend(["--identify", args["--identify"]])
 
     if args["--debug"]:
         debug = 0.15
