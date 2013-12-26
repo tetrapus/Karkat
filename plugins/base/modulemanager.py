@@ -156,6 +156,8 @@ class ModManager(object):
     def load_modules(self, server, message, module):
         path = module.split(".")
         try:
+            if module in sys.modules:
+                imp.reload(module)
             module = __import__(path[0])
             for i in path[1:]:
                 module = module.__dict__[i]

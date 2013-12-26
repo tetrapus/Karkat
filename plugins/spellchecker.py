@@ -90,7 +90,7 @@ def __initialise__(server):
 
         @classmethod
         def isLiteral(cls, sentence):
-            return not any(sentence.startswith(i) for i in cls.literalprefixes)
+            return any(sentence.startswith(i) for i in cls.literalprefixes)
 
         @classmethod
         def spellcheck(cls, sentence):

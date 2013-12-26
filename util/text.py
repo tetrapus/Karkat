@@ -8,7 +8,15 @@ import math
 from datetime import timedelta
 import html.entities
 import random
+from collections import deque
 
+class ControlCode:
+    ITALICS = "\x1d"
+    BOLD = "\x02"
+    UNDERLINE = "\x1f"
+    COLOR = COLOUR = "\x03"
+    RESET = NORMAL = "\x0f"
+    REVERSE = "\x16"
 
 def lineify(data, max_size=400):
     """ Split text up into IRC-safe lines. """
@@ -222,6 +230,128 @@ def aligntable(rows, separator=" 08⎪ "):
 def cmp(a, b):
     return (a > b) - (a < b)
 
+
+
+class Buffer(object):
+    """
+    Represents an iterable buffer that returns completed lines.
+
+    Note: This object is not thread safe.
+    """
+
+    def __init__(self):
+        self.buffer = b''
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        if b"\n" not in self.buffer:
+            raise StopIteration
+        else:
+            data, self.buffer = tuple(self.buffer.split(b"\r\n", 1))
+            return data.decode("utf-8", "replace")
+
+    def __next__(self):
+        return self.next()
+
+    def append(self, data):
+        self.buffer += data
+        return data
+
+class LineReader(object):
+    """
+    Iterates over lines from a socket.
+    """
+
+    def __init__(self, sock, recv=1024):
+        self.recv = recv
+        self.sock = sock
+        self.buffer = ""
+
+    def __iter__(self):
+        return self
+
+    def refill(self):
+        """ Refill the buffer. Return False on closed connection. """
+        while "\n" not in self.buffer:
+            data = self.sock.recv(self.recv)
+            if not data:
+                return False
+            self.buffer += data
+
+    def next(self):
+        if not self.refill():
+            raise StopIteration
+        data, self.buffer = tuple(self.buffer.split("\r\n", 1))
+        return data
+
+
+class TimerBuffer(Buffer):
+    """
+    Prints out the time between loop iterations.
+    """
+
+    def __init__(self, threshhold):
+        super(TimerBuffer, self).__init__()
+        self.start = None
+        self.threshhold = threshhold
+        self.log = []
+
+    def next(self):
+        if self.start is not None:
+            time_taken = time.time() - self.start
+            if time_taken > self.threshhold:
+                print("!!! Warning: Loop executed in %r seconds." % time_taken)
+                self.log.append(time_taken)
+        try:
+            nextval = super(TimerBuffer, self).next()
+        except StopIteration:
+            self.start = None
+            raise
+        else:
+            self.start = time.time()
+            return nextval
+
+def overline(text):
+    return "\u0305".join(text) + "\u0305"
+
+def strikethrough(text):
+    return "\u0336".join(text) + "\u0336"
+
+def underline(text):
+    return "\u0332".join(text) + "\u0332"
+
+swears = open("data/Vulgarities/first.txt").read().split()
+nouns = open("data/Vulgarities/second.txt").read().split()
+insults = open("data/Vulgarities/full.txt").read().split()
+
+def generate_vulgarity():
+    if random.random() < 0.05:
+        vulgarity = random.choice(insults)
+    else:
+        vulgarity = random.choice(swears) + random.choice(nouns)
+
+    return vulgarity
+
+
+def minify(string):
+    """
+    Gets rid of redundant irc codes.
+    """
+    foreground, background = None, None
+    bold, italics, reverse, underline = False, False, False, False
+    minified = ""
+    string = deque(string)
+    while string:
+        char = string.popleft()
+        minified += char
+        # TODO
+
+    return minified
+
+## Phase out.
+
 def graph_vertical_DOS(values, minheight=3):
     values = [round(i) for i in values]
     CSTART, CMID, CEND = "╘", "╧", "╧"
@@ -355,108 +485,6 @@ def graph_horizontal(values, filled=False, minheight=3, height=None):
 
 graph = graph_vertical_DOS
 
-class Buffer(object):
-    """
-    Represents an iterable buffer that returns completed lines.
-
-    Note: This object is not thread safe.
-    """
-
-    def __init__(self):
-        self.buffer = b''
-
-    def __iter__(self):
-        return self
-
-    def next(self):
-        if b"\n" not in self.buffer:
-            raise StopIteration
-        else:
-            data, self.buffer = tuple(self.buffer.split(b"\r\n", 1))
-            return data.decode("utf-8", "replace")
-
-    def __next__(self):
-        return self.next()
-
-    def append(self, data):
-        self.buffer += data
-        return data
-
-class LineReader(object):
-    """
-    Iterates over lines from a socket.
-    """
-
-    def __init__(self, sock, recv=1024):
-        self.recv = recv
-        self.sock = sock
-        self.buffer = ""
-
-    def __iter__(self):
-        return self
-
-    def refill(self):
-        """ Refill the buffer. Return False on closed connection. """
-        while "\n" not in self.buffer:
-            data = self.sock.recv(self.recv)
-            if not data:
-                return False
-            self.buffer += data
-
-    def next(self):
-        if not self.refill():
-            raise StopIteration
-        data, self.buffer = tuple(self.buffer.split("\r\n", 1))
-        return data
-
-
-class TimerBuffer(Buffer):
-    """
-    Prints out the time between loop iterations.
-    """
-
-    def __init__(self, threshhold):
-        super(TimerBuffer, self).__init__()
-        self.start = None
-        self.threshhold = threshhold
-        self.log = []
-
-    def next(self):
-        if self.start is not None:
-            time_taken = time.time() - self.start
-            if time_taken > self.threshhold:
-                print("!!! Warning: Loop executed in %r seconds." % time_taken)
-                self.log.append(time_taken)
-        try:
-            nextval = super(TimerBuffer, self).next()
-        except StopIteration:
-            self.start = None
-            raise
-        else:
-            self.start = time.time()
-            return nextval
-
-def overline(text):
-    return "\u0305".join(text) + "\u0305"
-
-def strikethrough(text):
-    return "\u0336".join(text) + "\u0336"
-
-def underline(text):
-    return "\u0332".join(text) + "\u0332"
-
-swears = open("data/Vulgarities/first.txt").read().split()
-nouns = open("data/Vulgarities/second.txt").read().split()
-insults = open("data/Vulgarities/full.txt").read().split()
-
-def generate_vulgarity():
-    if random.random() < 0.05:
-        vulgarity = random.choice(insults)
-    else:
-        vulgarity = random.choice(swears) + random.choice(nouns)
-
-    return vulgarity
-
 def graph_thick(values, symbols = [' ', '▁', '▂', '▃', '▄', '▅', '▆', '▇', '█', '\x16 \x16']):
     symblen = len(symbols) - 1
     values = [round(i) for i in values]
@@ -475,22 +503,3 @@ def colordots(values, normalise=True, char="⋅", nums=[0, 15, 14, 1]):
         values = [min(i*3/maxval, len(nums)-1) for i in values]
     val = "".join("\x03%2d⋅\x0f"%nums[round(i)] for i in values).replace("\x0f\x03", "\x03")
     return re.sub(r"(\x03\d\d)(.)\1", r"\1\2", val)
-
-def normalise(values, minval=0, maxval=None):
-    if not values: 
-        return values
-    
-    if minval is None:
-        minval = min(values)
-    if maxval is None:
-        maxval = max(values)
-
-    vrange = maxval - minval
-
-    # Shift the values up so that 0 = minval
-    values = [i - minval for i in values]
-
-    # Scale the values
-    values = [i/vrange for i in values]
-
-    return values
