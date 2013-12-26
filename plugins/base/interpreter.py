@@ -132,6 +132,8 @@ class Interpreter(object):
                 try: 
                     assert "\n" not in code
                     output = eval(code, self.namespace.globals, self.namespace.locals)
+                    if type(output) in [map, filter]:
+                        output = list(output)
                     self.last = output
                     if output != None: 
                         server.printer.message(str(output), msg.context)

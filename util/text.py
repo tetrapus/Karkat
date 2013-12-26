@@ -457,8 +457,7 @@ def generate_vulgarity():
 
     return vulgarity
 
-def graph_thick(values):
-    symbols = [' ', '▁', '▂', '▃', '▄', '▅', '▆', '▇', '█', '\x16 \x16']
+def graph_thick(values, symbols = [' ', '▁', '▂', '▃', '▄', '▅', '▆', '▇', '█', '\x16 \x16']):
     symblen = len(symbols) - 1
     values = [round(i) for i in values]
     output = []
@@ -469,3 +468,29 @@ def graph_thick(values):
 
     output = [i.replace("\x16\x16", "") for i in output[::-1]]
     return output
+
+def colordots(values, normalise=True, char="⋅", nums=[0, 15, 14, 1]):
+    if normalise:
+        maxval = max(values)
+        values = [min(i*3/maxval, len(nums)-1) for i in values]
+    val = "".join("\x03%2d⋅\x0f"%nums[round(i)] for i in values).replace("\x0f\x03", "\x03")
+    return re.sub(r"(\x03\d\d)(.)\1", r"\1\2", val)
+
+def normalise(values, minval=0, maxval=None):
+    if not values: 
+        return values
+    
+    if minval is None:
+        minval = min(values)
+    if maxval is None:
+        maxval = max(values)
+
+    vrange = maxval - minval
+
+    # Shift the values up so that 0 = minval
+    values = [i - minval for i in values]
+
+    # Scale the values
+    values = [i/vrange for i in values]
+
+    return values
