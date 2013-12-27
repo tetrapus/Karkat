@@ -86,6 +86,10 @@ def __initialise__(server):
             if any(ord(c) > 127 for c in word):
                 return False
 
+            # words with dots in them are hostnames
+            if "." in word:
+                return False
+
             return True
 
         @classmethod
