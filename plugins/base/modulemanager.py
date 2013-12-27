@@ -157,7 +157,7 @@ class ModManager(object):
         path = module.split(".")
         try:
             if module in sys.modules:
-                imp.reload(module)
+                del sys.modules[module]
             module = __import__(path[0])
             for i in path[1:]:
                 module = module.__dict__[i]
