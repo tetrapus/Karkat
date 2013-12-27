@@ -316,13 +316,13 @@ class TimerBuffer(Buffer):
             return nextval
 
 def overline(text):
-    return "\u0305".join(text) + "\u0305"
+    return "\u0305" + "\u0305".join(text)
 
 def strikethrough(text):
-    return "\u0336".join(text) + "\u0336"
+    return "\u0336" + "\u0336".join(text)
 
 def underline(text):
-    return "\u0332".join(text) + "\u0332"
+    return "\u0332" + "\u0332".join(text)
 
 swears = open("data/Vulgarities/first.txt").read().split()
 nouns = open("data/Vulgarities/second.txt").read().split()
