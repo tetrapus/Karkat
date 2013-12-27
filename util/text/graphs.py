@@ -29,7 +29,7 @@ def minify(string):
         # TODO
 
     # warning: ONLY WORKS FOR CURRENT PURPOSES REPLACE WITH FULL LEXER
-    return re.sub(r"(\x16|\x03\d{0,2}(,\d{1,2}})?|\x02)\1", "", minified)
+    return re.sub(r"(\x16|\x03\d\d)\1", "", minified)
 
 def cmp(a, b):
     return (a > b) - (a < b)
