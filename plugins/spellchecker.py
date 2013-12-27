@@ -87,7 +87,7 @@ def __initialise__(server):
                 return False
 
             # words with dots in them are hostnames
-            if "." in word:
+            if "." in word.strip("."):
                 return False
 
             return True
