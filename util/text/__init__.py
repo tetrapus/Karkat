@@ -337,22 +337,6 @@ def generate_vulgarity():
     return vulgarity
 
 
-def minify(string):
-    """
-    Gets rid of redundant irc codes.
-    """
-    foreground, background = None, None
-    bold, italics, reverse, underline = False, False, False, False
-    minified = ""
-    string = deque(string)
-    while string:
-        char = string.popleft()
-        minified += char
-        # TODO
-
-    # warning: ONLY WORKS FOR CURRENT PURPOSES REPLACE WITH FULL LEXER
-    return re.sub(r"(\x16|\x03\d{0,2}(,\d{1,2}})?|\x02)\1", "", minified)
-
 ## Phase out.
 
 def graph_vertical_DOS(values, minheight=3):
