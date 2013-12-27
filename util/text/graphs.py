@@ -1,11 +1,12 @@
 from collections import deque
+from . import minify
 
 # For axis declarations, [top, right, bottom, left]
 
 GRAPH_BLOCK = [' ', '▁', '▂', '▃', '▄', '▅', '▆', '▇', '█', '\x16 \x16']
 
 GRAPH_FILLED_DOTS = ['\x0300⋅', '\x0315⋅', '\x0314⋅', '\x0301⋅']
-GRAPH_DOTS = [' ', '\x0315⋅', '\x0314⋅', '\x0301⋅']
+GRAPH_DOTS = [' ', '\x0315⋅\x0315', '\x0314⋅\x0314', '\x0301⋅\x0301']
 
 GRAPH_FILLED_DOS = ["─", "┬", "│"]
 GRAPH_DOS = [" ", "╷", "│"]
@@ -28,7 +29,7 @@ def graph(values, height, symbols=GRAPH_BLOCK):
         output.append("".join(symbols[min(i, n)] for i in values))
         values = [i - min(i, n) for i in values]
 
-    output = [i.replace("\x16\x16", "") for i in output[::-1]]
+    output = [minify(i) for i in output[::-1]]
     return "\n".join(output)
 
 def graph_dos(values, height):

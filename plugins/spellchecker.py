@@ -31,7 +31,7 @@ def __initialise__(server):
         last_correction = None
         threshhold = 2
 
-        wordsep = "/.:^&*|+=-?,_()"
+        wordsep = "/.:^&*|+=-?,_()\""
 
         literalprefixes = ".!/@<`:~=+"
         dataprefixes = list("#$<[/") + ["r/", "u/", "http://"]

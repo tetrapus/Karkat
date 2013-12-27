@@ -350,7 +350,8 @@ def minify(string):
         minified += char
         # TODO
 
-    return minified
+    # warning: ONLY WORKS FOR CURRENT PURPOSES REPLACE WITH FULL LEXER
+    return re.sub(r"(\x16|\x03\d{0,2}(,\d{1,2}})?|\x02)\1", "", minified)
 
 ## Phase out.
 
