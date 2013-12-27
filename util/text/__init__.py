@@ -117,6 +117,78 @@ def striplen(data):
     """ Calculate the display length of a string """
     return len(ircstrip(data))
 
+def control_reduce(data):
+    """ Reduce a set of control codes to simplest form. """
+    data = data.group(0)
+
+    constructed = ""
+    # Step 1: Delete all control codes before a reset.
+    if "\x0f" in data:
+        data = data.rsplit("\x0f", 1)[-1]
+        constructed = "\x0f"
+
+    # Step 2. Pull out the control codes. \x03s go first, then the rest.
+    colors = re.findall(r"\x03\d?\d?(?:,\d\d?)?", data)
+    data = re.sub(r"\x03\d?\d?(?:,\d\d?)?)", "", data)
+    data = sorted(data)
+
+    # Step 3a. Delete cancelling control codes.
+    data = re.sub(r"([\x1d\x02\x1f\x16])\1", "", data)
+
+    # Step 3b. Merge colour codes.
+    if colors:
+        colors = [colors[1:] for i in colors]
+        fg, bg = None, None
+        for i in colors:
+            if i == "":
+                fg, bg = None, None
+            elif "," not in i:
+                fg = i
+            elif i.startswith(","):
+                bg = i[1:]
+            else:
+                fg, bg = i.split(",")
+
+        if (fg, bg) == (None, None):
+            color = "\x03"
+        elif fg == None:
+            color = "\x03," + bg
+        elif bg == None:
+            color = "\x03" + bg
+        else:
+            color = "\x03%s,%s" % (fg, bg)
+
+        data = color + data
+
+    # Step 4. Shorten colour codes. 
+    # If it has a background and is 2 digits starting with 0
+    # the 0 is omitted.
+    data = re.sub(r"\x030(\d),", r"\x03\1,", data)
+    # If the character following is not a digit, and the adjacent code starts with 0
+    # the 0 is omitted.
+    data = re.sub(r"\x03(\d?\d?,)?0(\d[^\d]))", r"\x03\1\2", data)
+
+    return data
+
+def minify(data):
+    if "\n" in data:
+        return "\n".join(map(minify, data.split("\n")))
+
+    # Step 1. Reduce all contiguous blocks of control codes.
+    data = re.sub(r"([\x1d\x02\x1f\x0f\x16]|\x03\d?\d?(,\d\d?)?)+", control_reduce, data)
+
+    # Step 2. Get rid of redundant color codes.
+    # TODO
+
+    # Step 3. Get rid of redundant resets.
+    data = data.strip("\x0f")
+    # TODO
+
+    # Step 4. Get rid of trailing codes.
+    data = re.sub(r"([\x1d\x02\x1f\x0f\x16]|\x03\d?\d?(,\d\d?)?)+$", "", data) 
+
+    return data
+
 
 def spacepad(left, right, length):
     """ Glues together left and right with the correct amount of padding. """
