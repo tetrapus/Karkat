@@ -33,7 +33,7 @@ def __initialise__(server):
 
         wordsep = "/.:^&*|+=-?,_()\""
 
-        literalprefixes = ".!/@<`:~=+"
+        literalprefixes = ".!/@<`:~=+>"
         dataprefixes = list("#$<[/") + ["r/", "u/", "http://"]
         contractions = ["s", "d", "ve", "nt", "m"]
 

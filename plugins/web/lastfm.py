@@ -61,7 +61,7 @@ except ImportError:
 else:
     yt = youtube.youtube
 
-def cut(songs, seconds=20 * 60):
+def cut(songs, seconds=25 * 60):
     if not songs: return []
     split = [[songs.pop(0)]]
 

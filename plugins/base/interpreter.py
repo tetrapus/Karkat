@@ -145,7 +145,7 @@ class Interpreter(object):
                         server.printer.message(
                             "\x02「\x02\x0305 "
                             "oh wow"
-                            "\x0307 \x0315%s \x03\x02」\x02"
+                            "\x0307 \x0315%s \x03\x02」\x02 "
                             % (repr(err)[:repr(err).find("(")]) + str(err), 
                                msg.context)
                 self.curcmd = []
