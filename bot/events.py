@@ -105,6 +105,9 @@ def split_templates(templates):
 
     return errors, prefixes
 
+def template(prefixes, errors):
+    pass
+
 
 def command(name=None, 
             args=None, 
@@ -122,7 +125,7 @@ def command(name=None,
         if name is None:
             triggers = [funct.__name__]
         elif type(name) == str:
-            triggers = [name]
+            triggers = name.split()
         else:
             triggers = name
 

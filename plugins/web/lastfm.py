@@ -158,7 +158,7 @@ class LastFM(Callback):
             trackdata["album"] = " · %s" % album.get_name()
         return trackdata
 
-    @command("setlfm savelfm save".split(), "([^ ]*)")
+    @command("setlfm savelfm save", "([^ ]*)")
     def setlfm(self, server, message, username):
         nick = server.lower(message.address.nick)
         if not username:
@@ -333,7 +333,7 @@ class LastFM(Callback):
         # Cache results.
         with open(server.get_config_dir(self.COMPARE_FILE)) as compfile:
             data = json.load(compfile)
-            data.update({"%s %s" % tuple(sorted(users)): tasteometer})
+            data.update({"%s %s" % tuple(sorted(users)): [tasteometer, [i.name for i in artists]]})
         with open(server.get_config_dir(self.COMPARE_FILE), "w") as compfile:
             json.dump(data, compfile)
 
@@ -343,7 +343,9 @@ class LastFM(Callback):
             yield "04Last.FM│ %s ⟺ %s: %.2d%.1f%% compatible" % (users_display[0], users_display[1], [4, 7, 8, 9, 3][int(tasteometer * 4.95)], tasteometer * 100)
             yield "04Last.FM│ %s%s in common." % (common, overflow)
 
-
+    @command("besties", "(.*)")
+    def besties(self, server, message, user):
+        raise NotImplementedError
 
     def savefile(self):
         json.dump(self.users, open(self.userfile, "w"))
