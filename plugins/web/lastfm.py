@@ -315,6 +315,7 @@ class LastFM(Callback):
         users = [self.users[server.lower(i)] if server.lower(i) in self.users else i for i in users]
         first = self.network.get_user(users[0])
         tasteometer, artists = first.compare_with_user(users[1])
+        _artists = [i.name for i in artists]
         tasteometer = float(tasteometer)
         overflow = ""
         if not artists:
@@ -333,7 +334,7 @@ class LastFM(Callback):
         # Cache results.
         with open(server.get_config_dir(self.COMPARE_FILE)) as compfile:
             data = json.load(compfile)
-            data.update({"%s %s" % tuple(sorted(users)): [tasteometer, [i.name for i in artists]]})
+            data.update({"%s %s" % tuple(sorted(users)): [tasteometer, _artists]})
         with open(server.get_config_dir(self.COMPARE_FILE), "w") as compfile:
             json.dump(data, compfile)
 
