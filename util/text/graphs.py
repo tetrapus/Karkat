@@ -1,4 +1,5 @@
 from collections import deque
+import re
 
 # For axis declarations, [top, right, bottom, left]
 
