@@ -240,17 +240,18 @@ def __initialise__(server):
                 f.write("\n".join(self.locked))
 
 
-        @command("spellchecker", "(on|off|\d+)")
+        @command("spellchecker", "(on|off|\d+)", public=":", private=".")
         def correctChannel(self, server, msg, threshhold):
+            context = {".": msg.address.nick, ":": msg.context}[msg.prefix]
             if threshhold == "off":
-                if self.getSettings(msg.context) is not None:
-                    self.setThreshhold(msg.context, None)
+                if self.getSettings(context) is not None:
+                    self.setThreshhold(context, None)
                     return "FINE."
                 else:
                     return "IT'S OFF DICKBUTT"
             else:
                 query = int(threshhold) if threshhold.isdigit() else 0
-                self.setThreshhold(msg.context, query)
+                self.setThreshhold(context, query)
                 return "DONE."
 
 
