@@ -129,7 +129,7 @@ def control_reduce(data):
 
     # Step 2. Pull out the control codes. \x03s go first, then the rest.
     colors = re.findall(r"\x03\d?\d?(?:,\d\d?)?", data)
-    data = re.sub(r"\x03\d?\d?(?:,\d\d?)?)", "", data)
+    data = re.sub(r"(\x03\d?\d?(?:,\d\d?)?)", "", data)
     data = sorted(data)
 
     # Step 3a. Delete cancelling control codes.
