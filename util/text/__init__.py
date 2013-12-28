@@ -199,7 +199,7 @@ def minify(data):
     data = re.sub(r"\x030(\d),", r"\x03\1,", data)
     # If the character following is not a digit, and the adjacent code starts with 0
     # the 0 is omitted.
-    data = re.sub(r"\x03(\d?\d?,)?0(\d[^\d]))", r"\x03\1\2", data)
+    data = re.sub(r"(\x03(\d?\d?,)?0(\d[^\d]))", r"\x03\1\2", data)
 
     # Step 4. Get rid of trailing codes.
     data = re.sub(r"([\x1d\x02\x1f\x0f\x16]|\x03\d?\d?(,\d\d?)?)+$", "", data) 
