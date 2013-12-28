@@ -121,23 +121,23 @@ def control_reduce(data):
     """ Reduce a set of control codes to simplest form. """
     data = data.group(0)
 
-    constructed = ""
     # Step 1: Delete all control codes before a reset.
+    reset = ""
     if "\x0f" in data:
         data = data.rsplit("\x0f", 1)[-1]
-        constructed = "\x0f"
+        reset = "\x0f"
 
     # Step 2. Pull out the control codes. \x03s go first, then the rest.
     colors = re.findall(r"\x03\d?\d?(?:,\d\d?)?", data)
     data = re.sub(r"(\x03\d?\d?(?:,\d\d?)?)", "", data)
-    data = sorted(data)
+    data = "".join(sorted(data))
 
     # Step 3a. Delete cancelling control codes.
     data = re.sub(r"([\x1d\x02\x1f\x16])\1", "", data)
 
     # Step 3b. Merge colour codes.
     if colors:
-        colors = [colors[1:] for i in colors]
+        colors = [i[1:] for i in colors]
         fg, bg = None, None
         for i in colors:
             if i == "":
@@ -148,19 +148,18 @@ def control_reduce(data):
                 bg = i[1:]
             else:
                 fg, bg = i.split(",")
-
-        if (fg, bg) == (None, None):
+        if fg == bg == None:
             color = "\x03"
         elif fg == None:
             color = "\x03," + bg
         elif bg == None:
-            color = "\x03" + bg
+            color = "\x03" + fg
         else:
             color = "\x03%s,%s" % (fg, bg)
 
         data = color + data
 
-    return data
+    return reset + data
 
 def minify(data):
     if "\n" in data:
@@ -173,8 +172,8 @@ def minify(data):
     colors = None, None
     toggles = dict(zip("\x1d\x02\x1f\x16", (False, False, False, False)))
     reduced = []
-    for i in re.split(r"([\x1d\x02\x1f\x0f\x16]|\x03\d?\d?(,\d\d?)?)", data):
-        if not re.match(r"([\x1d\x02\x1f\x0f\x16]|\x03\d?\d?(,\d\d?)?)", i):
+    for i in re.split(r"([\x1d\x02\x1f\x0f\x16]|\x03\d?\d?(?:,\d\d?)?)", data):
+        if not re.match(r"([\x1d\x02\x1f\x0f\x16]|\x03\d?\d?(?:,\d\d?)?)", i):
             reduced.append(i)
         elif i in toggles:
             # Redundant toggles are already cancelled.
@@ -199,7 +198,7 @@ def minify(data):
     data = re.sub(r"\x030(\d),", r"\x03\1,", data)
     # If the character following is not a digit, and the adjacent code starts with 0
     # the 0 is omitted.
-    data = re.sub(r"(\x03(\d?\d?,)?0(\d[^\d]))", r"\x03\1\2", data)
+    data = re.sub(r"(\x03(?:\d?\d?,)?)0(\d[^\d])", r"\1\2", data)
 
     # Step 4. Get rid of trailing codes.
     data = re.sub(r"([\x1d\x02\x1f\x0f\x16]|\x03\d?\d?(,\d\d?)?)+$", "", data) 
