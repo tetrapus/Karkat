@@ -179,7 +179,7 @@ def minify(data):
         elif i in toggles:
             # Redundant toggles are already cancelled.
             toggles[i] = not toggles[i]
-        elif i == "\x0f" and not any(toggles.values() + colors):
+        elif i == "\x0f" and not any(toggles.values()) and not any(colors):
             reduced.append(i)
         elif i.startswith("\x03"):
             codes = i[1:].split(",")
