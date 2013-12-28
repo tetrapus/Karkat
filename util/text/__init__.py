@@ -160,14 +160,6 @@ def control_reduce(data):
 
         data = color + data
 
-    # Step 4. Shorten colour codes. 
-    # If it has a background and is 2 digits starting with 0
-    # the 0 is omitted.
-    data = re.sub(r"\x030(\d),", r"\x03\1,", data)
-    # If the character following is not a digit, and the adjacent code starts with 0
-    # the 0 is omitted.
-    data = re.sub(r"\x03(\d?\d?,)?0(\d[^\d]))", r"\x03\1\2", data)
-
     return data
 
 def minify(data):
@@ -177,12 +169,37 @@ def minify(data):
     # Step 1. Reduce all contiguous blocks of control codes.
     data = re.sub(r"([\x1d\x02\x1f\x0f\x16]|\x03\d?\d?(,\d\d?)?)+", control_reduce, data)
 
-    # Step 2. Get rid of redundant color codes.
-    # TODO
+    # Step 2. Get rid of redundant colour codes.
+    colors = None, None
+    toggles = dict(zip("\x1d\x02\x1f\x16", (False, False, False, False)))
+    reduced = []
+    for i in re.split(r"([\x1d\x02\x1f\x0f\x16]|\x03\d?\d?(,\d\d?)?)", data):
+        if not re.match(r"([\x1d\x02\x1f\x0f\x16]|\x03\d?\d?(,\d\d?)?)", i):
+            reduced.append(i)
+        elif i in toggles:
+            # Redundant toggles are already cancelled.
+            toggles[i] = not toggles[i]
+        elif i == "\x0f" and not any(toggles.values() + colors):
+            reduced.append(i)
+        elif i.startswith("\x03"):
+            codes = i[1:].split(",")
+            if codes == ("",) and any(colors):
+                reduced.append(i)
+            elif len(codes) == 1 and colors[0] != codes[0]:
+                reduced.append(i)
+            elif len(codes) == 2:
+                codes = [i if i else None for i in codes]
+                codes = ["" if x == y else x for x, y in zip(codes, colors)]
+                reduced.append("\x03" + ",".join(codes).rstrip(","))
+    data = "".join(reduced)
 
-    # Step 3. Get rid of redundant resets.
-    data = data.strip("\x0f")
-    # TODO
+    # Step 3. Shorten colour codes.
+    # If it has a background and is 2 digits starting with 0
+    # the 0 is omitted.
+    data = re.sub(r"\x030(\d),", r"\x03\1,", data)
+    # If the character following is not a digit, and the adjacent code starts with 0
+    # the 0 is omitted.
+    data = re.sub(r"\x03(\d?\d?,)?0(\d[^\d]))", r"\x03\1\2", data)
 
     # Step 4. Get rid of trailing codes.
     data = re.sub(r"([\x1d\x02\x1f\x0f\x16]|\x03\d?\d?(,\d\d?)?)+$", "", data) 
