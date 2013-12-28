@@ -162,6 +162,7 @@ def control_reduce(data):
     return reset + data
 
 def minify(data):
+    """ Rearrange and rewrite control codes to shorten the message. """
     if "\n" in data:
         return "\n".join(map(minify, data.split("\n")))
 
