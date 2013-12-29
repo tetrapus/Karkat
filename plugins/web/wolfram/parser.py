@@ -352,5 +352,5 @@ def format(data):
         elif is_matrix(i):
             newdata.extend(format_matrix(i))
         else:
-            newdata.extend(format_normal(i))
+            newdata.append(format_normal(i))
     return newdata
