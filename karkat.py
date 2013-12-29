@@ -16,9 +16,9 @@ Options:
     -c NUM, --connections=NUM           Number of output connections [default: 1]
 """
 
+import os
 import socket
 import sys
-import subprocess
 from collections import deque
 
 import docopt
@@ -67,6 +67,7 @@ def main():
     if args["--restart"]:
         server.restart = True
     server.connect()
+    os.makedirs(server.get_config_dir(), exist_ok=True)
 
     plugins = deque(args["--plugins"].split(","))
     loaded = []
@@ -119,7 +120,9 @@ def main():
         server.sock.send("QUIT\r\n".encode("utf-8"))
     if server.restart is True:
         print("Restarting...")
-        subprocess.call(sys.argv)
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os.execv(sys.argv[0], sys.argv[1:])
 
 if __name__ == "__main__":
     main()

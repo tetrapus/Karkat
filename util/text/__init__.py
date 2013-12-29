@@ -178,6 +178,8 @@ def minify(data):
             reduced.append(i)
         elif i in toggles:
             # Redundant toggles are already cancelled.
+            # TODO BUG: Reverses literally swap fg and bg, even in setting.
+            # Do not reorder these.
             toggles[i] = not toggles[i]
             reduced.append(i)
         elif i == "\x0f" and not any(toggles.values()) and not any(colors):
@@ -193,6 +195,10 @@ def minify(data):
                 codes = ["" if x == y else x for x, y in zip(codes, colors)]
                 reduced.append("\x03" + ",".join(codes).rstrip(","))
     data = "".join(reduced)
+
+    # Step 2b. If a space preceeds a non-background-affecting colour code,
+    # they may be swapped without consequence, and may have a shorter length.
+    # TODO
 
     # Step 3. Shorten colour codes.
     # If it has a background and is 2 digits starting with 0

@@ -209,36 +209,6 @@ class Translator(object):
 
 translator = Translator()
 
-class PiracyMonitor(object):
-    
-    ipscan = True
-    ipfile = "./iplog"
-    
-    def __init__(self):
-        self.known = dict([(str(x), str(y)) for x, y in json.loads(open(self.ipfile).read()).items()])
-    
-    def savestate(self):
-        with open(self.ipfile, "w") as ipfile:
-            ipfile.write(json.dumps(self.known))
-
-    @Callback.background
-    def trigger(self, x, y):
-        if not self.ipscan: return
-        
-        ips = re.findall(r"(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)[-.]){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)", x[0])
-        
-        if ips: ips = ips[0]
-        else: return
-        
-        ips = str().join(map(lambda x: x if x.isdigit() else ".", ips))
-        
-        if ips in self.known: return
-        
-        self.known[Address(x[0]).nick] = ips
-        self.savestate()
-        
-        
-ipscan = PiracyMonitor()
     
     
 class CAHPlayer(object):
@@ -903,34 +873,6 @@ class AI(object):
             f.close()
 ai = AI()
 
-
-class FilthRatio(object):
-    def filthratio(self, query, user=None):
-        if user not in ipscan.known:
-            ip = random.choice(ipscan.known.values())
-        else:
-            ip = ipscan.known[user]
-        safeRequest = urllib.request.Request("http://ajax.googleapis.com/ajax/services/search/web?v=1.0&q=%s&safe=active&userip=%s" % (query, ip), None, {"Referer" : "http://www.tetrap.us/"})
-        unsafeRequest = urllib.request.Request("http://ajax.googleapis.com/ajax/services/search/web?v=1.0&q=%s&userip=%s" % (query, ip), None, {"Referer" : "http://www.tetrap.us/"})
-        try:
-            ratio = float(json.decoder.JSONDecoder().decode(urllib.request.urlopen(safeRequest).read())["responseData"]["cursor"]["estimatedResultCount"])
-        except KeyError:
-            ratio = 0
-        
-        ratio /= float(json.decoder.JSONDecoder().decode(urllib.request.urlopen(unsafeRequest).read())["responseData"]["cursor"]["estimatedResultCount"])
-        
-        return 1-ratio
-
-    @Callback.threadsafe
-    @command("filth", "(.+)")
-    def trigger(self, message, query):
-        try:
-            data = self.filthratio(urllib.quote(query), message.address.nick)
-            return "05Filth ratio for %r ⎟ %.2f%%" % (query, data*100)
-        except TypeError:
-            return "05Filth ratio⎟ Error: Google is an asshole."
-        except KeyError:
-            return "05Filth ratio for %r ⎟ The fuck is that?" % query
 
 class Checker(threading.Thread):
 
