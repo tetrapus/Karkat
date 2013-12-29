@@ -101,7 +101,7 @@ def main():
                 cmd = "nickserv IDENTIFY %s"
             server.sendline(cmd % args["--identify"])
 
-        server.register("376", authenticate)
+        server.register("001", authenticate)
     if args["--debug"]:
         @Callback.inline
         def log(server, line):

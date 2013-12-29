@@ -23,7 +23,7 @@ class AutoJoin(object):
             self.sync()
 
         server.register("invite", self.invited)
-        server.register("376", self.join)
+        server.register("001", self.join)
         server.register("privmsg", self.trigger)
 
     def sync(self):
