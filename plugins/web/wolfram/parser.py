@@ -308,11 +308,11 @@ def format_normal(chunk):
     while chunks:
         chunk = chunks.popleft()
         if len(rechunked[-1]) < 80: # TODO: Fuck yeah magic numbers
-            rechunked[-1].append(" " + chunk)
+            rechunked[-1] += " " + chunk
         else:
-            rechunked.append([chunk])
+            rechunked.append(chunk)
 
-    return "\n".join(chunks)
+    return "\n".join(rechunked)
 
 def format_matrix(chunk):
     """ Takes a matrix and formats/aligns it. """
@@ -352,5 +352,5 @@ def format(data):
         elif is_matrix(i):
             newdata.extend(format_matrix(i))
         else:
-            newdata.append(format_normal(i))
+            newdata.extend(format_normal(i))
     return newdata
