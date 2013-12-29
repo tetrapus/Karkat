@@ -300,7 +300,19 @@ def format_brackets(chunk):
 
 def format_normal(chunk):
     """ Formats normal lines. """
-    return chunk
+    if "\n" in chunk:
+        return "\n".join(format_normal(i) for i in chunk)
+
+    chunks = collections.deque(chunk.split(" "))
+    rechunked = [chunks.popleft()]
+    while chunk:
+        chunk = chunks.popleft()
+        if len(rechunked[-1]) < 80: # TODO: Fuck yeah magic numbers
+            rechunked[-1].append(" " + chunk)
+        else:
+            rechunked.append([chunk])
+
+    return "\n".join(chunks)
 
 def format_matrix(chunk):
     """ Takes a matrix and formats/aligns it. """
