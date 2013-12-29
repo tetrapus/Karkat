@@ -305,7 +305,7 @@ def format_normal(chunk):
 
     chunks = collections.deque(chunk.split(" "))
     rechunked = [chunks.popleft()]
-    while chunk:
+    while chunks:
         chunk = chunks.popleft()
         if len(rechunked[-1]) < 80: # TODO: Fuck yeah magic numbers
             rechunked[-1].append(" " + chunk)
