@@ -15,6 +15,7 @@ from util.services import url as URL
 from util.irc import command, Message
 from bot.events import Callback
 from util.text import striplen, spacepad, justifiedtable
+from util import parallelise
 
 try:
     apikeys = yaml.safe_load(open("config/apikeys.conf"))["wolfram"]
@@ -26,7 +27,7 @@ except:
 
 class WolframAlpha(Callback):
 
-    t_max = 62
+    t_max = 64
     h_max = 7
     h_max_settings = {"#lgbteens": 3, "#teenagers":3}
     t_lines = 12
@@ -87,13 +88,13 @@ class WolframAlpha(Callback):
         try:
             if self.last is not None:
                 query = query.replace("$_", self.last)
-            answer = self.wolfram(query)
+            answer, url = parallelise([lambda: self.wolfram(query), lambda: URL.shorten("http://www.wolframalpha.com/input/?i=%s" % urllib.parse.quote_plus(query))])
             if "Result" in answer and "(" not in answer["Result"]:
                 self.last = answer["Result"]
             else:
                 self.last = "(%s)" % query
         except urllib.error.URLError:
-            return "05Wolfram08Alpha failed to respond. Try again later or go to " + URL.format(URL.shorten("http://www.wolframalpha.com/input/?i=%s" % urllib.parse.quote_plus(query)))
+            return "05Wolfram08Alpha failed to respond. Try again later or go to " + URL.format(url)
             
         if not answer:
             return "05Wolfram08Alpha returned no results for '07%s'" % query
@@ -159,8 +160,8 @@ class WolframAlpha(Callback):
 
                     if len(truncated) < len(lines):
                         omission = "%d more lines" % (len(lines) - h_max)
-                        length = t_max - len(omission) - 5
-                        output[-1] = " 08⎬✁" + ("-"*int(length)) + " 07%s" % omission
+                        length = t_max - len(omission) - 6 - len(url)
+                        output[-1] = " 08✁ " + url + " " + ("-"*int(length)) + " 07%s" % omission
         else:
             output.append(" 08‣ 05No plaintext results. See " + URL.format(URL.shorten("http://www.wolframalpha.com/input/?i=%s" % urllib.parse.quote_plus(query))))
         return "\n".join(i.rstrip() for i in output)
