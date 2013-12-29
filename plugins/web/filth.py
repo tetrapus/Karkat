@@ -74,7 +74,7 @@ class FilthRatio(Callback):
         try:
             user = message.address.nick
             if user not in self.ips.known:
-                ip = random.choice(self.ips.known.values())
+                ip = random.choice(list(self.ips.known.values()))
             else:
                 ip = self.ips.known[user]
             data = self.filthratio(query, ip)

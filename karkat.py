@@ -122,7 +122,7 @@ def main():
         print("Restarting...")
         sys.stdout.flush()
         sys.stderr.flush()
-        os.execv(sys.argv[0], sys.argv[1:])
+        os.execv(sys.argv[0], sys.argv)
 
 if __name__ == "__main__":
     main()
