@@ -50,7 +50,7 @@ def graph(values, height, symbols=GRAPH_BLOCK):
     return "\n".join(output)
 
 def graph_dos(values, height, top=False, right=True, bottom=True, left=False):
-    t, b, l, r = "", "", "", ""
+    t, b, l, r = [], [], "", ""
     if bottom:
         delta = 2*height + 1
         values = [round(i * delta) for i in values]
