@@ -50,13 +50,13 @@ def graph(values, height, symbols=GRAPH_BLOCK):
     return "\n".join(output)
 
 def graph_dos(values, height, top=False, right=True, bottom=True, left=False):
-    t, b, l, r = "", ""
+    t, b, l, r = "", "", "", ""
     if bottom:
         delta = 2*height + 1
         values = [round(i * delta) for i in values]
         axis = [min(1, i) for i in values]
         values = [(i - axis[z])/(delta-1) for z, i in enumerate(values)]
-        height = height - 1
+        height -= 1
         b = []
         if not left:
             b.append("═╘"[axis[0]])
@@ -66,6 +66,7 @@ def graph_dos(values, height, top=False, right=True, bottom=True, left=False):
         b = ["" + "".join(b) + ""]
     if top:
         t = ["═" * len(values)]
+        height -= 1
 
     graphed = graph(values, height, symbols=GRAPH_FILLED_DOS)
     fullgraph = t + graph.split("\n") + b
