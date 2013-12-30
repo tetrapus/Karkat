@@ -83,7 +83,7 @@ class WolframAlpha(Callback):
 
         if location is not None:
             params["location"] = location
-        elif ip is not None:
+        if ip is not None:
             params["ip"] = ip
 
         response = urllib.request.urlopen("http://api.wolframalpha.com/v2/query?"+urllib.parse.urlencode(params), timeout=self.timeout)
