@@ -41,7 +41,7 @@ categories = {
 }
 
 template = {Callback.USAGE: "\x0304Unicode│\x03 .unicode (character|query)",
-            Callback.ERROR: "\x0304Unicode│\x03 Character not found."}
+            KeyError: "\x0304Unicode│\x03 Character not found."}
 
 @command("unicode", "(.+)", templates=template)
 def search(server, message, data):
@@ -52,6 +52,8 @@ def search(server, message, data):
         results = [i for i in database.values() if any(data == x for x in i)]
         if not results:
             results = [i for i in database.values() if any(data in x for x in i)]
+    if not results:
+        raise KeyError("Character not found.")
     nresults, show = (len(results), 4) if message.prefix != "." else (1, 1)
     for r in results[:show]:
         code = int(r[0], 16)
@@ -61,7 +63,6 @@ def search(server, message, data):
                 break
         else:
             block = "Unknown"
-        print(r[2])
         info = {"module": "Unicode" if message.prefix != "." else "",
                 "symbol": chr(code),
                 "code": r[0],
