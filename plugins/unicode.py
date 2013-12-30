@@ -92,10 +92,16 @@ def symbols(server, msg, data):
     data = data.upper()
     results = [i for i in database.values() if any(data in x for x in i)]
     results = [repr(chr(int(i[0], 16)))[1:-1] for i in results]
-    if len(results) > 120:
-        results = results[:120] + ["and %d more." % (len(results) - 200)]
-    if not results:
-        results = ["No results."]
-    return "\x0310%s│\x03 %s" % ("Unicode" if msg.prefix != "." else "", " ".join(results))
+    size = -1
+    chars = []
+    while results and size < 400:
+        c = results.pop(0)
+        chars.append(c)
+        size += len(c.encode("utf-8", errors="replace")) + 1
+    if results:
+        chars.append("and %d more." % (len(results)))
+    if not chars:
+        chars = ["No results."]
+    return "\x0310%s│\x03 %s" % ("Unicode" if msg.prefix != "." else "", " ".join(chars))
 
 __callbacks__ = {"privmsg":[search, symbols]}
