@@ -44,6 +44,9 @@ class WolframAlpha(Callback):
         self.last = None
         self.cache = {}
         self.settingsf = server.get_config_dir(self.SETTINGS_FILE)
+        self.ips = {}
+        if "iptracker" in dir(server):
+            self.ips = server.iptracker.known
         try:
             self.settings = json.load(open(self.settingsf))
         except:
@@ -104,6 +107,8 @@ class WolframAlpha(Callback):
                     location = settings["location"]
                 elif "ip" in settings:
                     ip = settings["ip"]
+                elif user in self.ips:
+                    ip = self.ips["user"]
 
             if self.last is not None:
                 query = query.replace("$_", self.last)
