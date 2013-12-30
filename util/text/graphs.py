@@ -57,11 +57,10 @@ def graph_dos(values, height, top=False, right=True, bottom=True, left=False):
         axis = [min(1, i) for i in values]
         values = [(i - axis[z])/(delta-1) for z, i in enumerate(values)]
         height -= 1
-        b = []
         if not left:
             b.append("═╘"[axis[0]])
-        b.extend("═╧"[i] for i in axis[not left:-(not right)])
-        if right:
+        b.extend("═╧"[i] for i in axis[not left:-(not right) or None])
+        if not right:
             b.append("═╛"[axis[-1]])
         b = ["" + "".join(b) + ""]
     if top:
@@ -74,12 +73,10 @@ def graph_dos(values, height, top=False, right=True, bottom=True, left=False):
         l = "╔" * top + "╟" * height + "╚" * bottom
         fullgraph = [l + i for l, i in zip(l, fullgraph)]
     if right:
-        r = "╗" * top + "╟" * height + "╝" * bottom
+        r = "╗" * top + "╢" * height + "╝" * bottom
         fullgraph = [i + r for i, r in zip(fullgraph, r)]
 
-
-    graphed = graphed.replace("\n", "╢\n")
-    return "%s╢\n%s╝" % (graphed, bottom)
+    return "\n".join(fullgraph)
 
 
 def normalise(values, minval=0, maxval=None):
