@@ -77,7 +77,7 @@ def search(server, message, data):
         else:
             block = "Unknown"
         info = {"module": "Unicode" if message.prefix != "." else "",
-                "symbol": chr(code),
+                "symbol": repr(chr(code))[1:-1],
                 "code": r[0],
                 "name": r[1],
                 "block": block,
@@ -89,10 +89,13 @@ def search(server, message, data):
 
 @command("symbols", "(.+)")
 def symbols(server, msg, data):
+    data = data.upper()
     results = [i for i in database.values() if any(data in x for x in i)]
-    results = [chr(int(i[0], 16)) for i in results]
+    results = [repr(chr(int(i[0], 16)))[1:-1] for i in results]
     if len(results) > 200:
         results = results[:200] + ["and %d more." % (len(results) - 200)]
+    if not results:
+        results = ["No results."]
     return "\x0310%s│\x03 %s" % ("Unicode" if msg.prefix != "." else "", " ".join(results))
 
 __callbacks__ = {"privmsg":[search, symbols]}
