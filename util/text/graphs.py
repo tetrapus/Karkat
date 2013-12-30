@@ -69,7 +69,7 @@ def graph_dos(values, height, top=False, right=True, bottom=True, left=False):
         height -= 1
 
     graphed = graph(values, height, symbols=GRAPH_FILLED_DOS)
-    fullgraph = t + graph.split("\n") + b
+    fullgraph = t + graphed.split("\n") + b
     if left:
         l = "╔" * top + "╟" * height + "╚" * bottom
         fullgraph = [l + i for l, i in zip(l, fullgraph)]
