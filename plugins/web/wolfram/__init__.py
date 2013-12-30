@@ -98,21 +98,11 @@ class WolframAlpha(Callback):
 
         return data
         
-    def wolfram_format(self, query, category=None, h_max=None, user=None):
+    def wolfram_format(self, query, category=None, h_max=None, user=None, wasettings={}):
         try:
-            location, ip = None, None
-            if user is not None and user in self.settings:
-                settings = self.settings[user]
-                if "location" in settings:
-                    location = settings["location"]
-                elif "ip" in settings:
-                    ip = settings["ip"]
-                elif user in self.ips:
-                    ip = self.ips["user"]
-
             if self.last is not None:
                 query = query.replace("$_", self.last)
-            answer, url = parallelise([lambda: self.wolfram(query, location, ip), lambda: URL.shorten("http://www.wolframalpha.com/input/?i=%s" % urllib.parse.quote_plus(query))])
+            answer, url = parallelise([lambda: self.wolfram(query, **wasettings), lambda: URL.shorten("http://www.wolframalpha.com/input/?i=%s" % urllib.parse.quote_plus(query))])
             if "Result" in answer and "(" not in answer["Result"]:
                 self.last = answer["Result"]
             else:
@@ -191,10 +181,23 @@ class WolframAlpha(Callback):
         return "\n".join(i.rstrip() for i in output)
 
     def getoutputsettings(self, target):
-            if self.server.isIn(target, self.settings):
-                return self.settings[self.server.lower(target)]["h_max"]
-            else:
-                return self.h_max
+        if self.server.isIn(target, self.settings):
+            return self.settings[self.server.lower(target)]["h_max"]
+        else:
+            return self.h_max
+
+    def getusersettings(self, user):
+        wasettings = {}
+        user = self.server.lower(user)
+        if user in self.settings:
+            settings = self.settings[user]
+            if "location" in settings:
+                wasettings["location"] = settings["location"]
+            elif "ip" in settings:
+                wasettings["ip"] = settings["ip"]
+            elif "iptracker" in dir(self.server) and user in self.server.iptracker.known:
+                wasettings["ip"] = self.server.iptracker.known[user]
+        return wasettings
 
     @command("waset", r"(\S+)(?:\s+(.+))?", templates={
                 Callback.USAGE:"05Wolfram Settings04⎟ Usage: [.@](waset) 03(ip|location) [value]"})
@@ -234,12 +237,12 @@ class WolframAlpha(Callback):
             target, msgtype = {"~": (context,   "PRIVMSG"),
                              "`": (user.nick, "NOTICE")}[prefix]
 
-            self.printer.message(self.wolfram_format(query, category, h_max=self.getoutputsettings(target), user=server.lower(user.nick)), target, msgtype)
+            self.printer.message(self.wolfram_format(query, category, h_max=self.getoutputsettings(target), wasettings=self.getusersettings(user.nick)), target, msgtype)
 
     @Callback.threadsafe
     @command(["wa", "wolfram"], "(.+)", templates={
                 Callback.USAGE:"05Wolfram08Alpha04⎟ Usage: [.@](wa|wolfram) 03query"})
     def trigger(self, server, message, query):
-        return self.wolfram_format(query, h_max=self.getoutputsettings(message.context), user=server.lower(message.address.nick))
+        return self.wolfram_format(query, h_max=self.getoutputsettings(message.context), wasettings=self.getusersettings(message.address.nick))
 
 __initialise__ = WolframAlpha

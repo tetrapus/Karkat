@@ -38,7 +38,7 @@ class IPTracker(Callback):
         if ip in self.known: 
             return
         
-        self.known[Address(words[0]).nick] = ip
+        self.known[server.lower(Address(words[0]).nick)] = ip
         self.savestate()
 
 __initialise__ = IPTracker
