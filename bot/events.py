@@ -16,8 +16,6 @@ DIE = "DIE"
 
 class Callback(object):
 
-    __instances__ = []
-
     @staticmethod
     def threadsafe(funct):
         funct.isThreadsafe = True
@@ -54,7 +52,10 @@ class Callback(object):
     USAGE = InvalidUsage
 
     def __init__(self, server):
-        self.__instances__.append(self)
+        if "__instances__" not in dir(self.__class__):
+            self.__class__.__instances__ = [self]
+        else:
+            self.__class__.__instances__.append(self)
 
         self.server = server
         self.printer = server.printer

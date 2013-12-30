@@ -321,13 +321,14 @@ class LastFM(Callback):
         if tasteometer < 0:
             raise ValueError("tasteometer returned invalid value")
         overflow = ""
+        artistlimit = 40 if message.prefix == "." else 400
         if not artists:
             common = "Absolutely nothing"
         elif len(artists) == 1:
             common = artists.pop(0).name
         else:
             common = artists.pop(0).name
-            while len(common) < 40 and len(artists) > 1:
+            while len(common) < artistlimit and len(artists) > 1:
                 common += ", " + artists.pop(0).name
             if len(artists) == 1:
                 common += " and %s" % artists.pop(0).name
