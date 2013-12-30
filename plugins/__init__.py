@@ -9,4 +9,5 @@ __modules__ = ["games",
                "base",
                "choose",
                "james",
+               "unicode",
                "spellchecker"]
