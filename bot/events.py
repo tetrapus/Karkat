@@ -4,6 +4,8 @@ Helper methods for defining event handlers.
 import functools
 import re
 import inspect
+import sys
+import traceback
 
 from util.irc import Command
 
@@ -185,6 +187,8 @@ def command(name=None,
                                     with output as out:
                                         out += rval
                     except tuple(errors.keys()) as e:
+                        if "-d" in sys.argv:
+                            traceback.print_exc()
                         for error in errors:
                             if issubclass(e.__class__, error):
                                 with output as out:

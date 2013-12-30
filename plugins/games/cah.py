@@ -199,8 +199,10 @@ class CardsAgainstHumanity(object):
         self.round += 1
         
         self.printplayers()
+        time.sleep(0.5)
         self.printer.message(CAHPREFIX + "%s will be the Card Czar for Round %d%s." % (self.czar.nick, self.round, "of %d" % self.rounds if self.rounds else ""), self.channel)
         self.question = self.questions.pop()
+        time.sleep(2)
         self.printer.message("00,01 %s " % re.sub("[*^]_+", "_______", self.question), self.channel)
         numanswers = self.numcards()
         numanswers = "a card" if numanswers == 1 else ("%d cards" % numanswers)

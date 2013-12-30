@@ -305,7 +305,8 @@ class LastFM(Callback):
     @Callback.threadsafe
     @command("compare", "([^ ]+)(?:\s+([^ ]+))?",
      templates={Callback.USAGE: "04Last.FM│ Usage: [.@]compare user1 [user2]",
-                Callback.ERROR: "04Last.FM│ Couldn't retrieve Last.FM user data."})
+                Callback.ERROR: "04Last.FM│ Couldn't retrieve Last.FM user data.",
+                ValueError: "04Last.FM│ Last.FM compatibility service is down."})
     def compare(self, server, message, user1, user2):
         if not user2:
             users = (message.address.nick, user1)
@@ -317,6 +318,8 @@ class LastFM(Callback):
         tasteometer, artists = first.compare_with_user(users[1])
         _artists = [i.name for i in artists]
         tasteometer = float(tasteometer)
+        if tasteometer < 0:
+            raise ValueError("tasteometer returned invalid value")
         overflow = ""
         if not artists:
             common = "Absolutely nothing"
