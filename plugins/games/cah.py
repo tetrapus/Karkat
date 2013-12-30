@@ -369,6 +369,11 @@ class CAHBot(object):
                 if x[3].lower() == ":!join":
                     if game.addPlayer(nick):
                         printer.message(CAHPREFIX + "%s is our %s player." % (nick, ordinal(len(game.players) - bool(game.rando))), channel)
+                        if game.state == "collect":
+                            printer.message("00,01 %s " % re.sub("[*^]_+", "_______", game.question), nick, "NOTICE")
+                            player = game.getPlayer(nick)
+                            game.repopulate(player)
+                            player.printHand(printer)
                     else:
                         printer.message(CAHPREFIX + "%s is already in the game." % nick, channel)
                 elif x[3].lower() == ":!score":
