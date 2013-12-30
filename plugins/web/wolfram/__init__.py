@@ -4,6 +4,7 @@ import difflib
 import re
 import sys
 import time
+import json
 import urllib.parse
 import urllib.request
 
@@ -12,8 +13,8 @@ import yaml
 from . import parser
 
 from util.services import url as URL
-from util.irc import command, Message
-from bot.events import Callback
+from util.irc import Message
+from bot.events import Callback, command
 from util.text import striplen, spacepad, justifiedtable
 from util import parallelise
 
@@ -29,9 +30,10 @@ class WolframAlpha(Callback):
 
     t_max = 64
     h_max = 7
-    h_max_settings = {"#lgbteens": 3, "#teenagers":3}
     t_lines = 12
     timeout = 45
+
+    SETTINGS_FILE = "wolfram_users.json"
 
     results = ["Result", "Response", "Infinite sum", "Decimal approximation", "Decimal form", "Limit", "Definition", "Definitions", "Description", "Balanced equation", "Chemical names and formulas", "Conversions to other units", "Roots", "Root", "Definite integral", "Plot", "Plots"]
     input_categories = ["Input interpretation", "Input"]
@@ -41,9 +43,11 @@ class WolframAlpha(Callback):
         self.printer = server.printer
         self.last = None
         self.cache = {}
-
-        server.register("privmsg", self.shorthand_trigger)
-        server.register("privmsg", self.trigger)
+        self.settingsf = server.get_config_dir(self.SETTINGS_FILE)
+        try:
+            self.settings = json.load(open(self.settingsf))
+        except:
+            self.settings = {}
 
         super().__init__(server)
 
@@ -67,12 +71,19 @@ class WolframAlpha(Callback):
 
         return data
         
-    def wolfram(self, query):
+    def wolfram(self, query, location=None, ip=None):
         # Cache results for 5 minutes
         if query in self.cache and time.time() - self.cache[query][0] > 300:
             return self.cache[query][1]
 
-        response = urllib.request.urlopen("http://api.wolframalpha.com/v2/query?"+urllib.parse.urlencode({"appid": apikeys["key"], "input":query, "scantimeout":str(self.timeout)}), timeout=self.timeout)
+        params = {"appid": apikeys["key"], "input":query, "scantimeout":str(self.timeout)}
+
+        if location is not None:
+            params["location"] = location
+        elif ip is not None:
+            params["ip"] = ip
+
+        response = urllib.request.urlopen("http://api.wolframalpha.com/v2/query?"+urllib.parse.urlencode(params), timeout=self.timeout)
         response = etree.parse(response)
         data = collections.OrderedDict()
         for pod in response.findall("pod"):
@@ -84,11 +95,19 @@ class WolframAlpha(Callback):
 
         return data
         
-    def wolfram_format(self, query, category=None, h_max=None):
+    def wolfram_format(self, query, category=None, h_max=None, user=None):
         try:
+            location, ip = None, None
+            if user is not None and user in self.settings:
+                settings = self.settings[user]
+                if "location" in settings:
+                    location = settings["location"]
+                elif "ip" in settings:
+                    ip = settings["ip"]
+
             if self.last is not None:
                 query = query.replace("$_", self.last)
-            answer, url = parallelise([lambda: self.wolfram(query), lambda: URL.shorten("http://www.wolframalpha.com/input/?i=%s" % urllib.parse.quote_plus(query))])
+            answer, url = parallelise([lambda: self.wolfram(query, location, ip), lambda: URL.shorten("http://www.wolframalpha.com/input/?i=%s" % urllib.parse.quote_plus(query))])
             if "Result" in answer and "(" not in answer["Result"]:
                 self.last = answer["Result"]
             else:
@@ -167,13 +186,35 @@ class WolframAlpha(Callback):
         return "\n".join(i.rstrip() for i in output)
 
     def getoutputsettings(self, target):
-            if self.server.isIn(target, self.h_max_settings):
-                return self.h_max_settings[self.server.lower(target)]
+            if self.server.isIn(target, self.settings):
+                return self.settings[self.server.lower(target)]["h_max"]
             else:
                 return self.h_max
 
+    @command("waset", r"(\S+)(?:\s+(.+))?", templates={
+                Callback.USAGE:"05Wolfram Settings04⎟ Usage: [.@](waset) 03(ip|location) [value]"})
+    def update_settings(self, server, msg, varname, value):
+        var = varname.lower()
+        nick = server.lower(msg.address.nick) 
+        if varname not in ("location", "ip"):
+            return "05Wolfram Settings04⎟ No such setting."
+        elif value is None:
+            try:
+                value = repr(self.settings[nick][var])
+            except:
+                value = "not set"
+            return "05Wolfram Settings05⎟ Your %s is currently %s." % (var, value) 
+        else:
+            if nick in self.settings:
+                self.settings[nick][var] = value
+            else:
+                self.settings[nick] = {var: value}
+            json.dump(self.settings, open(self.settingsf, "w"))
+            return "05Wolfram Settings05⎟ Your %s has been set to %r." % (var, value)
+
+
     @Callback.threadsafe
-    def shorthand_trigger(self, server, line):
+    def shorthand_trigger(self, server, line) -> "privmsg":
         message = Message(line)
         user, context = message.address, message.context
         pattern = re.match(r"([~`])(.*?\1 ?|([\"']).*?\3 ?|[^ ]+ )(.+)", message.text)
@@ -188,12 +229,12 @@ class WolframAlpha(Callback):
             target, msgtype = {"~": (context,   "PRIVMSG"),
                              "`": (user.nick, "NOTICE")}[prefix]
 
-            self.printer.message(self.wolfram_format(query, category, h_max=self.getoutputsettings(target)), target, msgtype)
+            self.printer.message(self.wolfram_format(query, category, h_max=self.getoutputsettings(target), user=server.lower(user.nick)), target, msgtype)
 
     @Callback.threadsafe
-    @command(["wa", "wolfram"], "(.+)",
-                usage="05Wolfram08Alpha04⎟ Usage: [.@](wa|wolfram) 03query")
+    @command(["wa", "wolfram"], "(.+)", templates={
+                Callback.USAGE:"05Wolfram08Alpha04⎟ Usage: [.@](wa|wolfram) 03query"})
     def trigger(self, server, message, query):
-        return self.wolfram_format(query, h_max=self.getoutputsettings(message.context))
+        return self.wolfram_format(query, h_max=self.getoutputsettings(message.context), user=server.lower(message.address.nick))
 
 __initialise__ = WolframAlpha

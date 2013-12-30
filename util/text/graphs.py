@@ -70,6 +70,7 @@ def graph_dos(values, height, top=False, right=True, bottom=True, left=False):
     graphed = graph(values, height, symbols=GRAPH_FILLED_DOS)
     fullgraph = t + graphed.split("\n") + b
     if left:
+        # TODO: fix hanging -s
         l = "╔" * top + "╟" * height + "╚" * bottom
         fullgraph = [l + i for l, i in zip(l, fullgraph)]
     if right:
