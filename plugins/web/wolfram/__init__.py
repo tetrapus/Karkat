@@ -173,7 +173,7 @@ class WolframAlpha(Callback):
                         output.append(" 08⎪ " + line)
 
                     if len(truncated) < len(lines):
-                        omission = "%d more lines" % (len(lines) - h_max)
+                        omission = "%d more lines" % (len(lines) - h_max + 1)
                         length = t_max - len(omission) - 6 - len(url)
                         output[-1] = " 08✁ " + url + " " + ("-"*int(length)) + " 07%s" % omission
         else:
