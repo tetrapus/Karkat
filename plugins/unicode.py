@@ -1,3 +1,5 @@
+import unicodedata
+
 from bot.events import command, Callback
 
 database = open("data/UnicodeData.txt").read().split("\n")
@@ -43,15 +45,26 @@ categories = {
 template = {Callback.USAGE: "\x0304Unicode│\x03 .unicode (character|query)",
             KeyError: "\x0304Unicode│\x03 Character not found."}
 
+def getdata(char):
+    try:
+        return ("%X" % ord(char), unicodedata.name(char), unicodedata.category(char))
+    except:
+        raise KeyError("Character not found.")
+
 @command("unicode", "(.+)", templates=template)
 def search(server, message, data):
     if len(data) == 1:
-        results = [database[ord(data)]]
+        try:
+            results = [database[ord(data)]]
+        except KeyError:
+            results = [getdata(data)]
     else:
         data = data.upper()
         results = [i for i in database.values() if any(data == x for x in i)]
         if not results:
             results = [i for i in database.values() if any(data in x for x in i)]
+        if not results:
+            results = [getdata(unicodedata.lookup(data))]
     if not results:
         raise KeyError("Character not found.")
     nresults, show = (len(results), 4) if message.prefix != "." else (1, 1)
