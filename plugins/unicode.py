@@ -44,6 +44,8 @@ categories = {
 
 template = {Callback.USAGE: "\x0304Unicode│\x03 .unicode (character|query)",
             KeyError: "\x0304Unicode│\x03 Character not found."}
+template_sym = {Callback.USAGE: "\x0304Unicode│\x03 .symbols (query)",
+            KeyError: "\x0304Unicode│\x03 Character not found."}
 
 def getdata(char):
     try:
@@ -61,12 +63,10 @@ def search(server, message, data):
     else:
         data = data.upper()
         results = [i for i in database.values() if any(data == x for x in i)]
-        if not results:
-            results = [i for i in database.values() if any(data in x for x in i)]
+        results += [i for i in database.values() if any(data in x for x in i) and not any(data == x for x in i)]
         if not results:
             results = [getdata(unicodedata.lookup(data))]
-    if not results:
-        raise KeyError("Character not found.")
+
     nresults, show = (len(results), 4) if message.prefix != "." else (1, 1)
     for r in results[:show]:
         code = int(r[0], 16)
@@ -87,4 +87,12 @@ def search(server, message, data):
     if nresults > 4:
         yield "\x0310Unicode│\x03 %d of %d results shown." % (4, nresults)
 
-__callbacks__ = {"privmsg":[search]}
+@command("symbols", "(.+)")
+def symbols(server, msg, data):
+    results = [i for i in database.values() if any(data in x for x in i)]
+    results = [chr(int(i[0], 16)) for i in results]
+    if len(results) > 200:
+        results = results[:200] + ["and %d more." % (len(results) - 200)]
+    return "\x0310%s│\x03 %s" % ("Unicode" if msg.prefix != "." else "", " ".join(results))
+
+__callbacks__ = {"privmsg":[search, symbols]}
