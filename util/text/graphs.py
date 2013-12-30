@@ -49,15 +49,34 @@ def graph(values, height, symbols=GRAPH_BLOCK):
     output = [minify(i) for i in output[::-1]]
     return "\n".join(output)
 
-def graph_dos(values, height):
-    delta = 2*height + 1
-    values = [round(i * delta) for i in values]
-    axis = [min(1, i) for i in values]
-    values = [(i - axis[z])/(delta-1) for z, i in enumerate(values)]
-    graphed = graph(values, height-1, symbols=GRAPH_FILLED_DOS)
-    bottom = ["" + "═╘"[axis[0]]]
-    bottom.extend("═╧"[i] for i in axis[1:])
-    bottom = "".join(bottom)
+def graph_dos(values, height, top=False, right=True, bottom=True, left=False):
+    t, b, l, r = "", ""
+    if bottom:
+        delta = 2*height + 1
+        values = [round(i * delta) for i in values]
+        axis = [min(1, i) for i in values]
+        values = [(i - axis[z])/(delta-1) for z, i in enumerate(values)]
+        height = height - 1
+        b = []
+        if not left:
+            b.append("═╘"[axis[0]])
+        b.extend("═╧"[i] for i in axis[not left:-(not right)])
+        if right:
+            b.append("═╛"[axis[-1]])
+        b = ["" + "".join(b) + ""]
+    if top:
+        t = ["═" * len(values)]
+
+    graphed = graph(values, height, symbols=GRAPH_FILLED_DOS)
+    fullgraph = t + graph.split("\n") + b
+    if left:
+        l = "╔" * top + "╟" * height + "╚" * bottom
+        fullgraph = [l + i for l, i in zip(l, fullgraph)]
+    if right:
+        r = "╗" * top + "╟" * height + "╝" * bottom
+        fullgraph = [i + r for i, r in zip(fullgraph, r)]
+
+
     graphed = graphed.replace("\n", "╢\n")
     return "%s╢\n%s╝" % (graphed, bottom)
 
