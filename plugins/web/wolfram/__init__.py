@@ -193,7 +193,7 @@ class WolframAlpha(Callback):
             settings = self.settings[user]
             if "location" in settings:
                 wasettings["location"] = settings["location"]
-            elif "ip" in settings:
+            if "ip" in settings:
                 wasettings["ip"] = settings["ip"]
             elif "iptracker" in dir(self.server) and user in self.server.iptracker.known:
                 wasettings["ip"] = self.server.iptracker.known[user]
