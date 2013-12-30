@@ -1,4 +1,4 @@
-from bot.events import command
+from bot.events import command, Callback
 
 database = open("data/UnicodeData.txt").read().split("\n")
 database = [i.split(";") for i in database if i]
@@ -40,7 +40,10 @@ categories = {
 "Zs": "Separator, Space"
 }
 
-@command("unicode", "(.+)")
+template = {Callback.USAGE: "\x0304Unicode│\x03 .unicode (character|query)",
+            Callback.ERROR: "\x0304Unicode│\x03 Character not found."}
+
+@command("unicode", "(.+)", templates=template)
 def search(server, message, data):
     if len(data) == 1:
         results = [database[ord(data)]]
