@@ -101,7 +101,7 @@ class ModManager(object):
             yield i
 
     @Callback.inline
-    @command("unload", "(.+)", 
+    @command("unload", "(.+)", private="", public=":",
                 admin=True, 
                 usage="12Module Manager│ Usage: [!@]unload <module>")
     def unregister_modules(self, server, message, module):
@@ -118,7 +118,7 @@ class ModManager(object):
                 yield i
 
     @Callback.inline
-    @command("reload", "(.+)", 
+    @command("reload", "(.+)", private="", public=":",
                 admin=True, 
                 usage="12Module Manager│ Usage: [!@]reload <module>",
                 error="12Module Manager│ Module failed to load.")
@@ -149,7 +149,7 @@ class ModManager(object):
             yield "05Module Manager│ Module not found."
 
     @Callback.inline
-    @command("load", "(.+)", 
+    @command("load", "(.+)", private="", public=":",
                 admin=True, 
                 usage="12Module Manager│ Usage: [!@]load <module>",
                 error="12Module Manager│ Module failed to load.")
