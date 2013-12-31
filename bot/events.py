@@ -192,11 +192,18 @@ def command(name=None,
                     except tuple(errors.keys()) as e:
                         if "-d" in sys.argv:
                             traceback.print_exc()
+                        if type(e) in errors:
+                            with output as out:
+                                out += errors[type(e)](e)
+                            return
                         for error in errors:
                             if issubclass(e.__class__, error):
                                 with output as out:
                                     out += errors[error](e)
                                 break
         _.__annotations__["return"] = "privmsg"
+        _.private = private
+        _.public = public
+        _.triggers = triggers
         return _
     return decorator

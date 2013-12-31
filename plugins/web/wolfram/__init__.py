@@ -76,8 +76,8 @@ class WolframAlpha(Callback):
         
     def wolfram(self, query, location=None, ip=None):
         # Cache results for 5 minutes
-        if query in self.cache and time.time() - self.cache[query][0] > 300:
-            return self.cache[query][1]
+        #if query in self.cache and time.time() - self.cache[query][0] < 90:
+        #    return self.cache[query][1]
 
         params = {"appid": apikeys["key"], "input":query, "scantimeout":str(self.timeout)}
 
