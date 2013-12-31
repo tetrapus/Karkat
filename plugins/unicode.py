@@ -53,6 +53,7 @@ def getdata(char):
     except:
         raise KeyError("Character not found.")
 
+@Callback.threadsafe
 @command("unicode", "(.+)", templates=template)
 def search(server, message, data):
     if len(data) == 1:
@@ -87,6 +88,7 @@ def search(server, message, data):
     if nresults > 4:
         yield "\x0310Unicode│\x03 %d of %d results shown." % (4, nresults)
 
+@Callback.threadsafe
 @command("symbols", "(.+)")
 def symbols(server, msg, data):
     data = data.upper()

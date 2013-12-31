@@ -134,6 +134,8 @@ def command(name=None,
 
         triggers = [i.lower() for i in triggers]
 
+        #TODO: Parse docstring as templates
+
         @functools.wraps(funct)
         def _(*argv): 
             try:
