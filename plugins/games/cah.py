@@ -5,6 +5,7 @@ import sqlite3
 import time
 import sys
 import os
+import functools
 
 from util.text import ordinal
 from util.irc import Callback, Address, Message, command
@@ -171,7 +172,7 @@ class CardsAgainstHumanity(object):
         if self.state == "failed": return
         self.state = "failed"
         with self.printer.buffer(self.channel) as buffer:
-            buffer += "00,01 Cards Against Humanity  is over!"
+            buffer += "01│00,01 Cards Against Humanity  is over!"
             players = sorted(self.allplayers, key=CAHPlayer.score)[::-1]
             for i, player in enumerate(players):
                 if i and players[i-1].score() == player.score():
@@ -292,10 +293,10 @@ class CardsAgainstHumanity(object):
         if self.state == "signups":
             if len(self.players) < self.minplayers:
                 self.state = "failed"
-                self.printer.message("00,01 Cards Against Humanity  has failed to gather enough interest.", self.channel)
+                self.printer.message("01│00,01 Cards Against Humanity  has failed to gather enough interest.", self.channel)
             else:
                 self.state = "started"
-                self.printer.message("00,01 Cards Against Humanity  begins!", self.channel)
+                self.printer.message("01│00,01 Cards Against Humanity  begins!", self.channel)
                 self.next()
         
     def failed(self): 
@@ -354,6 +355,17 @@ class CAHBot(object):
                 CardsAgainstHumanity.expansionas.append(data)
                 CardsAgainstHumanity.savecards(self.expansiondir)
             printer.message(CAHPREFIX + "Added: 01,00 %s " % (data), msg.context)
+
+    @staticmethod
+    def gamecmd(funct):
+        @functools.wraps(funct)
+        def _(self, server, message, *args, **kwargs):
+            channel = server.lower(message.context)
+            if channel in self.games and not self.games[channel].failed():
+                game = self.games[channel]
+                with game.lock:
+                    return funct(self, server, message, *args, **kwargs)
+        return _
 
     @Callback.threadsafe
     def trigger(self, server, line):
@@ -470,7 +482,7 @@ class CAHBot(object):
         elif x[3].lower() in [":!cah", ":!cards"]:
             args = self.parseSettings(line.split(" ", 4)[-1])
             self.games[channel] = CardsAgainstHumanity(printer, channel, **args)
-            printer.message("00,01 Cards Against Humanity  will begin in a minute. Want to !join us?", channel)
+            printer.message("01│00,01 Cards Against Humanity  will begin in a minute. Want to !join us?", channel)
             threading.Timer(150, self.games[channel].start).start()
 
     @staticmethod

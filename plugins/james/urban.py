@@ -38,15 +38,19 @@ def urban_lookup(bot, msg, arg, index):
 
     output = output.strip()
     output = ' '.join(output.split())
+    sentences = re.split("([!.?]+)", output)
+    truncated = ""
+    i = 0
+    while len(truncated) < 375 and sentences:
+        truncated += sentences.pop(0)
+        i += 1
+    if i % 2 and sentences:
+        truncated += sentences.pop(0)
+    output = truncated
+    if sentences:
+        output += '\n15│ Read more: %s' % format(shorten(defs[index]['permalink']))
 
-    if len(output) > 300:
-        tinyurl = format(shorten(defs[index]['permalink']))
-        output = output[:output.rfind(' ', 0, 180)] + '...\r\n15│ Read more: %s'\
-            % (tinyurl)
-        return "15│ %s" % output
-
-    else:
-        return "15│ %s" % output
+    return "15│ %s" % output
 
 def failmsg():
     return random.choice([
