@@ -371,7 +371,7 @@ class CAHBot(object):
                     if game.addPlayer(nick):
                         printer.message(CAHPREFIX + "%s is our %s player." % (nick, ordinal(len(game.players) - bool(game.rando))), channel)
                         if game.state == "collect":
-                            printer.message("00,01 %s " % re.sub("[*^]_+", "_______", game.question), nick, "NOTICE")
+                            printer.message("01│00,01 %s " % re.sub("[*^]_+", "_______", game.question), nick, "NOTICE")
                             player = game.getPlayer(nick)
                             game.repopulate(player)
                             player.printHand(printer)
@@ -426,9 +426,9 @@ class CAHBot(object):
                             if all((bet + args).count(i) == 1 and 1 <= i <= len(player.hand) for i in bet + args) and (len(args) == game.numcards() and len(bet) in [game.numcards(), 0]):
                                 player.setResponses(args)
                                 player.setBet(bet)
-                                printer.message("Your response: 00,01 %s " % game.substitute(player.responses), nick, "NOTICE")
+                                printer.message(CAHPREFIX + "Response: 00,01 %s " % game.substitute(player.responses), nick, "NOTICE")
                                 if bet:
-                                    printer.message("       Backup: 00,01 %s " % game.substitute(player.bets), nick, "NOTICE")
+                                    printer.message(CAHPREFIX + "  Backup: 00,01 %s " % game.substitute(player.bets), nick, "NOTICE")
                             else:
                                 printer.message(CAHPREFIX + "Invalid arguments.", nick, "NOTICE")
                             if not [i for i in game.players if i.responses is None and i != game.czar]:
