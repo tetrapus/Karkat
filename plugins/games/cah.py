@@ -9,7 +9,7 @@ import os
 from util.text import ordinal
 from util.irc import Callback, Address, Message, command
 
-CAHPREFIX = "00,01 15,14 01,15  "
+CAHPREFIX = "01│14│15│ "
 datadir = "data/CardsAgainstHumanity"
 
 class CardsAgainstHumanity(object):
@@ -204,7 +204,7 @@ class CardsAgainstHumanity(object):
         self.printer.message(CAHPREFIX + "%s will be the Card Czar for Round %d%s." % (self.czar.nick, self.round, "of %d" % self.rounds if self.rounds else ""), self.channel)
         self.question = self.questions.pop()
         time.sleep(2)
-        self.printer.message("00,01 %s " % re.sub("[*^]_+", "_______", self.question), self.channel)
+        self.printer.message("01│00,01 %s " % re.sub("[*^]_+", "_______", self.question), self.channel)
         numanswers = self.numcards()
         numanswers = "a card" if numanswers == 1 else ("%d cards" % numanswers)
 
@@ -213,7 +213,7 @@ class CardsAgainstHumanity(object):
             if player == self.rando:
                 player.setResponses(random.sample(list(range(1, len(player.hand)+1)), self.numcards()))
             elif player != self.czar:
-                self.printer.message(CAHPREFIX + "Please !choose %s." % numanswers, player.nick, "NOTICE")
+                self.printer.message(CAHPREFIX + "Please !pick %s." % numanswers, player.nick, "NOTICE")
                 player.printHand(self.printer)
             else:
                 self.printer.message(CAHPREFIX + "You're the Card Czar! Once all the responses to come in, you can pick the best.", player.nick, "NOTICE")
@@ -229,7 +229,7 @@ class CardsAgainstHumanity(object):
                 buffer += CAHPREFIX + "All cards are in. %s, please pick the best %s" % (self.czar.nick, "response." if not self.ranked or len(self.players) < 4 else "%d responses." % min(len(self.players) - 2, 3))
                 for i, player in enumerate(self.order):
                     response = player.responses if self.order.index(player) == i else player.bets
-                    buffer += "00,01 15,14 01,15  %d. %s" % (i+1, self.substitute(response))
+                    buffer += CAHPREFIX + "%d. %s" % (i+1, self.substitute(response))
             self.state = "judge"
 
     def logwinner(self, wins, logdir):
