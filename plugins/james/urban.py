@@ -6,6 +6,7 @@ from bot.events import command, Callback
 from util.services.url import shorten, format
 import requests
 import random
+import re
 
 
 @command(['urban', 'urbandictionary', 'ud'], r"^(.+?)(\s+\d+)?$",
