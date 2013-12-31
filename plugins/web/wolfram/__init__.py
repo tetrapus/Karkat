@@ -225,6 +225,8 @@ class WolframAlpha(Callback):
     def shorthand_trigger(self, server, line) -> "privmsg":
         message = Message(line)
         user, context = message.address, message.context
+        if not message.text or not (message.text[0] == message.text[-1] and message.text[0] in "~`"):
+            return
         pattern = re.match(r"([~`])(.*?\1 ?|([\"']).*?\3 ?|[^ ]+ )(.+)", message.text)
         if pattern:
             prefix, category, quoted, query = pattern.groups()
