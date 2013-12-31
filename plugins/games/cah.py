@@ -118,8 +118,9 @@ class CardsAgainstHumanity(object):
             else:
                 self.usedanswers.append(card)
                 player.hand.append(card)
-           
-    def subs(self, x, sub):
+    
+    @staticmethod 
+    def subs(x, sub):
         if x.group(2):
             if re.match(r"\w", sub[-1]):
                 sub = "%s" % sub
@@ -278,7 +279,7 @@ class CardsAgainstHumanity(object):
             for i in self.order:
                 response = i.popResponses() or i.popBets()
                 if response:
-                    buff += CAHPREFIX + "%s: %s" % (i.nick, self.substitute(response))
+                    buff += CAHPREFIX + "%s: %s" % (i.nick, " ".join("[ %s ]" % (i.rstrip(".")) for i in response))
         self.next()
     
     def remove(self, player):
