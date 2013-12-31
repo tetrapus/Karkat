@@ -91,7 +91,16 @@ def search(server, message, data):
 def symbols(server, msg, data):
     data = data.upper()
     results = [i for i in database.values() if any(data in x for x in i)]
+    if data in [i.upper() for i in categories.values()]:
+        category = {v.upper(): k for k, v in categories.items()}[data]
+        results += [i for i in database.values() if i[2] == category]
+    if data in [i.upper() for i in categories.keys()]:
+        results += [i for i in database.values() if i[2].upper() == data]
+    for block in [x[0] for x in blocks if data == x[1].upper()]:
+        results += map(lambda x:("%X"%x,), range(*block))
+
     results = [repr(chr(int(i[0], 16)))[1:-1] for i in results]
+    results.sort(key=lambda x:x.startswith("\\"))
     size = -1
     chars = []
     while results and size < 400:
