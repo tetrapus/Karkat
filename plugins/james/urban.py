@@ -33,7 +33,7 @@ def urban_lookup(bot, msg, arg, index):
         if data['result_type'] == 'no_results':
             return failmsg() % (nick, params['term'])
 
-        output = defs[index]['word'] + ' [' + str(index+1) + ']: ' + defs[index]['definition']
+        output = "%s 15│ %s" % (defs[index]['word'], re.sub(r"\[(.+?)\]", "\x02\\1\x02", defs[index]['definition']))
     except:
         return failmsg() % params['term']
 
@@ -50,8 +50,6 @@ def urban_lookup(bot, msg, arg, index):
             sentences = [s] + sentences # put it back gently
             break
         i += 1
-
-    output = re.sub(r"\[(.+?)\]", "\x02\\1\x02", output)
 
     if sentences:
         output += '\n15│ Read more: %s' % format(shorten(defs[index]['permalink']))
