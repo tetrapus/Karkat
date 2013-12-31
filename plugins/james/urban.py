@@ -50,6 +50,8 @@ def urban_lookup(bot, msg, arg, index):
             break
         i += 1
 
+    output = re.sub(r"\[(.+?)\]", r"\x02\1\x02", output)
+
     if sentences:
         output += '\n15│ Read more: %s' % format(shorten(defs[index]['permalink']))
 
