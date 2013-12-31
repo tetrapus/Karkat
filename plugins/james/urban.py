@@ -47,10 +47,11 @@ def urban_lookup(bot, msg, arg, index):
         if i % 2 or len(output) + len(s) < 350:
             output += s
         else:
+            sentences = [s] + sentences # put it back gently
             break
         i += 1
 
-    output = re.sub(r"\[(.+?)\]", r"\x02\1\x02", output)
+    output = re.sub(r"\[(.+?)\]", "\x02\\1\x02", output)
 
     if sentences:
         output += '\n15│ Read more: %s' % format(shorten(defs[index]['permalink']))
