@@ -113,6 +113,12 @@ class Youtube(object):
         answer = requests.get("https://www.googleapis.com/youtube/v3/search", params=p).json()
         return answer["items"]
 
+    @apimethod
+    def stats(self, video):
+        p = {"part": "statistics", "access_token": self.token, "id":video}
+        answer = requests.get("https://www.googleapis.com/youtube/v3/search", params=p).json()
+        return answer["items"][0]["statistics"]
+
     def trigger(self, words, line):
         message = Message(line)
         videos = re.findall(r"(?:youtube\.com/watch\?(?:.+&)?v=|youtu\.be/)([a-zA-Z0-9-_]+)", message.message)

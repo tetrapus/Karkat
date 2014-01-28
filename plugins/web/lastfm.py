@@ -242,7 +242,7 @@ class LastFM(Callback):
                 " %dm/bar" % (timespan / (60 * values)),
                 " %.2f songs per day" % (average * 24 * 60 * 60),
                 " %dm average play time" % (runs / 60)]
-        data = ["%s04│ %s" % i for i in zip(data, meta)]
+        data = ["%s04│ %s" % i for i in zip(data, meta)]
 
         for i in data:
             yield i
@@ -351,6 +351,17 @@ class LastFM(Callback):
     @command("besties", "(.*)")
     def besties(self, server, message, user):
         raise NotImplementedError
+
+    @command("lastfm", "(.*)")
+    def lastfm(self, server, message, user):
+        if not user:
+            user = message.address.nick
+
+        lowername = server.lower(user)
+        if lowername in self.users:
+            return "04│04 http://last.fm/user/" + self.users[lowername]
+        return "04│04 %s has not associated their last.fm." % user
+
 
     def savefile(self):
         json.dump(self.users, open(self.userfile, "w"))

@@ -7,6 +7,7 @@ import sys
 import os
 import functools
 
+from util import cmp
 from util.text import ordinal
 from util.irc import Callback, Address, Message, command
 
@@ -17,7 +18,7 @@ class CardsAgainstHumanity(object):
     black = [i.strip() for i in open(datadir + "/black.txt").read().split("\n")]
     white = [i.strip() for i in open(datadir + "/white.txt").read().split("\n")]
 
-    def __init__(self, printer, channel, rounds=None, black=[], white=[], rando=False, numcards=10, minplayers=3, bets=True, firstto=None, ranked=False):
+    def __init__(self, printer, channel, rounds=None, black=[], white=[], rando=False, numcards=10, minplayers=3, bets=True, firstto=None, ranked=False, democracy=False):
         self.printer = printer
 
         self.lock = threading.Lock()
@@ -37,6 +38,7 @@ class CardsAgainstHumanity(object):
         self.bets = not ranked or bets
         self.firstto = firstto
         self.ranked = ranked
+        self.democracy = democracy
         
         self.players = []
         self.allplayers = []
@@ -63,6 +65,11 @@ class CardsAgainstHumanity(object):
             open(directory + "/questions.txt", "w")
             open(directory + "/answers.txt", "w")
             cls.expansionas, cls.expansionqs = [], []
+
+    def getvar(self, varname):
+        if varname == "PLAYER":
+            return random.choice(self.players)
+        if varname == "ASKREDDIT": pass
 
     def addPlayer(self, player):
         if player in [x.nick for x in self.players]:
@@ -117,7 +124,6 @@ class CardsAgainstHumanity(object):
                 self.usedanswers = []
                 random.shuffle(self.answers)
             else:
-                self.usedanswers.append(card)
                 player.hand.append(card)
     
     @staticmethod 
@@ -152,11 +158,11 @@ class CardsAgainstHumanity(object):
         else: return len(re.findall("_+", self.question))
             
     def printplayers(self):
-        self.printer.message(CAHPREFIX + "Scores: " + (", ".join("%s - %s"%(i.nick if i != self.czar else "%s"%i.nick, i.score()) for i in sorted(self.players, key=CAHPlayer.score)[::-1])), self.channel)
+        self.printer.message(CAHPREFIX + "Scores 15│ " + (" · ".join("%s (%s)"%(i.nick if i != self.czar else "%s"%i.nick, i.score()) for i in sorted(self.players, key=CAHPlayer.score)[::-1])), self.channel)
         
     def chooseprompt(self, rnum, forcenext=False): 
         if self.state == "collect" and self.round == rnum:
-            self.printer.message(CAHPREFIX + "Waiting for: %s" % (", ".join(i.nick for i in self.players if not (i.responses or i == self.czar))), self.channel)
+            self.printer.message(CAHPREFIX + "Waiting for %s" % (", ".join(i.nick for i in self.players if not (i.responses or i == self.czar))), self.channel)
             if forcenext: threading.Timer(45, self.removeall, args=(rnum,)).start()
             else: threading.Timer(60, self.chooseprompt, args=(rnum,), kwargs={"forcenext":True}).start()
         
@@ -176,10 +182,10 @@ class CardsAgainstHumanity(object):
             players = sorted(self.allplayers, key=CAHPlayer.score)[::-1]
             for i, player in enumerate(players):
                 if i and players[i-1].score() == player.score():
-                    rank = "    "
+                    rank = "     "
                 else:
-                    rank = ordinal(i+1) + ":"
-                buffer += CAHPREFIX + "%s %s - %d points" % (rank, player.nick, player.score())
+                    rank = ordinal(i+1) + (" " if i < 9 else "")
+                buffer += CAHPREFIX + "%s 01│ %s - %d point%s" % (rank, player.nick, player.score(), ["", "s"][cmp(1, player.score())])
  
     def isEndGame(self):
         return (not (self.questions) 
@@ -230,6 +236,7 @@ class CardsAgainstHumanity(object):
                 buffer += CAHPREFIX + "All cards are in. %s, please pick the best %s" % (self.czar.nick, "response." if not self.ranked or len(self.players) < 4 else "%d responses." % min(len(self.players) - 2, 3))
                 for i, player in enumerate(self.order):
                     response = player.responses if self.order.index(player) == i else player.bets
+                    self.usedanswers.append(response)
                     buffer += CAHPREFIX + "%d. %s" % (i+1, self.substitute(response))
             self.state = "judge"
 
@@ -277,10 +284,20 @@ class CardsAgainstHumanity(object):
                 winning = winner.popResponses() if self.order.index(winner) == number - 1 else winner.popBets()
                 winner.addPoints(points)
                 buff += CAHPREFIX + "%s picked %s's response: 00,01 %s " % (self.czar.nick, winner.nick, self.substitute(winning))
+            reveal = []
             for i in self.order:
                 response = i.popResponses() or i.popBets()
                 if response:
-                    buff += CAHPREFIX + "%s: %s" % (i.nick, " ".join("[ %s ]" % (i.rstrip(".")) for i in response))
+                    reveal.append("\x02%s\x02 %s" % (i.nick, " ".join("[ %s ]" % ((i[0].upper() + i[1:]).rstrip(".")) for i in response)))
+            output = [[]]
+            for i in reveal:
+                if sum(len(i) + 2 for i in output) + len(i) < 375:
+                    output[-1].append(i)
+                else:
+                    output.append([i])
+            for i in output:
+                buff += CAHPREFIX + " · ".join(i)
+
         self.next()
     
     def remove(self, player):
@@ -324,6 +341,7 @@ class CAHBot(object):
         server.register("privmsg", self.trigger)
         server.register("privmsg", self.custom_cards)
         server.register("privmsg", self.remove_player)
+#        server.register("nick". self.rename)
 
     @command("remove", "(.+)", admin=True, error="No such player.")
     def remove_player(self, server, message, player):
@@ -366,6 +384,7 @@ class CAHBot(object):
                 with game.lock:
                     return funct(self, server, message, *args, **kwargs)
         return _
+
 
     @Callback.threadsafe
     def trigger(self, server, line):
@@ -438,9 +457,9 @@ class CAHBot(object):
                             if all((bet + args).count(i) == 1 and 1 <= i <= len(player.hand) for i in bet + args) and (len(args) == game.numcards() and len(bet) in [game.numcards(), 0]):
                                 player.setResponses(args)
                                 player.setBet(bet)
-                                printer.message(CAHPREFIX + "Response: 00,01 %s " % game.substitute(player.responses), nick, "NOTICE")
+                                printer.message(CAHPREFIX + "Response 15│00,01 %s " % game.substitute(player.responses), nick, "NOTICE")
                                 if bet:
-                                    printer.message(CAHPREFIX + "  Backup: 00,01 %s " % game.substitute(player.bets), nick, "NOTICE")
+                                    printer.message(CAHPREFIX + "Backup   15│00,01 %s " % game.substitute(player.bets), nick, "NOTICE")
                             else:
                                 printer.message(CAHPREFIX + "Invalid arguments.", nick, "NOTICE")
                             if not [i for i in game.players if i.responses is None and i != game.czar]:
@@ -513,6 +532,9 @@ class CAHPlayer(object):
         self.responses = None
         self.bets = None
         
+    def rename(self, newname):
+        self.nick = newname
+
     def addCard(self, card):
         self.hand.append(card)
             
@@ -554,3 +576,6 @@ class CAHPlayer(object):
             lines.append(CAHPREFIX + "%d. %s" % (i+1, card[0].upper() + card[1:]))
         lines.append(CAHPREFIX + "You have %d point%s." % (self.points, "" if self.points == 1 else "s"))
         return lines
+
+class CAHDeck(list):
+    pass

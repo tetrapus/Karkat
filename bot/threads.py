@@ -148,7 +148,8 @@ class Printer(WorkerThread):
         """
         Send a message.
         """
-        for message in [i for i in str(mesg).split("\n") if i]:
+        msg = lineify(str(mesg))
+        for message in [i for i in msg if i]:
             self.work.put("%s %s :%s" % (method, recipient, message))
         return mesg # Debugging
 
@@ -185,23 +186,6 @@ class Printer(WorkerThread):
                     break
             else:
                 break
-
-    def write(self, data):
-        # TODO: Check if deprecated?
-        """
-        Send a message. If data is a string, the message is sent to the
-        current context, else it is assumed to be a 2-tuple containing
-        (message, target).
-        """
-        raise Warning("Soon to be deprecated.")
-        if data.strip():
-            if isinstance(data, str):
-                data, channel = lineify(data), None
-            else:
-                data, channel = lineify(data[0]), data[1]
-            for line in data:
-                if line.strip():
-                    self.message(line, channel)
 
     def buffer(self, recipient, method="PRIVMSG"):
         """
@@ -246,7 +230,7 @@ class ColourPrinter(Printer):
                           line)
             line = line.replace("\x0f", "\x0f\x03%s" % (color))
             value.append("\x03%s%s" % (color, line))
-        return "\n".join(value)
+        return ("\n".join(value)) # TODO: Minify.
 
     def message(self, msg, recipient=None, method="PRIVMSG"):
         msg = str(msg)
@@ -652,6 +636,15 @@ class SelectiveBot(Bot):
         if data[1] != "PRIVMSG" or not any(handler.module.__name__.startswith(i) for i in self.blacklist.get(data[2].lower(), self.blacklist[None])):
             super().execute(handler, line)
 
+
+class IAL(object):
+    def __init__(self):
+        self.ial = set()
+
+    def get(self, nick):
+        for i in self.ial:
+            if i.nick == nick:
+                return i
 
 class StatefulBot(SelectiveBot):
     """ Beware of thread safety when manipulating server state. If a callback

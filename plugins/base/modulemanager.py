@@ -105,7 +105,7 @@ class ModManager(object):
                 admin=True, 
                 usage="12Module Manager│ Usage: [!@]unload <module>")
     def unregister_modules(self, server, message, module):
-        removed = {x.module for x in self.remove_modules(server, module)}
+        removed = {x.module.__name__ for x in self.remove_modules(server, module)}
         if not removed:
             yield "05Module Manager│ Module not found."
         elif len(removed) == 1:

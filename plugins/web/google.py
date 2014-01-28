@@ -6,16 +6,16 @@ import requests
 from util.irc import Callback, command
 from util.text import unescape
 
-templates = {"@": "%(color).2d│ 02%(title)s\n%(color).2d│ 03↗ %(url)s\n%(color).2d│ %(description)s",
-             ".": "%(color).2d│ %(title)s 12↗ %(url)s",
-             "!": "%(color).2d│ %(title)s 12↗ %(url)s"}
+templates = {'@': "%(color).2d│ 02%(title)s\n%(color).2d│ 03↗ %(url)s\n%(color).2d│ %(description)s",
+             '.': "%(color).2d│ %(title)s 12↗ %(url)s",
+             '!': "%(color).2d│ %(title)s 12↗ %(url)s"}
 
-maxlines = {"@": 1,
-            ".": 4,
-            "!": 6}
-deflines = {"@": 1,
-            ".": 1,
-            "!": 4}
+maxlines = {'@': 1,
+            '.': 4,
+            '!': 6}
+deflines = {'@': 1,
+            '.': 1,
+            '!': 4}
 
 
 def google(query, nresults, retry={}):
@@ -38,10 +38,13 @@ def google(query, nresults, retry={}):
     return data
 
 @Callback.threadsafe
-@command(["google", "search", "g"], "(-\d\s+)?(.+)", private="!", public=".@",
+@command(["google", "gooogle", "goooogle", "gooooogle", "search", "g"], "(-\d\s+)?(.+)", private="!", public=".@",
             usage="12Google│ Usage: !google [-NUM_RESULTS] <query>",
             error="04Google│ Error: Could not fetch google results.")
 def google_template(server, message, nresults, query):
+    if message.command.lower() in ["gooogle", "goooogle", "gooooogle"]:
+        nresults = len(message.command) - 5
+
     if nresults:
         nresults = min(-int(nresults.strip()), maxlines[message.prefix])
     else:

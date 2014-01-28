@@ -1,39 +1,20 @@
 #!/usr/bin/env python
 
-## Code obtained via https://github.com/martinp/pysnap
-
 import json
-from hashlib import sha256
+import os.path
 from time import time
 
-import requests
-from Crypto.Cipher import AES
+from .utils import encrypt, decrypt, make_media_id, request
 
-URL = 'https://feelinsonice-hrd.appspot.com/bq/'
-SECRET = b'iEk21fuwZApXlz93750dmW22pw389dPwOk'
-STATIC_TOKEN = 'm198sOkJEn37DjqZ32lpRu76xmw288xSQ9'
-BLOB_ENCRYPTION_KEY = 'M02cnQ51Ji97vwT4'
-HASH_PATTERN = ('00011101111011100011110101011110'
-                '11010001001110011000110001000110')
 MEDIA_IMAGE = 0
 MEDIA_VIDEO = 1
+MEDIA_VIDEO_NOAUDIO = 2
+
 FRIEND_CONFIRMED = 0
 FRIEND_UNCONFIRMED = 1
 FRIEND_BLOCKED = 2
 PRIVACY_EVERYONE = 0
 PRIVACY_FRIENDS = 1
-
-
-def make_request_token(a, b):
-    hash_a = sha256(SECRET + a.encode('utf-8')).hexdigest()
-    hash_b = sha256(b.encode('utf-8') + SECRET).hexdigest()
-    return ''.join((hash_b[i] if c == '1' else hash_a[i]
-                    for i, c in enumerate(HASH_PATTERN)))
-
-
-def pkcs5_pad(data, blocksize=16):
-    pad_count = blocksize - len(data) % blocksize
-    return data + (chr(pad_count) * pad_count).encode('utf-8')
 
 
 def is_video(data):
@@ -45,25 +26,19 @@ def is_image(data):
 
 
 def get_file_extension(media_type):
-    if media_type == MEDIA_VIDEO:
+    if media_type in (MEDIA_VIDEO, MEDIA_VIDEO_NOAUDIO):
         return 'mp4'
     if media_type == MEDIA_IMAGE:
         return 'jpg'
     return ''
 
 
-def decrypt(data):
-    cipher = AES.new(BLOB_ENCRYPTION_KEY, AES.MODE_ECB)
-    return cipher.decrypt(pkcs5_pad(data))
-
-
-def encrypt(data):
-    cipher = AES.new(BLOB_ENCRYPTION_KEY, AES.MODE_ECB)
-    return cipher.encrypt(pkcs5_pad(data))
-
-
-def timestamp():
-    return int(round(time() * 1000))
+def get_media_type(data):
+    if is_video(data):
+        return MEDIA_VIDEO
+    if is_image(data):
+        return MEDIA_IMAGE
+    return None
 
 
 def _map_keys(snap):
@@ -97,26 +72,9 @@ class Snapchat(object):
         self.username = None
         self.auth_token = None
 
-    def _request(self, endpoint, data=None, raise_for_status=True):
-        """Wrapper method for calling Snapchat API which adds required form
-        data before sending the request.
-
-        :param endpoint: URL for API endpoint
-        :param data: Dictionary containing form data
-        :param raise_for_status: Raise exception for 4xx and 5xx status codes
-        """
-        now = timestamp()
-        if data is None:
-            data = {}
-        data.update({
-            'timestamp': now,
-            'req_token': make_request_token(self.auth_token or STATIC_TOKEN,
-                                            str(now))
-        })
-        r = requests.post(URL + endpoint, data=data)
-        if raise_for_status:
-            r.raise_for_status()
-        return r
+    def _request(self, endpoint, data=None, files=None, raise_for_status=True):
+        return request(endpoint, self.auth_token, data, files,
+                       raise_for_status)
 
     def _unset_auth(self):
         self.username = None
@@ -125,7 +83,7 @@ class Snapchat(object):
     def login(self, username, password):
         """Login to Snapchat account
         Returns a dict containing user information on successful login, the
-        data return is similar to get_updates.
+        data returned is similar to get_updates.
 
         :param username Snapchat username
         :param password Snapchat password
@@ -275,6 +233,42 @@ class Snapchat(object):
         """
         return self.get_updates().get('friends', [])
 
+    def get_best_friends(self):
+        """Get best friends
+        Returns a list of best friends.
+        """
+        return self.get_updates().get('bests', [])
+
+    def add_friend(self, username):
+        """Add user as friend
+        Returns JSON response.
+        Expected messages:
+            Success: '{username} is now your friend!'
+            Pending: '{username} is private. Friend request sent.'
+            Failure: 'Sorry! Couldn't find {username}'
+
+        :param username: Username to add as a friend
+        """
+        r = self._request('friend', {
+            'action': 'add',
+            'friend': username,
+            'username': self.username
+        })
+        return r.json()
+
+    def delete_friend(self, username):
+        """Remove user from friends
+        Returns true on success.
+
+        :param username: Username to remove from friends
+        """
+        r = self._request('friend', {
+            'action': 'delete',
+            'friend': username,
+            'username': self.username
+        })
+        return r.json().get('logged')
+
     def block(self, username):
         """Block a user
         Returns true on success.
@@ -306,3 +300,40 @@ class Snapchat(object):
         Returns a list of currently blocked users.
         """
         return [f for f in self.get_friends() if f['type'] == FRIEND_BLOCKED]
+
+    def upload(self, path):
+        """Upload media
+        Returns the media ID on success. The media ID is used when sending
+        the snap.
+        """
+        if not os.path.exists(path):
+            raise ValueError('No such file: {0}'.format(path))
+
+        with open(path) as f:
+            data = f.read()
+
+        media_type = get_media_type(data)
+        if media_type is None:
+            raise ValueError('Could not determine media type for given data')
+
+        media_id = make_media_id(self.username)
+        r = self._request('upload', {
+            'username': self.username,
+            'media_id': media_id,
+            'type': media_type
+            }, files={'data': encrypt(data)})
+
+        return media_id if len(r.content) == 0 else None
+
+    def send(self, media_id, recipients, time=5):
+        """Send a snap. Requires a media_id returned by the upload method
+        Returns true if the snap was sent successfully
+        """
+        r = self._request('send', {
+            'username': self.username,
+            'media_id': media_id,
+            'recipient': recipients,
+            'time': time,
+            'zipped': '0'
+            })
+        return len(r.content) == 0
