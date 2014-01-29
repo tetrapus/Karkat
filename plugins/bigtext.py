@@ -92,7 +92,7 @@ def bigtext(server, message, flags, lines, text):
     if lines == 1:
         text = "│ " + text
     else:
-        ds = parse("data/bigtext/%d.txt")
+        ds = parse("data/bigtext/%d.txt" % lines)
         text = big(text, ds)
     if "t" in flags:
         text = thicken(text)
