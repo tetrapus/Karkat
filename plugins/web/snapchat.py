@@ -12,7 +12,7 @@ from bot.events import Callback, command
 
 def savevideo(data):
     fchars = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', '|', '-', '_']
-    template = "/home/joey/Dropbox/Public/Snaps/%s.mp4"
+    template = "Snapchat/%s.mp4"
     fname = random.choice(fchars)
     while os.path.exists(template % fname):
         fname += random.choice(fchars)
@@ -22,9 +22,9 @@ def savevideo(data):
 
 def savegif(data):
     fname = savevideo(data)
-    subprocess.call("ffmpeg -i /home/joey/Dropbox/Public/Snaps/%(id)s.mp4 -vf scale=320:-1 -r 10 /tmp/snapchat-%(pid)s-%(id)s.%%04d.png" % {"pid": os.getpid(), "id": fname}, shell=True)
+    subprocess.call("ffmpeg -i Snapchat/%(id)s.mp4 -vf scale=320:-1 -r 10 /tmp/snapchat-%(pid)s-%(id)s.%%04d.png" % {"pid": os.getpid(), "id": fname}, shell=True)
     subprocess.call("rm /tmp/snapchat-%(pid)s-%(id)s.0001.png" % {"pid": os.getpid(), "id": fname}, shell=True)
-    subprocess.call("convert -delay 5 -loop 0 /tmp/snapchat-%(pid)s-%(id)s.*.png /home/joey/Dropbox/Public/Snaps/%(id)s.gif" % {"pid": os.getpid(), "id": fname}, shell=True)
+    subprocess.call("convert -delay 5 -loop 0 /tmp/snapchat-%(pid)s-%(id)s.*.png Snapchat/%(id)s.gif" % {"pid": os.getpid(), "id": fname}, shell=True)
     subprocess.call("rm /tmp/snapchat-%(pid)s-%(id)s.*.png" % {"pid": os.getpid(), "id": fname}, shell=True)
     return fname
 
@@ -60,12 +60,13 @@ class Snap(Callback):
         elif pysnap.is_video(data):
             if gif:
                 gifid = savegif(data)
-                if os.path.getsize("/home/joey/Dropbox/Public/Snaps/%s.gif" % gifid) < 2097152:
-                    res = imgur.upload(open("/home/joey/Dropbox/Public/Snaps/%s.gif" % gifid, "rb").read())["data"]["link"]
+                if os.path.getsize("Snapchat/%s.gif" % gifid) < 2097152:
+                    res = imgur.upload(open("Snapchat/%s.gif" % gifid, "rb").read())["data"]["link"]
                 else:
-                    res = url.shorten("http://dl.dropboxusercontent.com/u/5321377/Snaps/%s.gif" % savegif(data))
+                    # TODO: generic urls or some shit
+                    res = url.shorten("http://synaptoso.me:8000/%s.gif" % gifid)
             else:
-                res = url.shorten("http://dl.dropboxusercontent.com/u/5321377/Snaps/%s.mp4" % savevideo(data))
+                res = url.shorten("http://synaptoso.me:8000/%s.mp4" % savevideo(data))
 
         self.cache[sig] = res
         return res
