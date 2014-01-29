@@ -7,12 +7,15 @@ import hashlib
 import subprocess
 
 from util.text import pretty_date
-from util.services import pysnap, imgur, url
+from util.services import pysnap, imgur
 from bot.events import Callback, command
+
+snapfolder = "/var/www/snaps"
+public_url = "http://s.n0.ms/"
 
 def savevideo(data):
     fchars = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', '|', '-', '_']
-    template = "Snapchat/%s.mp4"
+    template = snapfolder + "/%s.mp4"
     fname = random.choice(fchars)
     while os.path.exists(template % fname):
         fname += random.choice(fchars)
@@ -22,15 +25,17 @@ def savevideo(data):
 
 def savegif(data):
     fname = savevideo(data)
-    subprocess.call("ffmpeg -i Snapchat/%(id)s.mp4 -vf scale=320:-1 -r 10 /tmp/snapchat-%(pid)s-%(id)s.%%04d.png" % {"pid": os.getpid(), "id": fname}, shell=True)
-    subprocess.call("rm /tmp/snapchat-%(pid)s-%(id)s.0001.png" % {"pid": os.getpid(), "id": fname}, shell=True)
-    subprocess.call("convert -delay 5 -loop 0 /tmp/snapchat-%(pid)s-%(id)s.*.png Snapchat/%(id)s.gif" % {"pid": os.getpid(), "id": fname}, shell=True)
-    subprocess.call("rm /tmp/snapchat-%(pid)s-%(id)s.*.png" % {"pid": os.getpid(), "id": fname}, shell=True)
+    var = {"pid": os.getpid(), "id": fname, "folder": snapfolder}
+    subprocess.call("ffmpeg -i %(folder)s/%(id)s.mp4 -vf scale=320:-1 -r 10 /tmp/snapchat-%(pid)s-%(id)s.%%04d.png" % var, shell=True)
+    subprocess.call("rm /tmp/snapchat-%(pid)s-%(id)s.0001.png" % var, shell=True)
+    subprocess.call("convert -delay 5 -loop 0 /tmp/snapchat-%(pid)s-%(id)s.*.png %(folder)s/%(id)s.gif" % var, shell=True)
+    subprocess.call("rm /tmp/snapchat-%(pid)s-%(id)s.*.png" % var, shell=True)
     return fname
 
 class Snap(Callback):
 
     SETTINGS_FILE = "snapchat.json"
+    DELETION_FILE = "snapchat-deletion.json"
 
     def __init__(self, server):
         self.settingsf = server.get_config_dir(self.SETTINGS_FILE)
@@ -39,6 +44,11 @@ class Snap(Callback):
         except FileNotFoundError:
             self.settings = {}
         
+        self.deletionf = server.get_config_dir(self.DELETION_FILE)
+        try:
+            self.deletion = json.load(open(self.deletionf))
+        except FileNotFoundError:
+            self.deletion = {}
         self.accounts = {i: pysnap.Snapchat() for i in self.settings}
         for i in self.settings:
             self.accounts[i].login(self.settings[i]["username"], self.settings[i]["password"])
@@ -46,27 +56,37 @@ class Snap(Callback):
 
         super().__init__(server)
 
-    def snapsave(self, data, gif=False):
+    def add_deletion(self, username, id, link):
+        self.deletion.setdefault(username.lower(), {}).update({id: link})
+        
+        json.dump(self.deletion, open(self.deletionf, "w"))
+        
+    def snapsave(self, data, snap):
         sig = hashlib.md5(data).hexdigest()
         if sig in self.cache:
             return self.cache[sig]
         res = None
 
+        gif = snap["media_type"] == 2
+
         # Check if image file.
         if pysnap.is_image(data):
             # Upload to imgur
             response = imgur.upload(data)
+            self.add_deletion(snap["sender"], response["data"]["id"], response["data"]["deletehash"])
             res = response["data"]["link"]
         elif pysnap.is_video(data):
             if gif:
                 gifid = savegif(data)
-                if os.path.getsize("Snapchat/%s.gif" % gifid) < 2097152:
-                    res = imgur.upload(open("Snapchat/%s.gif" % gifid, "rb").read())["data"]["link"]
+                if os.path.getsize(snapfolder + "/%s.gif" % gifid) < 2097152:
+                    response = imgur.upload(open("%s/%s.gif" % (snapfolder, gifid), "rb").read())
+                    self.add_deletion(snap["sender"], response["data"]["id"], response["data"]["deletehash"])
+                    res = response["data"]["link"]
                 else:
                     # TODO: generic urls or some shit
-                    res = url.shorten("http://synaptoso.me:8000/%s.gif" % gifid)
+                    res = public_url + ("%s.gif" % gifid)
             else:
-                res = url.shorten("http://synaptoso.me:8000/%s.mp4" % savevideo(data))
+                res = public_url + ("%s.mp4" % savevideo(data))
 
         self.cache[sig] = res
         return res
@@ -102,7 +122,7 @@ class Snap(Callback):
                     continue
                 print(snap)
                 print("*** Saving", snap["id"])
-                url = self.snapsave(blob, gif=snap["media_type"] == 2)
+                url = self.snapsave(blob, snap)
                 print("*** URL:", url)
                 self.settings[channel]["snaps"][snap["id"]] = url
                 account.mark_viewed(snap["id"])
