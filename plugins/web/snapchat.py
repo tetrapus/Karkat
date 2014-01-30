@@ -132,12 +132,14 @@ class Snap(Callback):
                 traceback.print_exc()
         json.dump(self.settings, open(self.settingsf, "w"))
 
-    @command("snaps")
+    @Callback.background
+    @command("updatesnaps")
     def getnewsnaps(self, server, message):
         channel = server.lower(message.context)
 
         yield from self.newsnaps(channel)
 
+    @Callback.background
     def checksnaps(self, server, line) -> "ALL":
         for channel in self.settings:
             if time.time() - self.settings[channel]["last"] > 60:
@@ -155,6 +157,8 @@ class Snap(Callback):
         else:
             return "08│ Could not block %s." % username
 
-
+    @command("snaps")
+    def search(self, server, message):
+        raise NotImplementedError
 
 __initialise__ = Snap
