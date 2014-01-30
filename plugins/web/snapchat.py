@@ -127,7 +127,7 @@ class Snap(Callback):
                 self.settings[channel]["snaps"][snap["id"]] = url
                 self.settings[channel].setdefault("history", []).append(snap)
                 account.mark_viewed(snap["id"])
-                yield "08│12 %s via %s (⌚ %s)" % (url, snap["sender"], pretty_date(time.time() - snap["sent"]/1000) if snap["sent"] else "Unknown")
+                yield "08👻│12 %s via %s (⌚ %s)" % (url, snap["sender"], pretty_date(time.time() - snap["sent"]/1000) if snap["sent"] else "Unknown")
             except:
                 traceback.print_exc()
         json.dump(self.settings, open(self.settingsf, "w"))
