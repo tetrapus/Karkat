@@ -101,7 +101,7 @@ class Snap(Callback):
         if channel in self.accounts:
             self.accounts[channel].logout()
         self.accounts[channel] = res
-        self.settings[server.lower(channel)] = {"username": username, "password": password, "snaps": {}, "last": time.time()}
+        self.settings[server.lower(channel)] = {"username": username, "password": password, "snaps": {}, "last": time.time(), "history":[]}
         json.dump(self.settings, open(self.settingsf, "w"))
         return "Associated %s with username %s successfully." % (channel, username)
 
@@ -125,6 +125,7 @@ class Snap(Callback):
                 url = self.snapsave(blob, snap)
                 print("*** URL:", url)
                 self.settings[channel]["snaps"][snap["id"]] = url
+                self.settings[channel].setdefault("history", []).append(snap)
                 account.mark_viewed(snap["id"])
                 yield "08│12 %s via %s (⌚ %s)" % (url, snap["sender"], pretty_date(time.time() - snap["sent"]/1000) if snap["sent"] else "Unknown")
             except:
