@@ -184,14 +184,19 @@ class AI(Callback):
         try:
             self.lines = open(self.configdir + "caps.txt").read().split("\n")
         except FileNotFoundError:
-            self.lines = []
+            self.lines = ["HELLO"]
+        self.server = server
         super().__init__(server)
 
     def getline(self, sender):
         return re.sub("binary", sender.upper(), random.choice(self.lines), flags=re.IGNORECASE)
 
-    def addline(self, sender, line):
-        self.lines.append(re.sub(sender, "binary", line, flags=re.IGNORECASE))
+    def addline(self, users, line):
+        for i in users:
+            line = re.sub(r"\b%s\b" % re.escape(i), "BINARY", line, flags=re.IGNORECASE)
+        self.lines.append(re.sub("(pipey|karkat)", "BINARY", line, flags=re.IGNORECASE))
+        with open(self.configdir + "caps.txt", "w") as f:
+            f.write("\n".join(self.lines))
 
     @Callback.background
     def capsmsg(self, server, line) -> "privmsg":
@@ -199,8 +204,6 @@ class AI(Callback):
         if msg.text.isupper():
             server.message(self.getline(msg.address.nick), msg.context)
             if msg.text not in self.lines:
-                self.addline(msg.address.nick, msg.text)
-                with open(self.configdir + "caps.txt", "w") as f:
-                    f.write("\n".join(self.lines))
+                self.addline(server.channels[server.lower(msg.context)], msg.text)
 
 __initialise__ = AI
