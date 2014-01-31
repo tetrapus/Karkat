@@ -20,6 +20,8 @@ BLOB_ENCRYPTION_KEY = 'M02cnQ51Ji97vwT4'
 HASH_PATTERN = ('00011101111011100011110101011110'
                 '11010001001110011000110001000110')
 
+USER_AGENT = 'Snapchat/6.1.2 (iPhone6,2; iOS 7.0.4; gzip)'
+
 
 def make_request_token(a, b):
     hash_a = sha256(SECRET + a.encode('utf-8')).hexdigest()
@@ -68,7 +70,7 @@ def request(endpoint, auth_token, data=None, files=None,
         'req_token': make_request_token(auth_token or STATIC_TOKEN,
                                         str(now))
     })
-    r = requests.post(URL + endpoint, data=data, files=files)
+    r = requests.post(URL + endpoint, data=data, files=files, headers={'User-Agent': USER_AGENT })
     if raise_for_status:
         r.raise_for_status()
     return r
