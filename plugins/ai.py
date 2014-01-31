@@ -182,7 +182,7 @@ class AI(Callback):
         if not os.path.exists(self.configdir):
             os.makedirs(self.configdir, exist_ok=True)
         try:
-            self.lines = open(self.configdir + "caps.txt").read().split("\n")
+            self.lines = open(self.configdir + "/caps.txt").read().split("\n")
         except FileNotFoundError:
             self.lines = ["HELLO"]
         self.server = server
