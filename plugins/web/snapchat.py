@@ -74,7 +74,7 @@ class Snap(Callback):
 
         filetype = ["jpg", "mp4", "gif"][media_type]
 
-        res = save_as(data, filetype)
+        res = public_url + save_as(data, filetype) + "." + filetype
 
         self.cache[sig] = res
         return res
