@@ -6,6 +6,7 @@ import os
 import hashlib
 import subprocess
 
+from util.text import pretty_date
 from util.services import pysnap, imgur
 from bot.events import Callback, command
 
@@ -26,8 +27,8 @@ def savegif(data):
     fname = savevideo(data)
     var = {"pid": os.getpid(), "id": fname, "folder": snapfolder}
     subprocess.call("ffmpeg -i %(folder)s/%(id)s.mp4 -vf scale=320:-1 -r 10 /tmp/snapchat-%(pid)s-%(id)s.%%04d.png" % var, shell=True)
-    subprocess.call("rm /tmp/snapchat-%(pid)s-%(id)s.0001.png" % var, shell=True)
-    subprocess.call("convert -delay 5 -loop 0 /tmp/snapchat-%(pid)s-%(id)s.*.png %(folder)s/%(id)s.gif" % var, shell=True)
+#    subprocess.call("rm /tmp/snapchat-%(pid)s-%(id)s.0001.png" % var, shell=True)
+    subprocess.call("convert -delay 10 -loop 0 /tmp/snapchat-%(pid)s-%(id)s.*.png %(folder)s/%(id)s.gif" % var, shell=True)
     subprocess.call("rm /tmp/snapchat-%(pid)s-%(id)s.*.png" % var, shell=True)
     return fname
 
@@ -126,13 +127,13 @@ class Snap(Callback):
                 self.settings[channel]["snaps"][snap["id"]] = url
                 self.settings[channel].setdefault("history", []).append(snap)
                 account.mark_viewed(snap["id"])
-                yield "08│ 👻 12%s via %s" % (url, snap["sender"])
+                yield "08│👻│ 12%s · via %s · ⌚ %s" % (url, snap["sender"], pretty_date(time.time() - snap["sent"]/1000) if snap["sent"] else "Unknown")
             except:
                 traceback.print_exc()
         json.dump(self.settings, open(self.settingsf, "w"))
 
     @Callback.background
-    @command("updatesnaps")
+    @command("update")
     def getnewsnaps(self, server, message):
         channel = server.lower(message.context)
 
@@ -156,8 +157,8 @@ class Snap(Callback):
         else:
             return "08│ Could not block %s." % username
 
-    @command("snaps")
-    def search(self, server, message):
-        raise NotImplementedError
+    @command("snaps", r"(?:(last|first)\s+(\d+)(?:(?:(?:-|\s+to\s+)(\d+))?)\s*)?((?:gifs|videos|snaps|pics|clips)(?:(?:\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*)(?:gifs|videos|snaps|pics|clips))*)?(?:from\s+(\S+(?:(?:\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*)\S+)*))?")
+    def search(self, server, message, anchor, frm, to, typefilter, user):
+        pass
 
 __initialise__ = Snap
