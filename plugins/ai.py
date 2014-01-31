@@ -194,7 +194,7 @@ class AI(Callback):
     def addline(self, users, line):
         for i in users:
             line = re.sub(r"\b%s\b" % re.escape(i), "BINARY", line, flags=re.IGNORECASE)
-        self.lines.append(re.sub("(pipey|karkat)", "BINARY", line, flags=re.IGNORECASE))
+        self.lines.append(re.sub(r"\b(pipey|karkat|\|)\b", "BINARY", line, flags=re.IGNORECASE))
         with open(self.configdir + "caps.txt", "w") as f:
             f.write("\n".join(self.lines))
 
