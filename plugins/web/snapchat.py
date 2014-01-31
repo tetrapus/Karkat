@@ -26,9 +26,9 @@ def savevideo(data):
 def savegif(data):
     fname = savevideo(data)
     var = {"pid": os.getpid(), "id": fname, "folder": snapfolder}
-    subprocess.call("ffmpeg -i %(folder)s/%(id)s.mp4 -vf scale=320:-1 -r 10 /tmp/snapchat-%(pid)s-%(id)s.%%04d.png" % var, shell=True)
+    subprocess.call("ffmpeg -i %(folder)s/%(id)s.mp4 -vf scale=320:-1 -r 12 /tmp/snapchat-%(pid)s-%(id)s.%%04d.png" % var, shell=True)
 #    subprocess.call("rm /tmp/snapchat-%(pid)s-%(id)s.0001.png" % var, shell=True)
-    subprocess.call("convert -delay 10 -loop 0 /tmp/snapchat-%(pid)s-%(id)s.*.png %(folder)s/%(id)s.gif" % var, shell=True)
+    subprocess.call("convert -delay 25x300 -loop 0 /tmp/snapchat-%(pid)s-%(id)s.*.png %(folder)s/%(id)s.gif" % var, shell=True)
     subprocess.call("rm /tmp/snapchat-%(pid)s-%(id)s.*.png" % var, shell=True)
     return fname
 
