@@ -25,7 +25,7 @@ def savevideo(data):
 def savegif(data):
     fname = savevideo(data)
     var = {"pid": os.getpid(), "id": fname, "folder": snapfolder}
-    subprocess.call("ffmpeg -i %(folder)s/%(id)s.mp4 -vf scale=320:-1 -r 10 /tmp/snapchat-%(pid)s-%(id)s.%%04d.png" % var)
+    subprocess.call("ffmpeg -i %(folder)s/%(id)s.mp4 -vf scale=320:-1 -r 10 /tmp/snapchat-%(pid)s-%(id)s.%%04d.png" % var, shell=True)
     subprocess.call("rm /tmp/snapchat-%(pid)s-%(id)s.0001.png" % var, shell=True)
     subprocess.call("convert -delay 5 -loop 0 /tmp/snapchat-%(pid)s-%(id)s.*.png %(folder)s/%(id)s.gif" % var, shell=True)
     subprocess.call("rm /tmp/snapchat-%(pid)s-%(id)s.*.png" % var, shell=True)
@@ -126,7 +126,7 @@ class Snap(Callback):
                 self.settings[channel]["snaps"][snap["id"]] = url
                 self.settings[channel].setdefault("history", []).append(snap)
                 account.mark_viewed(snap["id"])
-                yield "08👻 │12 %s via %s" % (url, snap["sender"])
+                yield "08│ 👻 12%s via %s" % (url, snap["sender"])
             except:
                 traceback.print_exc()
         json.dump(self.settings, open(self.settingsf, "w"))
