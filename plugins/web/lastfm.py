@@ -165,12 +165,12 @@ class LastFM(Callback):
             username = message.address.nick
         self.users[nick] = username
         self.savefile()
-        return "04Last.FM│ Associated %s with Last.FM user %s." % (message.address.nick, username)
+        return "04│ ♫ │ Associated %s with Last.FM user %s." % (message.address.nick, username)
 
     @Callback.threadsafe
     @command("listens", r"([-.:#+|!]\d+(?:\s+|\b))?((?:\d+[dhms])*)\s*(.*)",
-             templates={Callback.USAGE: "04Last.FM│ Usage: [.@]listens [(\d+[dhms])+] [user]",    
-                        Callback.ERROR: "04Last.FM│ Couldn't retrieve Last.FM playing history."})
+             templates={Callback.USAGE: "04│ ♫ │ Usage: [.@]listens [(\d+[dhms])+] [user]",    
+                        Callback.ERROR: "04│ ♫ │ Couldn't retrieve Last.FM playing history."})
     def listen_history(self, server, message, size, period, username):
         timevals = {"d": 24 * 60 * 60, 
                     "h": 60 * 60, 
@@ -249,8 +249,8 @@ class LastFM(Callback):
 
     @Callback.threadsafe
     @command("np", "(-\d+)?\s*([^ ]*)", 
-             templates={Callback.USAGE: "04Last.FM│ Usage: [.!@]np [-d] [user]",
-                        Callback.ERROR: "04Last.FM│ Couldn't retrieve Last.FM playing history."},
+             templates={Callback.USAGE: "04│ ♫ │ Usage: [.!@]np [-d] [user]",
+                        Callback.ERROR: "04│ ♫ │ Couldn't retrieve Last.FM playing history."},
              prefixes=("!", ".@"))
     def now_playing(self, server, message, lastnum, username):
         difftime = collections.OrderedDict()
@@ -290,8 +290,8 @@ class LastFM(Callback):
 
         if message.prefix in "!@":
             # Provide full template
-            template = "04Last.FM│ %(loved)s%(artist)s%(album)s · %(title)s\n"\
-                       "04Last.FM│ %(listens)s%(timeago)s%(duration)s %(link)s"
+            template = "04│ ♫ │ %(loved)s%(artist)s%(album)s · %(title)s\n"\
+                       "04│ ♫ │ %(listens)s%(timeago)s%(duration)s %(link)s"
         else:
             template = "04│ %(loved)s%(artist)s · %(title)s (%(duration)s) %(tad)s%(dotlink)s"
         difftime["template"] = time.time()
@@ -304,9 +304,9 @@ class LastFM(Callback):
 
     @Callback.threadsafe
     @command("compare", "([^ ]+)(?:\s+([^ ]+))?",
-     templates={Callback.USAGE: "04Last.FM│ Usage: [.@]compare user1 [user2]",
-                Callback.ERROR: "04Last.FM│ Couldn't retrieve Last.FM user data.",
-                ValueError: "04Last.FM│ Last.FM compatibility service is down."})
+     templates={Callback.USAGE: "04│ ♫ │ Usage: [.@]compare user1 [user2]",
+                Callback.ERROR: "04│ ♫ │ Couldn't retrieve Last.FM user data.",
+                ValueError: "04│ ♫ │ Last.FM compatibility service is down."})
     def compare(self, server, message, user1, user2):
         if not user2:
             users = (message.address.nick, user1)
@@ -345,8 +345,8 @@ class LastFM(Callback):
         if message.prefix == ".":
             yield "04│ %.2d%.1f%% 04│ %s%s" % ([4, 7, 8, 9, 3][int(tasteometer * 4.95)], tasteometer * 100, common, "..." if overflow else "")
         else:
-            yield "04Last.FM│ %s ⟺ %s: %.2d%.1f%% compatible" % (users_display[0], users_display[1], [4, 7, 8, 9, 3][int(tasteometer * 4.95)], tasteometer * 100)
-            yield "04Last.FM│ %s%s in common." % (common, overflow)
+            yield "04│ ♫ │ %s ⟺ %s: %.2d%.1f%% compatible" % (users_display[0], users_display[1], [4, 7, 8, 9, 3][int(tasteometer * 4.95)], tasteometer * 100)
+            yield "04│ ♫ │ %s%s in common." % (common, overflow)
 
     @command("besties", "(.*)")
     def besties(self, server, message, user):

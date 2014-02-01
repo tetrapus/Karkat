@@ -349,7 +349,7 @@ class Snapchat(object):
             'type': media_type,
             'time': time,
             })
-        return len(r.content) == 0
+        return len(r.content) != 0
 
     def get_friend_stories(self, update_timestamp=0):
         """Get stories
