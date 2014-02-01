@@ -45,7 +45,7 @@ class Pipeline(object):
                 procs[i] = subprocess.Popen(shlex.split(p), stdin=procs[i-1].stdout, stdout=subprocess.PIPE)
                 procs[i-1].stdout.close()
         output = procs[len(procs) - 1].communicate()[0]
-        return output
+        return output.encode("utf-8")
 
 
 class PipelineWithSubstitutions(Pipeline):
