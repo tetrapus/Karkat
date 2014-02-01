@@ -207,3 +207,4 @@ class AI(Callback):
                 self.addline(server.channels[server.lower(msg.context)], msg.text)
 
 __initialise__ = AI
+

@@ -3,8 +3,76 @@ Interprets python statements.
 """
 
 import sys
+import subprocess
+import shlex
+import re
 
 from util.irc import Message, Callback
+
+
+class Pipeline(object):
+    def __init__(self, descriptor=None):
+        self.steps = []
+        if descriptor:
+            for step in descriptor.split("|"):
+                self.add(step.strip())
+
+    def __repr__(self):
+        return " | ".join(self.steps)
+
+    def add(self, step, pos=None):
+        if pos:
+            self.steps.insert(pos, step)
+        else:
+            self.steps.append(step)
+            pos = len(self.steps) - 1
+        return pos
+
+    # syntactic sugar
+    def __or__(self, step):
+        self.add(step)
+        return self
+
+    def remove(self, pos):
+        del self.steps[pos]
+
+    def run(self):
+        procs = {}
+        procs[0] = subprocess.Popen(shlex.split(self.steps[0]), stdout=subprocess.PIPE)
+        if len(self.steps) > 1:
+            i = 1
+            for p in self.steps[1:]:
+                procs[i] = subprocess.Popen(shlex.split(p), stdin=procs[i-1].stdout, stdout=subprocess.PIPE)
+                procs[i-1].stdout.close()
+        output = procs[len(procs) - 1].communicate()[0]
+        return output
+
+
+class PipelineWithSubstitutions(Pipeline):
+    def __init__(self, descriptor=None, substitutions=None):
+        Pipeline.__init__(self, descriptor)
+        self.substitutions = substitutions
+
+    def add(self, step, pos=None):
+        for sub in self.substitutions:
+            step = re.sub(sub, self.substitutions[sub], step)
+        Pipeline.add(self, step, pos)
+        
+
+class VolatilePipeline(Pipeline):
+    def __repr__(self):
+        return self.run()
+        
+class PipeWrapper(object):
+    def __sub__(self, thing):
+        pipe = VolatilePipeline()
+        pipe.add(thing)
+        return pipe
+
+    def __lshift__(self, thing):
+        return self.__sub__(thing)
+        
+run = PipeWrapper()
 
 # Magic interpretter objects
 class Allbots(object):
@@ -73,7 +141,8 @@ class Interpreter(object):
                           "printer": server.printer, 
                           "print": server.printer.message, 
                           "karkat": Allbots([server]), 
-                          "main":__import__("__main__")}
+                          "main":__import__("__main__"),
+                          "run": run}
         self.namespace.update(sys.modules)
         self.namespace = NamespaceStack(self.namespace)
         server.register("privmsg", self.trigger)
