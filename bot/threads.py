@@ -467,7 +467,7 @@ class EventHandler(object):
         self.module = inspect.getmodule(function)
         self.name = function.__qualname__
         if self.module:
-            self.module.__name__ + "." + self.name
+            self.name = self.module.__name__ + "." + self.name
         self.funct = function
         if Callback.isInline(function):
             self.cbtype = self.INLINE
