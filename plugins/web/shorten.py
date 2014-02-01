@@ -18,10 +18,10 @@ lg = LinkGrabber()
 
 @Callback.threadsafe
 @command("shorten shortgo bl bitly bit.ly".split(), "(.*)", private="!", public="@.",
-			usage="12bit.ly│ Usage: !shorten <url>",
-			error="05bit.ly│ Unable to generate shortlink.")
+			usage="12│ 🔗 │ Usage: !shorten <url>",
+			error="05│ 🔗 │ Unable to generate shortlink.")
 def shortgo(server, message, url):
     if not url: url = lg.links[server.lower(message.context)][-1]
-    return "12%s│ %s" % ("bit.ly" * message.text.startswith("@"), URL.format(URL.shorten(url)))
+    return "12%s│ %s" % ("" * message.text.startswith("@"), URL.format(URL.shorten(url)))
 
 __callbacks__ = {"privmsg": [shortgo, lg.trigger_linkget]}

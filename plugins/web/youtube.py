@@ -2,9 +2,9 @@ from util.services.youtube import youtube as yt
 
 from util.irc import Callback, command
 
-templates = {"@": "You04Tube│ %(title)s\nYou04Tube│ 15by %(channel)s 12↗ http://youtu.be/%(url)s",
+templates = {"@": "04│ ▶ │ %(title)s\n04│ ▶ │ 15by %(channel)s 12↗ http://youtu.be/%(url)s",
              ".": "04│ %(title)s 12↗ http://youtu.be/%(url)s",
-             "!": "You04Tube│ %(title)s\nYou04Tube│ 15by %(channel)s 12↗ http://youtu.be/%(url)s"}
+             "!": "04│ ▶ │ %(title)s\n04│ ▶ │ 15by %(channel)s 12↗ http://youtu.be/%(url)s"}
 
 lines = {"@": 1,
          ".": 1,
@@ -16,8 +16,8 @@ def refresh_tokens(server, line):
         yt.refresh_tokens()
 
 @command(["youtube", "yt"], "(-\d\s+)?(.+)", public=".@", private="!",
-            usage="You04Tube│ Usage: [.@]youtube [-NUM_RESULTS] <query>",
-            error="You04Tube│ Failed to get search results.")
+            usage="04│ ▶ │ Usage: [.@]youtube [-NUM_RESULTS] <query>",
+            error="04│ ▶ │ Failed to get search results.")
 def youtube(server, message, nresults, query):
     if nresults:
         nresults = min(-int(nresults.strip()), lines[message.prefix])
