@@ -340,6 +340,17 @@ class Snapchat(object):
             })
         return len(r.content) == 0
 
+    def post_story(self, media_id, media_type, caption="", time=5):
+        r = self._request('post_story', {
+            'username': self.username,
+            'media_id': media_id,
+            'client_id': media_id,
+            'caption_text_display': caption,
+            'type': media_type,
+            'time': time,
+            })
+        return len(r.content) == 0
+
     def get_friend_stories(self, update_timestamp=0):
         """Get stories
         Returns a dict containing metadata for stories
