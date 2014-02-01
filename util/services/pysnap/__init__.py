@@ -4,7 +4,8 @@ import json
 import os.path
 from time import time
 
-from .utils import encrypt, decrypt, make_media_id, request
+from .utils import (encrypt, decrypt, decrypt_story,
+                          make_media_id, request)
 
 MEDIA_IMAGE = 0
 MEDIA_VIDEO = 1
@@ -72,9 +73,10 @@ class Snapchat(object):
         self.username = None
         self.auth_token = None
 
-    def _request(self, endpoint, data=None, files=None, raise_for_status=True):
-        return request(endpoint, self.auth_token, data, files,
-                       raise_for_status)
+    def _request(self, endpoint, data=None, files=None,
+                 raise_for_status=True, req_type='post'):
+         return request(endpoint, self.auth_token, data, files,
+                       raise_for_status, req_type)
 
     def _unset_auth(self):
         self.username = None
@@ -337,3 +339,41 @@ class Snapchat(object):
             'zipped': '0'
             })
         return len(r.content) == 0
+
+    def get_friend_stories(self, update_timestamp=0):
+        """Get stories
+        Returns a dict containing metadata for stories
+
+        :param update_timestamp: Optional timestamp (epoch in seconds) to limit
+                                 updates
+        """
+        r = self._request("all_updates", {
+            'username': self.username,
+            'update_timestamp': update_timestamp
+        })
+        result = r.json()
+        if 'auth_token' in result:
+            self.auth_token = result['auth_token']
+        stories = []
+        story_groups = result['stories_response']['friend_stories']
+        for group in story_groups:
+            sender = group['username']
+            for story in group['stories']:
+                obj = story['story']
+                obj['sender'] = sender
+                stories.append(obj)
+        return stories
+
+    def get_story_blob(self, story_id, story_key, story_iv):
+        """Get the image or video of a given snap
+        Returns the decrypted image or a video of the given snap or None if
+        data is invalid.
+
+        :param story_id: Media id to fetch
+        :param story_key: Encryption key of the story
+        :param story_iv: Enctyprion IV of the story
+        """
+        r = self._request('story_blob', {'story_id': story_id},
+                          raise_for_status=False, req_type='get')
+        data = decrypt_story(r.content, story_key, story_iv)
+        return data if is_image(data) or is_video(data) else None
