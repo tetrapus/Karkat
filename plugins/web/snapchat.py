@@ -14,7 +14,7 @@ snapfolder = "/var/www/snaps"
 public_url = "http://s.n0.ms/"
 
 def save(data, fmt):
-    fchars =  "abcdefghijklmnopqrstuvwxyz|-_+=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:@~,."
+    fchars =  "abcdefghijklmnopqrstuvwxyz-_+=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:@~,."
     template = snapfolder + "/%s." + fmt
     fname = random.choice(fchars)
     while os.path.exists(template % fname):

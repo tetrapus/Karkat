@@ -182,7 +182,7 @@ class CardsAgainstHumanity(object):
             players = sorted(self.allplayers, key=CAHPlayer.score)[::-1]
             for i, player in enumerate(players):
                 if i and players[i-1].score() == player.score():
-                    rank = "     "
+                    rank = "    "
                 else:
                     rank = ordinal(i+1) + (" " if i < 9 else "")
                 buffer += CAHPREFIX + "%s 01│ %s - %d point%s" % (rank, player.nick, player.score(), ["", "s"][cmp(1, player.score())])

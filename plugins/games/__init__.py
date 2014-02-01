@@ -1,1 +1,1 @@
-__modules__ = ["addgame", "cah"]
+__modules__ = ["addgame", "cah", "game"]
