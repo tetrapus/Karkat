@@ -91,8 +91,8 @@ class ModManager(object):
                 admin=True) # NTS: Figure out how this function signature works
     def list_modules(self, server, message, mask):
         modules = set()
-        for key, ls in list(server.callbacks.items()):
-            modules |= {i.module.__name__ for i in ls}
+        for ls in server.callbacks.values():
+            modules |= {i.module.__name__ for i in ls if i.module}
         table = namedtable([i.split(".")[-1] for i in modules 
                               if i.startswith(mask)] or ["No matches."],
                            size=72,
@@ -152,7 +152,7 @@ class ModManager(object):
     @command("load", "(.+)", private="", public=":",
                 admin=True, 
                 usage="12Module Manager│ Usage: [!@]load <module>",
-                error="12Module Manager│ Module failed to load.")
+                error="05Module Manager│ Module failed to load.")
     def load_modules(self, server, message, module):
         path = module.split(".")
         try:

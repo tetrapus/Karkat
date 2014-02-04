@@ -6,6 +6,8 @@ import queue
 class Scheduler(threading.Thread):
     _scheduler = None
     _schedlock = threading.Lock()
+    
+    # pylint: disable=E1101
 
     def __new__(cls):
         if cls._scheduler is None:
@@ -16,7 +18,7 @@ class Scheduler(threading.Thread):
                     pass
             else:
                 # We're the new thread: make the scheduler.
-                cls._scheduler = getattr(threading.Thread, "__new__")(cls) 
+                cls._scheduler = threading.Thread.__new__(cls)
                 threading.Thread.__init__(cls._scheduler)
                 cls._scheduler.incoming = queue.PriorityQueue()
                 cls._scheduler.start()
@@ -24,8 +26,8 @@ class Scheduler(threading.Thread):
         return cls._scheduler
         
     def __init__(self):
-        # Tricking pylint into thinking this is a real member.
-        if False: self.incoming = getattr(self, "incoming")
+        pass
+        
 
     def run(self):
         waiting = queue.PriorityQueue()
@@ -59,7 +61,7 @@ class Scheduler(threading.Thread):
 
 class Job(object):
     def __init__(self, job, seconds=0, stop_after=1):
-        self.job = job
+        self.job = Job
         self.interval = seconds
         self.stop_after = stop_after
         self.stop = False

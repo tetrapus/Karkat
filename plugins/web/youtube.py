@@ -15,6 +15,7 @@ def refresh_tokens(server, line):
     if yt.tokensExpired():
         yt.refresh_tokens()
 
+@Callback.threadsafe
 @command(["youtube", "yt"], "(-\d\s+)?(.+)", public=".@", private="!",
             usage="04│ ▶ │ Usage: [.@]youtube [-NUM_RESULTS] <query>",
             error="04│ ▶ │ Failed to get search results.")

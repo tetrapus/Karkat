@@ -183,7 +183,7 @@ class Interpreter(object):
                 if act:
                     self.curcmd = [act]
 
-            elif args[0] == ">>>":
+            elif args[0].endswith(">>>") and args[0][:-3] in ["", server.nick]:
                 try:
                     act = args[1]
                 except IndexError:

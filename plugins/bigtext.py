@@ -1,6 +1,6 @@
 import re
 
-from bot.events import command
+from bot.events import command, Callback
 from util.text import ircstrip, minify
 
 def parse(btf):
@@ -77,6 +77,7 @@ def thicken(text):
         ans += i
     return ans
 
+@Callback.threadsafe
 @command("big", "(?:-([rbclt!]*)([1-5])?\s+)?(.+)")
 def bigtext(server, message, flags, lines, text):
     lines = int(lines or 3)
@@ -102,6 +103,7 @@ def bigtext(server, message, flags, lines, text):
         text = "\n".join("\x02" + x for x in text.split("\n"))
     return minify(text)
 
+@Callback.threadsafe
 @command("bigvars")
 def bigvars(server, message):
     return "│ " + (", ".join("$" + x for x in mapping))
