@@ -16,7 +16,7 @@ snapfolder = "/var/www/snaps"
 public_url = "http://s.n0.ms/"
 
 def save(data, fmt):
-    fchars =  "abcdefghijklmnopqrstuvwxyz-_+=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:@~,."
+    fchars =  "abcdefghijklmnopqrstuvwxyz-_+=~ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
     template = snapfolder + "/%s." + fmt
     fname = random.choice(fchars)
     while os.path.exists(template % fname):
@@ -33,9 +33,8 @@ def save_as(data, fmt):
 
 def gifify(fname):
     var = {"pid": os.getpid(), "id": fname, "folder": snapfolder}
-    subprocess.call("ffmpeg -i %(folder)s/%(id)s.mp4 -vf scale=320:-1 -r 12 /tmp/snapchat-%(pid)s-%(id)s.%%04d.png" % var, shell=True)
-#    subprocess.call("rm /tmp/snapchat-%(pid)s-%(id)s.0001.png" % var, shell=True)
-    subprocess.call("convert -delay 25x300 -loop 0 /tmp/snapchat-%(pid)s-%(id)s.*.png %(folder)s/%(id)s.gif" % var, shell=True)
+    subprocess.call("ffmpeg -i '%(folder)s/%(id)s.mp4' -vf scale=320:-1 -r 12 '/tmp/snapchat-%(pid)s-%(id)s.%%04d.png'" % var, shell=True)
+    subprocess.call("convert -delay 25x300 -loop 0 /tmp/snapchat-%(pid)s-%(id)s.*.png '%(folder)s/%(id)s.gif'" % var, shell=True)
     subprocess.call("rm /tmp/snapchat-%(pid)s-%(id)s.*.png" % var, shell=True)
     return fname
 
@@ -146,9 +145,17 @@ class Snap(Callback):
         else:
             return "08│👻│04 Could not block %s." % username
 
-    @command("snaps", r"(?:(last|first)\s+(?:(?:(\d+)(?:-|\s+to\s+))?(\d*))\s*)?((?:gifs|videos|snaps|pics|clips)(?:(?:\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*)(?:gifs|videos|snaps|pics|clips))*)?(?:\s*(?:from|by)\s+(\S+(?:(?:\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*)\S+)*))?")
-    def search(self, server, message, anchor, frm, to, typefilter, users):
-        context = server.lower(message.context)
+    @command("snaps", r"(?:(last|first)\s+(?:(?:(\d+)(?:-|\s+to\s+))?(\d*))\s*)?((?:gifs|videos|snaps|pics|clips)(?:(?:\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*)(?:gifs|videos|snaps|pics|clips))*)?(?:\s*(?:from|by)\s+(\S+(?:(?:\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*)\S+)*))?(?:\s*to\s+(\S+))?")
+    def search(self, server, message, anchor, frm, to, typefilter, users, context):
+        if not context:
+            context = message.context
+        elif "#" not in context:
+            target = [i for i in self.settings if self.settings[i]["username"].lower() == context.lower()]
+            if not target:
+                yield "08│👻│04 No associated channel for that snapchat account."
+                return
+            context = target
+        context = server.lower(context)
         if context not in self.settings:
             yield "08│👻│04 No associated snapchat for this channel."
             return
