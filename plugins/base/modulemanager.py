@@ -80,10 +80,16 @@ class ModManager(object):
 
     def remove_modules(self, bot, mod):
         removed = []
+        destroyed = []
         for i in bot.callbacks:
             for cb in [x for x in bot.callbacks[i] if x.name.startswith(mod)]:
                 removed.append(cb)
                 bot.callbacks[i].remove(cb)
+                if (hasattr(cb.funct, "__self__") 
+                    and hasattr(cb.funct.__self__, "__destroy__")
+                    and cb.funct.__self__ not in destroyed):
+                    cb.funct.__self__.__destroy__(bot)
+                    destroyed.append(cb.funct.__self__)
         return removed
 
 

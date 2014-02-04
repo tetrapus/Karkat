@@ -59,8 +59,7 @@ class Snap(Callback):
         for i in self.settings:
             self.accounts[i].login(self.settings[i]["username"], self.settings[i]["password"])
         self.cache = {}
-        scheduler.schedule_after(60, self.checksnaps, args=(server,), stop_after=None)
-        server.register("DIE", scheduler.stop)
+        self.checker = scheduler.schedule_after(60, self.checksnaps, args=(server,), stop_after=None)
 
         super().__init__(server)
 
@@ -149,5 +148,8 @@ class Snap(Callback):
     @command("snaps", r"(?:(last|first)\s+(\d+)(?:(?:(?:-|\s+to\s+)(\d+))?)\s*)?((?:gifs|videos|snaps|pics|clips)(?:(?:\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*)(?:gifs|videos|snaps|pics|clips))*)?(?:from\s+(\S+(?:(?:\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*)\S+)*))?")
     def search(self, server, message, anchor, frm, to, typefilter, user):
         pass
+
+    def __destroy__(self, server):
+        self.checker.cancel()
 
 __initialise__ = Snap

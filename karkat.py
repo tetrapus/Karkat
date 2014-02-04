@@ -25,6 +25,7 @@ import docopt
 from bot.threads import StatefulBot, Printer, Bot
 from util.irc import Callback, Message
 import util.text
+import util.scheduler
 
 __version__ = 2.0
 
@@ -121,6 +122,9 @@ def main():
         print("Terminating...")
         server.connected = False
         server.sock.send("QUIT\r\n".encode("utf-8"))
+
+    util.scheduler.stop()
+
     if server.restart is True:
         print("Restarting...")
         sys.stdout.flush()
