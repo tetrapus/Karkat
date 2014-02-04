@@ -154,7 +154,7 @@ class Snap(Callback):
             if not target:
                 yield "08│👻│04 No associated channel for that snapchat account."
                 return
-            context = target
+            context = target[0]
         context = server.lower(context)
         if context not in self.settings:
             yield "08│👻│04 No associated snapchat for this channel."
