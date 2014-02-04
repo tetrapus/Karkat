@@ -146,7 +146,7 @@ class Snap(Callback):
         else:
             return "08│👻│04 Could not block %s." % username
 
-    @command("snaps", r"(?:(last|first)\s+(?:(?:(\d+)(?:-|\s+to\s+))?(\d*))\s*)?((?:gifs|videos|snaps|pics|clips)(?:(?:\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*)(?:gifs|videos|snaps|pics|clips))*)?(?:(?:from|by)\s+(\S+(?:(?:\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*)\S+)*))?")
+    @command("snaps", r"(?:(last|first)\s+(?:(?:(\d+)(?:-|\s+to\s+))?(\d*))\s*)?((?:gifs|videos|snaps|pics|clips)(?:(?:\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*)(?:gifs|videos|snaps|pics|clips))*)?(?:\s*(?:from|by)\s+(\S+(?:(?:\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*)\S+)*))?")
     def search(self, server, message, anchor, frm, to, typefilter, users):
         context = server.lower(message.context)
         if context not in self.settings:
@@ -169,7 +169,6 @@ class Snap(Callback):
             filtr |= types[i.lower()]
         if users:
             users = {i.lower() for i in re.split(r"\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*", users)}
-        print(anchor, frm, to, typefilter, users)
         history = self.settings[context]["history"]
         history = [i for i in history if (i["media_type"] in filtr) and ((not users) or (i["sender"].lower() in users))]
         results = history[frm:to:anchor][:1 if message.prefix == "." else 5]
