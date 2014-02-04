@@ -158,7 +158,6 @@ class Snap(Callback):
             frm, to, anchor = -int(frm or 1), -int(to)-1 if to else None, -1
         elif anchor.lower() == "first":
             frm, to, anchor = int(frm or 1)-1, int(to) if to else None, 1
-        print(frm, to, anchor)
         types = {"gifs": {2},
                  "videos": {1},
                  "snaps": {0, 1, 2},
@@ -168,9 +167,9 @@ class Snap(Callback):
         if not typefilter: typefilter = "snaps"
         for i in re.split(r"\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*", typefilter):
             filtr |= types[i.lower()]
-        print(filtr)
         if users:
             users = {i.lower() for i in re.split(r"\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*", users)}
+        print(anchor, frm, to, typefilter, users)
         history = self.settings[context]["history"]
         history = [i for i in history if (i["media_type"] in filtr) and ((not users) or (i["sender"].lower() in users))]
         results = history[frm:to:anchor][:1 if message.prefix == "." else 5]
