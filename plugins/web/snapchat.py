@@ -8,6 +8,7 @@ import subprocess
 
 from util.text import pretty_date
 from util.services import pysnap
+from util import scheduler
 from bot.events import Callback, command
 
 snapfolder = "/var/www/snaps"
@@ -58,6 +59,8 @@ class Snap(Callback):
         for i in self.settings:
             self.accounts[i].login(self.settings[i]["username"], self.settings[i]["password"])
         self.cache = {}
+        scheduler.schedule_after(60, self.checksnaps, args=(server,), stop_after=None)
+        server.register("DIE", scheduler.stop)
 
         super().__init__(server)
 
@@ -127,12 +130,10 @@ class Snap(Callback):
 
         yield from self.newsnaps(channel)
 
-    @Callback.background
-    def checksnaps(self, server, line) -> "ALL":
+    def checksnaps(self, server):
         for channel in self.settings:
-            if time.time() - self.settings[channel]["last"] > 60:
-                for i in self.newsnaps(channel):
-                    server.message(i, channel)
+            for i in self.newsnaps(channel):
+                server.message(i, channel)
 
     @command("block", "(.*)", admin=True)
     def block(self, server, message, username):
