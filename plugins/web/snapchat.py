@@ -153,11 +153,11 @@ class Snap(Callback):
             yield "08│👻│04 No associated snapchat for this channel."
             return
         if not anchor:
-            frm, to, anchor = -1, -2 if message.prefix == "." else -6, -1
+            frm, to, anchor = -1, -2 if message.prefix == "." else -5, -1
         elif anchor.lower() == "last":
-            frm, to, anchor = -int(frm or 1), -int(to) if to else None, -1
+            frm, to, anchor = -int(frm or 1), -int(to)-1 if to else None, -1
         elif anchor.lower() == "first":
-            frm, to, anchor = int(frm or 1)-1, int(to)-1 if to else None, 1
+            frm, to, anchor = int(frm or 1)-1, int(to) if to else None, 1
         print(frm, to, anchor)
         types = {"gifs": {2},
                  "videos": {1},
@@ -168,6 +168,7 @@ class Snap(Callback):
         if not typefilter: typefilter = "snaps"
         for i in re.split(r"\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*", typefilter):
             filtr |= types[i.lower()]
+        print(filtr)
         if users:
             users = {i.lower() for i in re.split(r"\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*", users)}
         history = self.settings[context]["history"]
