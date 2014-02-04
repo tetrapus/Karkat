@@ -24,7 +24,8 @@ class Scheduler(threading.Thread):
         return cls._scheduler
         
     def __init__(self):
-        self.incoming = getattr(self, "incoming")
+        # Tricking pylint into thinking this is a real member.
+        if False: self.incoming = getattr(self, "incoming")
 
     def run(self):
         waiting = queue.PriorityQueue()
