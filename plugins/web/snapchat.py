@@ -163,9 +163,9 @@ class Snap(Callback):
                  "pics": {0},
                  "clips": {1, 2}}
         filtr = set()
-        for i in re.split(typefilter, r"\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*"):
+        for i in re.split(r"\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*", typefilter):
             filtr |= types[i.lower()]
-        users = {i.lower() for i in re.split(users, r"\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*")}
+        users = {i.lower() for i in re.split(r"\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*", users)}
 
         history = self.settings[context]["history"]
         history = [i for i in history if i["media_type"] in filtr and i["sender"].lower() in users]
