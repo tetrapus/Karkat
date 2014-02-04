@@ -18,16 +18,13 @@ class Scheduler(threading.Thread):
                 # We're the new thread: make the scheduler.
                 cls._scheduler = getattr(threading.Thread, "__new__")(cls) 
                 threading.Thread.__init__(cls._scheduler)
+                cls._scheduler.incoming = queue.PriorityQueue()
                 cls._scheduler.start()
                 cls._schedlock.release()
         return cls._scheduler
         
     def __init__(self):
-        if "incoming" not in dir(self):
-            # Warning: not threadsafe, may drop jobs
-            # outside critical section due to pylint issues
-            self.incoming = queue.PriorityQueue()
-
+        self.incoming = getattr(self, "incoming")
 
     def run(self):
         waiting = queue.PriorityQueue()
