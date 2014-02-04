@@ -172,7 +172,8 @@ class Snap(Callback):
         if users:
             users = {i.lower() for i in re.split(r"\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*", users)}
         history = self.settings[context]["history"]
-        history = [i for i in history if i["media_type"] in filtr and users is None or i["sender"].lower() in users]
+        print(history)
+        history = [i for i in history if (i["media_type"] in filtr) and ((users is None) or (i["sender"].lower() in users))]
         results = history[frm:to:anchor][:1 if message.prefix == "." else 5]
         for i in results:
             yield "08│👻│ 12%s · via %s · ⌚ %s" % (self.settings[context]["snaps"][i["id"]], i["sender"], pretty_date(time.time() - i["sent"]/1000) if i["sent"] else "Unknown")
