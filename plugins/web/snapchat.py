@@ -3,6 +3,7 @@ import json
 import traceback
 import random
 import os
+import re
 import hashlib
 import subprocess
 
@@ -86,14 +87,14 @@ class Snap(Callback):
         # try to login
         res = pysnap.Snapchat()
         if not res.login(username, password):
-            return "Could not log in."
+            return "08│👻│04 Could not log in."
         channel = server.lower(channel)
         if channel in self.accounts:
             self.accounts[channel].logout()
         self.accounts[channel] = res
         self.settings[server.lower(channel)] = {"username": username, "password": password, "snaps": {}, "last": time.time(), "history":[]}
         json.dump(self.settings, open(self.settingsf, "w"))
-        return "Associated %s with username %s successfully." % (channel, username)
+        return "08│👻│04 Associated %s with username %s successfully." % (channel, username)
 
     def newsnaps(self, channel):
         account = self.accounts[channel]
@@ -138,16 +139,39 @@ class Snap(Callback):
     def block(self, server, message, username):
         channel = server.lower(message.context)
         if channel not in self.accounts:
-            return "08│ No associated snapchat for this channel."
+            return "08│👻│04 No associated snapchat for this channel."
         account = self.accounts[channel]
         if account.block(username):
-            return "08│ Blocked %s." % username
+            return "08│👻│ Blocked %s." % username
         else:
-            return "08│ Could not block %s." % username
+            return "08│👻│04 Could not block %s." % username
 
-    @command("snaps", r"(?:(last|first)\s+(\d+)(?:(?:(?:-|\s+to\s+)(\d+))?)\s*)?((?:gifs|videos|snaps|pics|clips)(?:(?:\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*)(?:gifs|videos|snaps|pics|clips))*)?(?:from\s+(\S+(?:(?:\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*)\S+)*))?")
-    def search(self, server, message, anchor, frm, to, typefilter, user):
-        pass
+    @command("snaps", r"(?:(last|first)\s+(?:(?:(\d+)(?:-|\s+to\s+))?(\d*))\s*)?((?:gifs|videos|snaps|pics|clips)(?:(?:\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*)(?:gifs|videos|snaps|pics|clips))*)?(?:from\s+(\S+(?:(?:\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*)\S+)*))?")
+    def search(self, server, message, anchor, frm, to, typefilter, users):
+        context = server.lower(message.context)
+        if context not in self.settings:
+            yield "08│👻│04 No associated snapchat for this channel."
+        if not anchor:
+            frm, to, anchor = -1, -2 if message.prefix == "." else -6, -1
+        elif anchor.lower() == "last":
+            frm, to, anchor = -int(frm or 1), -int(to) if to else None, -1
+        elif anchor.lower() == "first":
+            frm, to, anchor == int(frm or 1)-1, int(to)-1 if to else None, 1
+        types = {"gifs": {2},
+                 "videos": {1},
+                 "snaps": {0, 1, 2},
+                 "pics": {0},
+                 "clips": {1, 2}}
+        filtr = set()
+        for i in re.split(typefilter, r"\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*"):
+            filtr |= types[i.lower()]
+        users = {i.lower() for i in re.split(users, r"\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*")}
+
+        history = self.settings[context]["history"]
+        history = [i for i in history if i["media_type"] in filtr and i["sender"].lower() in users]
+        results = history[frm:to:anchor][:1 if message.prefix == "." else 5]
+        for i in results:
+            yield "08│👻│ 12%s · via %s · ⌚ %s" % (self.settings[context]["snaps"][i["id"]], i["sender"], pretty_date(time.time() - i["sent"]/1000) if i["sent"] else "Unknown")
 
     def __destroy__(self, server):
         self.checker.cancel()

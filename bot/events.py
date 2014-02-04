@@ -174,7 +174,7 @@ def command(name=None,
                                 if callable(args):
                                     fargs.extend(list(args(arg)))
                                 else:
-                                    fargs.extend(re.match(args, arg).groups())
+                                    fargs.extend(re.match(args, arg, flags=re.IGNORECASE).groups())
                         except (AttributeError, IndexError):
                             print(errors.keys())
                             raise Callback.InvalidUsage(msg)
