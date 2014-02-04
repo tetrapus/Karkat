@@ -61,7 +61,7 @@ class Scheduler(threading.Thread):
 
 class Job(object):
     def __init__(self, job, seconds=0, stop_after=1):
-        self.job = Job
+        self.job = job
         self.interval = seconds
         self.stop_after = stop_after
         self.stop = False
