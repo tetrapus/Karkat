@@ -151,14 +151,14 @@ class Snap(Callback):
         context = server.lower(message.context)
         if context not in self.settings:
             yield "08│👻│04 No associated snapchat for this channel."
+            return
         if not anchor:
             frm, to, anchor = -1, -2 if message.prefix == "." else -6, -1
         elif anchor.lower() == "last":
             frm, to, anchor = -int(frm or 1), -int(to) if to else None, -1
         elif anchor.lower() == "first":
             frm, to, anchor == int(frm or 1)-1, int(to)-1 if to else None, 1
-        else:
-            raise Exception("WTF? %s" % anchor)
+        print(frm, to, anchor)
         types = {"gifs": {2},
                  "videos": {1},
                  "snaps": {0, 1, 2},
