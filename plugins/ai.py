@@ -188,8 +188,71 @@ class AI(Callback):
         self.server = server
         super().__init__(server)
 
-    def getline(self, sender):
+        self.constructrate = 0.314159265359                             # pi/10
+        self.lowerrate = 0.115572734979                                 # pi/10e
+        self.correctionrate = 0.66180339887498948                       # (1 + sqrt(5)) / 20 + 0.5
+        self.tangentrate = 0.164493406685                               # pi^2 / 6
+        self.wadsworthrate = 0.20322401432901574                            # sqrt(413)/100
+        self.wadsworthconst = 0.3
+        self.suggestrate = 0                                            # not implemented and this is a terrible idea
+        self.grammerifyrate = 0                                         # not implemented and also a terrible idea
+        self.internetrate = 90.01                                       # what does this even mean
+        self.sentiencerate = 0.32                                       # oh god oh god oh god
+
+
+    def getline(self, sender, text):
         return re.sub("binary", sender.upper(), random.choice(self.lines), flags=re.IGNORECASE)
+
+        words = text.split()
+
+        choices = [i for i in self.lines if random.choice(words).lower() in i.lower() and i.lower().strip() != text.lower().strip()]
+        if len(choices) < random.choice([2,3]):
+            choices = []
+            for i in range(random.randrange(3,9)):
+                choices.append(random.choice(tuple(self.lines)))
+        answer = random.choice(choices)
+
+        if choices[1:] and random.random() < 0.07:
+            common = set()
+            stuff = set(choices)
+            stuff.remove(answer)
+            words = set()
+            for i in stuff:
+                words |= set([x.lower() for x in i.split()])
+            common = set(answer.lower().split()) & words
+            if common:
+                word = list(common)[0]
+                other = random.choice([i for i in stuff if word in i.lower().split()])
+                print(("Value constructed. Baseword: %r :: Seeds: %r & %r" % (word, answer, other)))
+                answer = " ".join(answer.split()[:answer.lower().split().index(word)] + other.split()[other.lower().split().index(word):])
+        
+        if random.random() < 0.07 and answer[0] != "\x01":
+            truncate = int(self.wadsworthconst * len(answer))
+            truncate, keep = answer[:truncate], answer[truncate:]
+            answer = keep.lstrip() if keep.startswith(" ") else (truncate.split(" ")[-1] + keep).lstrip()
+            print(("Wadsworthing. Throwing away %r, product is %r" % (truncate, answer)))
+        
+        answer = answer.split(" ")
+        
+        if hasattr(self.server, "spellcheck") and random.random() < self.correctionrate:
+            fixed = []
+            for i in answer:
+                correction = self.server.spellcheck(i.lower())
+                fixed.append(i if not correction else correction[i.lower()][0])
+            if " ".join(answer) != " ".join(fixed):
+                print(("Spellchecked. Original phrase: %r ==> %r" % (" ".join(answer), " ".join(fixed))))
+                answer = fixed
+            
+        if random.random() < self.tangentrate:
+            print(("Reprocessing data. Current state: %r" % (" ".join(answer))))
+            answer = self.getline(sender, " ".join(answer)).split(" ")
+        
+        rval = [sender if "".join(k for k in i if i.isalnum()).lower() in list(map(str.lower, self.server.nicks)) + ["binary"] else (i.lower().replace("bot", random.choice(["human","person"])) if i.lower().find("bot") == 0 and (i.lower() == "bot" or i[3].lower() not in "ht") else i) for i in answer]
+            
+        rval = str.join(" ", rval).strip().replace("BINARY", sender)
+        if rval[0] == "\x01" and rval[-1] != "\x01": rval += "\x01"
+
+        return rval.upper()
 
     def addline(self, users, line):
         for i in users:
@@ -202,7 +265,7 @@ class AI(Callback):
     def capsmsg(self, server, line) -> "privmsg":
         msg = Message(line)
         if msg.text.isupper():
-            server.message(self.getline(msg.address.nick), msg.context)
+            server.message(self.getline(msg.address.nick, msg.text), msg.context)
             if msg.text not in self.lines:
                 self.addline(server.channels[server.lower(msg.context)], msg.text)
 
