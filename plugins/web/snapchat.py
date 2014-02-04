@@ -157,7 +157,7 @@ class Snap(Callback):
         elif anchor.lower() == "last":
             frm, to, anchor = -int(frm or 1), -int(to) if to else None, -1
         elif anchor.lower() == "first":
-            frm, to, anchor == int(frm or 1)-1, int(to)-1 if to else None, 1
+            frm, to, anchor = int(frm or 1)-1, int(to)-1 if to else None, 1
         print(frm, to, anchor)
         types = {"gifs": {2},
                  "videos": {1},
