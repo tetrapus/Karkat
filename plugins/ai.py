@@ -200,6 +200,8 @@ class AI(Callback):
         self.internetrate = 90.01                                       # what does this even mean
         self.sentiencerate = 0.32                                       # oh god oh god oh god
 
+        self.last = ""
+
 
     def continuity(self, words):
         # Boost probability of common words being used as the seed
