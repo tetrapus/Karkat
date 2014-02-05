@@ -266,7 +266,7 @@ class AI(Callback):
     @Callback.background
     def capsmsg(self, server, line) -> "privmsg":
         msg = Message(line)
-        if (msg.text.isupper() or "karkat" in msg.text.lower()) and random.randrange(9) and msg.text[0].isalpha() or msg.text[0] == "\x01":
+        if (msg.text.isupper() or "karkat" in msg.text.lower()) and random.randrange(9) and (msg.text[0].isalpha() or msg.text[0] == "\x01"):
             server.message(self.getline(msg.address.nick, msg.text.upper()), msg.context)
             if msg.text not in self.lines:
                 self.addline(server.channels[server.lower(msg.context)], msg.text.upper())
