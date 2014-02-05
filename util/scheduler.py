@@ -1,5 +1,6 @@
 import time
 import threading
+import traceback
 import queue
 
 
@@ -44,7 +45,10 @@ class Scheduler(threading.Thread):
                 job = self.incoming.get(timeout=wait)
             except queue.Empty:
                 # We've a job to run!
-                nextjob[1](*nextjob[2], **nextjob[3])
+                try:
+                    nextjob[1](*nextjob[2], **nextjob[3])
+                except BaseException:
+                    traceback.print_exc()
             else:
                 if job is None:
                     self.__class__._scheduler = None
