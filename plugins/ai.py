@@ -279,6 +279,7 @@ class AI(Callback):
         self.lines = [i for i in self.lines if i.upper() != self.last.upper()]
         with open(self.configdir + "caps.txt", "w") as f:
             f.write("\n".join(self.lines))
+        return "Removed %s from shouts." % self.last
 
 __initialise__ = AI
 
