@@ -2,6 +2,7 @@ import time
 import re
 import random
 import uuid
+import json
 
 from bot.events import Callback, command
 from util.text import pretty_date
@@ -43,13 +44,24 @@ def parse_time(expr):
     return seconds
 
 class Reminder(Callback):
+
+    REMINDERF = "reminders.json"
+
     def __init__(self, server):
         self.waiting = {}
         self.reminders = {}
+        try:
+            old = json.load(open(server.get_config_dir(self.REMINDERF)))
+        except FileNotFoundError:
+            pass
+        else:
+            self.reminders = old["reminders"]
+            
+
         self.server = server
         super().__init__(server)
 
-    @command("remind tell note send", r"^(?:to\s+)?(\S+)\s+(?:(?:in|after)\s+%(time)s\s+)?(?:that\s+)?(.+?)(?:\s+(?:in|after)\s+%(time)s)?(?:\s+via\s+(snapchat|pm|notice|channel message|message|private message))?(?:\s+every\s+%(time)s(?:\s+until\s+(cancelled|active))?)?$" % {"time": time_expression})
+    @command("remind tell note send", r"^(?:to\s+)?(\S+):?\s+(?:(?:in|after)\s+%(time)s\s+)?(?:that\s+)?(.+?)(?:\s+(?:in|after)\s+%(time)s)?(?:\s+via\s+(snapchat|pm|notice|channel message|message|private message))?(?:\s+every\s+%(time)s(?:\s+until\s+(cancelled|active))?)?$" % {"time": time_expression})
     def reminder(self, server, msg, user, after, text, after2, method, repeat, cancel):
         after = parse_time(after or after2)
         repeat = parse_time(repeat)
@@ -60,18 +72,19 @@ class Reminder(Callback):
             return "Snapchat not yet implemented."
 
         jobid = uuid.uuid4().hex
+        job = {"id": jobid, "sender": msg.address.nick, "message": text, "method": method, "time": time.time(), "repeats": 0, "interval": repeat}
 
-        def setreminder():
-            self.reminders.setdefault(server.lower(user), []).append({"id": jobid, "sender": msg.address, "message": text, "method": method, "time": time.time(), "repeats": 0, "interval": repeat})
+        def setreminder(job):
+            self.reminders.setdefault(server.lower(user), []).append(job)
             self.waiting.setdefault(server.lower(user), {}).pop(jobid, None)
             comchans = sorted([i for i in server.channels if server.isIn(user, server.channels[i])], key=lambda x:not server.eq(x, msg.context))
             if comchans:
                 self.send_messages([i for i in server.channels[comchans[0]] if server.lower(i) == server.lower(user)][0], comchans[0])
 
         if after:
-            self.waiting.setdefault(server.lower(user), {})[jobid] = scheduler.schedule_after(after, setreminder)
+            self.waiting.setdefault(server.lower(user), {})[jobid] = scheduler.schedule_after(after, setreminder, args=(job,))
         else:
-            setreminder()
+            setreminder(job)
         return "user=%(user)s, after=%(after)s, text=%(text)s, method=%(method)s, repeat=%(repeat)s, cancel=%(cancel)s" % locals()
 
     def privmsg_check(self, server, line) -> "privmsg":
@@ -102,7 +115,12 @@ class Reminder(Callback):
                      "message": (context, "PRIVMSG"),
                      "channel message": (context, "PRIVMSG"),
                      "notice": (user, "NOTICE")}[i["method"]]
-            self.server.message("03│ ✉ │ %s: %s · from %s · ⌚ %s" % (user, i["message"], i["sender"].nick, pretty_date(time.time() - i["time"])), *method)
+            self.server.message("03│ ✉ │ %s: %s · from %s · ⌚ %s" % (user, i["message"], i["sender"], pretty_date(time.time() - i["time"])), *method)
         self.reminders[self.server.lower(user)] = []
+
+    def __destroy__(self):
+        for i in self.waiting:
+            for job in i.values():
+                job.cancel()
 
 __initialise__ = Reminder
