@@ -224,12 +224,13 @@ class ColourPrinter(Printer):
         for line in data.rstrip().split("\n"):
             if " " in line and line[0] + line[-1] == "\x01\x01":
                 value.append("%s %s" % (line.split(" ")[0],
-                                        self.defaultcolor(" ".join(line.split(" ")[1:]))))
-            line = re.sub("\x03([^\d])",
-                          lambda x: (("\x03%s" % (color)) + (x.group(1) or "")),
-                          line)
-            line = line.replace("\x0f", "\x0f\x03%s" % (color))
-            value.append("\x03%s%s" % (color, line))
+                                        self.defaultcolor(line.split(" ", 1)[-1])))
+            else:
+                line = re.sub("\x03([^\d])",
+                              lambda x: (("\x03%s" % (color)) + (x.group(1) or "")),
+                              line)
+                line = line.replace("\x0f", "\x0f\x03%s" % (color))
+                value.append("\x03%s%s" % (color, line))
         return ("\n".join(value)) # TODO: Minify.
 
     def message(self, msg, recipient=None, method="PRIVMSG"):
