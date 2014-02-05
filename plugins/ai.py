@@ -212,6 +212,8 @@ class AI(Callback):
                 choices.append(random.choice(tuple(self.lines)))
         answer = random.choice(choices)
 
+        self.last = answer
+
         if choices[1:] and random.random() < self.constructrate:
             common = set()
             stuff = set(choices)
@@ -264,10 +266,10 @@ class AI(Callback):
     @Callback.background
     def capsmsg(self, server, line) -> "privmsg":
         msg = Message(line)
-        if msg.text.isupper():
-            server.message(self.getline(msg.address.nick, msg.text), msg.context)
+        if (msg.text.isupper() or "karkat" in msg.text.lower()) and random.randrange(9) and msg.text[0].isalpha() or msg.text[0] == "\x01":
+            server.message(self.getline(msg.address.nick, msg.text.upper()), msg.context)
             if msg.text not in self.lines:
-                self.addline(server.channels[server.lower(msg.context)], msg.text)
+                self.addline(server.channels[server.lower(msg.context)], msg.text.upper())
 
 __initialise__ = AI
 
