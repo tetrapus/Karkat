@@ -173,7 +173,7 @@ import os
 import re
 import random
 
-from bot.events import Callback
+from bot.events import Callback, command
 from util.irc import Message
 
 class AI(Callback):
@@ -251,8 +251,11 @@ class AI(Callback):
         
         rval = [sender if "".join(k for k in i if i.isalnum()).lower() in list(map(str.lower, self.server.nicks)) + ["binary", "disconcerted"] else (i.lower().replace("bot", random.choice(["human","person"])) if i.lower().find("bot") == 0 and (i.lower() == "bot" or i[3].lower() not in "ht") else i) for i in answer]
             
-        rval = str.join(" ", rval).strip().replace("BINARY", sender)
-        if rval[0] == "\x01" and rval[-1] != "\x01": rval += "\x01"
+        rval = " ".join(rval).strip().replace("BINARY", sender)
+
+        # Fix mismatching \x01s
+        if rval[0] == "\x01" and rval[-1] != "\x01": 
+            rval += "\x01"
 
         return rval.upper()
 
@@ -270,6 +273,12 @@ class AI(Callback):
             server.message(self.getline(msg.address.nick, msg.text.upper()), msg.context)
             if msg.text not in self.lines:
                 self.addline(server.channels[server.lower(msg.context)], msg.text.upper())
+
+    @command("purge", admin=True)
+    def purge(self, server, message):
+        self.lines = [i for i in self.lines if i.upper() != self.last.upper()]
+        with open(self.configdir + "caps.txt", "w") as f:
+            f.write("\n".join(self.lines))
 
 __initialise__ = AI
 
