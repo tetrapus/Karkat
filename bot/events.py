@@ -69,7 +69,11 @@ class Callback(object):
                 val = getattr(self, attr)
                 annotations = getattr(val, "__annotations__")
                 if "return" in annotations:
-                    hooks.setdefault(annotations["return"], []).append(val)
+                    if type(annotations["return"]) == str: 
+                        hooks.setdefault(annotations["return"], []).append(val)
+                    else:
+                        for i in annotations["return"]:
+                            hooks.setdefault(i, []).append(val)
             except AttributeError:
                 pass
 
