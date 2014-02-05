@@ -201,7 +201,7 @@ class AI(Callback):
 
 
     def getline(self, sender, text):
-        return re.sub("binary", sender.upper(), random.choice(self.lines), flags=re.IGNORECASE)
+        #return re.sub("binary", sender.upper(), random.choice(self.lines), flags=re.IGNORECASE)
 
         words = text.split()
 
