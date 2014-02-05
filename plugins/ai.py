@@ -266,13 +266,13 @@ class AI(Callback):
         
         rval = [sender if "".join(k for k in i if i.isalnum()).lower() in list(map(str.lower, self.server.nicks)) + ["binary", "disconcerted"] else (i.lower().replace("bot", random.choice(["human","person"])) if i.lower().find("bot") == 0 and (i.lower() == "bot" or i[3].lower() not in "ht") else i) for i in answer]
             
-        rval = " ".join(rval).strip().replace("BINARY", sender)
+        rval = " ".join(rval).strip().upper().replace("BINARY", sender)
 
         # Fix mismatching \x01s
         if rval[0] == "\x01" and rval[-1] != "\x01": 
             rval += "\x01"
 
-        return rval.upper()
+        return rval
 
     def addline(self, users, line):
         for i in users:
@@ -291,10 +291,11 @@ class AI(Callback):
 
     @command("purge", admin=True)
     def purge(self, server, message):
+        start = len(self.lines)
         self.lines = [i for i in self.lines if i.upper() != self.last.upper()]
         with open(self.configdir + "caps.txt", "w") as f:
             f.write("\n".join(self.lines))
-        return "Removed %s from shouts." % self.last
+        return "Removed %d instance(s) of %r from shouts." % (start - len(self.lines), self.last)
 
 __initialise__ = AI
 
