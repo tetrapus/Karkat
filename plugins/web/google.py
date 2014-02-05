@@ -43,7 +43,7 @@ def google(query, nresults, retry={}):
             error="04Google│ Error: Could not fetch google results.")
 def google_template(server, message, nresults, query):
     if message.command.lower() in ["gooogle", "goooogle", "gooooogle"]:
-        nresults = len(message.command) - 5
+        nresults = "-%d" % (len(message.command) - 5)
 
     if nresults:
         nresults = min(-int(nresults.strip()), maxlines[message.prefix])
