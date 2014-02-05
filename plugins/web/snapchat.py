@@ -160,6 +160,7 @@ class Snap(Callback):
             yield "08│👻│04 No associated snapchat for this channel."
             return
 
+        new = []
         if not any((anchor, frm, to, typefilter, users)):
             new = list(self.newsnaps(context))
             for i in new:
