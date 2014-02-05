@@ -164,6 +164,8 @@ class Snap(Callback):
             new = list(self.newsnaps(context))
             for i in new:
                 yield i + " [NEW]"
+                if context != server.lower(message.context):
+                    server.message(i, message.context)
             new = [i.rsplit("·", 1)[0] for i in new]
 
         if not anchor:
