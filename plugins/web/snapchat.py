@@ -161,7 +161,10 @@ class Snap(Callback):
             return
 
         if not any((anchor, frm, to, typefilter, users)):
-            yield from self.newsnaps(context)
+            new = list(self.newsnaps(context))
+            for i in new:
+                yield i + " [NEW]"
+            new = [i.rsplit("·", 1)[0] for i in new]
 
         if not anchor:
             frm, to, anchor = -1, -2 if message.prefix == "." else -5, -1
@@ -184,7 +187,9 @@ class Snap(Callback):
         history = [i for i in history if (i["media_type"] in filtr) and ((not users) or (i["sender"].lower() in users))]
         results = history[frm:to:anchor][:1 if message.prefix == "." else 5]
         for i in results:
-            yield "08│👻│ 12%s · from %s · ⌚ %s" % (self.settings[context]["snaps"][i["id"]], i["sender"], pretty_date(time.time() - i["sent"]/1000) if i["sent"] else "Unknown")
+            res = "08│👻│ 12%s · from %s · ⌚ %s" % (self.settings[context]["snaps"][i["id"]], i["sender"], pretty_date(time.time() - i["sent"]/1000) if i["sent"] else "Unknown")
+            if res.rsplit("·", 1)[0] not in new:
+                yield res
 
     def __destroy__(self, server):
         self.checker.cancel()
