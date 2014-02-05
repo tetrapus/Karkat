@@ -56,7 +56,11 @@ class Reminder(Callback):
         if method == "snapchat":
             return "Snapchat not yet implemented."
 
-        self.reminders.setdefault(server.lower(user), []).append({"sender": msg.address, "message": text, "method": method, "time": time.time()})
+        if not after:
+            self.reminders.setdefault(server.lower(user), []).append({"sender": msg.address, "message": text, "method": method, "time": time.time()})
+            comchans = sorted([i for i in server.channels if server.isIn(user, server.channels[i])], key=lambda x:not server.eq(x, msg.context))
+            if comchans:
+                self.send_messages(user, comchans[0])
         return "user=%(user)s, after=%(after)s, text=%(text)s, method=%(method)s, repeat=%(repeat)s, cancel=%(cancel)s" % locals()
 
     def privmsg_check(self, server, line) -> "privmsg":
@@ -65,15 +69,20 @@ class Reminder(Callback):
         if server.lower(address.nick) in self.reminders:
             self.send_messages(address.nick, msg.context)
 
-    def join_check(self, server, line) -> ["join", "nick"]:
+    def join_check(self, server, line) -> "join":
         hostmask, method, context = line.split()
         address = Address(hostmask)
-        if method.lower() == "join":
-            channel = context[1:]
-        else:
-            channel = random.choice([i for i in server.channels if server.isIn(address.nick, server.channels[i])])
+        channel = context[1:]
         if server.lower(address.nick) in self.reminders:
-            self.send_messages(address.nick, channel)        
+            self.send_messages(address.nick, channel)       
+
+    def nick_check(self, server, line) -> "nick":
+        hostmask, method, nick = line.split()
+        nick = nick[1:]
+
+        channel = random.choice([i for i in server.channels if server.isIn(nick, server.channels[i])])
+        if server.lower(nick) in self.reminders:
+            self.send_messages(nick, channel)
 
     def send_messages(self, user, context):
         for i in self.reminders[self.server.lower(user)]:
@@ -82,7 +91,7 @@ class Reminder(Callback):
                      "message": (context, "PRIVMSG"),
                      "channel message": (context, "PRIVMSG"),
                      "notice": (user, "NOTICE")}[i["method"]]
-            self.server.message("03│ ✉ │ %s: %s · from %s · ⌚ %s" % (user, i["message"], i["sender"], pretty_date(time.time() - i["time"])), *method)
+            self.server.message("03│ ✉ │ %s: %s · from %s · ⌚ %s" % (user, i["message"], i["sender"].nick, pretty_date(time.time() - i["time"])), *method)
         self.reminders[self.server.lower(user)] = []
 
 __initialise__ = Reminder
