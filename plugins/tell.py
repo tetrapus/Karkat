@@ -62,11 +62,11 @@ class Reminder(Callback):
         jobid = uuid.uuid4().hex
 
         def setreminder():
-            self.reminders.setdefault(server.lower(user), []).append({"id": jobid, "sender": msg.address, "message": text, "method": method, "time": time.time()})
+            self.reminders.setdefault(server.lower(user), []).append({"id": jobid, "sender": msg.address, "message": text, "method": method, "time": time.time(), "repeats": 0, "interval": repeat})
             self.waiting.setdefault(server.lower(user), {}).pop(jobid, None)
             comchans = sorted([i for i in server.channels if server.isIn(user, server.channels[i])], key=lambda x:not server.eq(x, msg.context))
             if comchans:
-                self.send_messages([i for i in server.channels[comchans[0]] if server.lower(i) == user.lower(i)][0], comchans[0])
+                self.send_messages([i for i in server.channels[comchans[0]] if server.lower(i) == server.lower(user)][0], comchans[0])
 
         if after:
             self.waiting.setdefault(server.lower(user), {})[jobid] = scheduler.schedule_after(after, setreminder)
