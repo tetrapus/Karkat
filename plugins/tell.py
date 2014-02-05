@@ -1,11 +1,12 @@
 import time
 import re
 import random
+import uuid
 
 from bot.events import Callback, command
 from util.text import pretty_date
 from util.irc import Address, Message
-#from util import scheduler
+from util import scheduler
 
 
 time_expression = r"((?:(?:\d+|an?)\s*(?:[wdhms]|(?:sec|min|second|minute|hour|day|week|wk|hr)s?)\s*)+)"
@@ -53,15 +54,23 @@ class Reminder(Callback):
         after = parse_time(after or after2)
         repeat = parse_time(repeat)
         method = (method or "channel message").lower()
+        if user.lower() == "me":
+            user = msg.address.nick
         if method == "snapchat":
             return "Snapchat not yet implemented."
 
+        jobid = uuid.uuid4().hex
+
         def _():
-            self.reminders.setdefault(server.lower(user), []).append({"sender": msg.address, "message": text, "method": method, "time": time.time()})
+            self.reminders.setdefault(server.lower(user), []).append({"id": jobid, "sender": msg.address, "message": text, "method": method, "time": time.time()})
+            self.waiting[server.lower(user)].pop(jobid, None)
             comchans = sorted([i for i in server.channels if server.isIn(user, server.channels[i])], key=lambda x:not server.eq(x, msg.context))
             if comchans:
                 self.send_messages(user, comchans[0])
-        _()
+        if after:
+            self.waiting.setdefault(server.lower(user), {})[jobid] = scheduler.schedule_after(after, _)
+        else:
+            _()
         return "user=%(user)s, after=%(after)s, text=%(text)s, method=%(method)s, repeat=%(repeat)s, cancel=%(cancel)s" % locals()
 
     def privmsg_check(self, server, line) -> "privmsg":
