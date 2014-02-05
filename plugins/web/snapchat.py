@@ -117,7 +117,7 @@ class Snap(Callback):
                 self.settings[channel]["snaps"][snap["id"]] = url
                 self.settings[channel].setdefault("history", []).append(snap)
                 account.mark_viewed(snap["id"])
-                yield "08│👻│ 12%s · via %s · ⌚ %s" % (url, snap["sender"], pretty_date(time.time() - snap["sent"]/1000) if snap["sent"] else "Unknown")
+                yield "08│👻│ 12%s · from %s · ⌚ %s" % (url, snap["sender"], pretty_date(time.time() - snap["sent"]/1000) if snap["sent"] else "Unknown")
             except:
                 traceback.print_exc()
         json.dump(self.settings, open(self.settingsf, "w"))
@@ -145,7 +145,7 @@ class Snap(Callback):
         else:
             return "08│👻│04 Could not block %s." % username
 
-    @command("snaps", r"(?:(last|first)\s+(?:(?:(\d+)(?:-|\s+to\s+))?(\d*))\s*)?((?:gifs|videos|snaps|pics|clips)(?:(?:\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*)(?:gifs|videos|snaps|pics|clips))*)?(?:\s*(?:from|by)\s+(\S+(?:(?:\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*)\S+)*))?(?:\s*to\s+(\S+))?")
+    @command("snaps", r"^(?:(last|first)\s+(?:(?:(\d+)(?:-|\s+to\s+))?(\d*))\s*)?((?:gifs|videos|snaps|pics|clips)(?:(?:\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*)(?:gifs|videos|snaps|pics|clips))*)?(?:\s*(?:from|by)\s+(\S+(?:(?:\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*)\S+)*))?(?:\s*to\s+(\S+))?$", templates={Callback.USAGE: "08│👻│04 Usage: .snaps [first/last index] [type] [by user] [to channel]"})
     def search(self, server, message, anchor, frm, to, typefilter, users, context):
         if not context:
             context = message.context
@@ -159,6 +159,10 @@ class Snap(Callback):
         if context not in self.settings:
             yield "08│👻│04 No associated snapchat for this channel."
             return
+
+        if not any((anchor, frm, to, typefilter, users)):
+            yield from self.newsnaps(context)
+
         if not anchor:
             frm, to, anchor = -1, -2 if message.prefix == "." else -5, -1
         elif anchor.lower() == "last":
@@ -180,7 +184,7 @@ class Snap(Callback):
         history = [i for i in history if (i["media_type"] in filtr) and ((not users) or (i["sender"].lower() in users))]
         results = history[frm:to:anchor][:1 if message.prefix == "." else 5]
         for i in results:
-            yield "08│👻│ 12%s · via %s · ⌚ %s" % (self.settings[context]["snaps"][i["id"]], i["sender"], pretty_date(time.time() - i["sent"]/1000) if i["sent"] else "Unknown")
+            yield "08│👻│ 12%s · from %s · ⌚ %s" % (self.settings[context]["snaps"][i["id"]], i["sender"], pretty_date(time.time() - i["sent"]/1000) if i["sent"] else "Unknown")
 
     def __destroy__(self, server):
         self.checker.cancel()
