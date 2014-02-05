@@ -41,8 +41,9 @@ class Reminder(Callback):
         self.reminders = {}
         super().__init__(server)
 
-    @command("remind tell note send", r"^(?:to\s+)?(\S+)\s+(?:in\s+%(time)s\s+)?(?:that\s+)?(.+?)(?:\s+via\s+(snapchat|pm|notice|globally))?(?:\s+every\s+%(time)s(?:\s+until\s+(cancelled|active))?)?$" % {"time": time_expression})
-    def reminder(self, server, msg, user, after, text, method, repeat, cancel):
+    @command("remind tell note send", r"^(?:to\s+)?(\S+)\s+(?:in\s+%(time)s\s+)?(?:that\s+)?(.+?)(?:\s+in\s+%(time)s)?(?:\s+via\s+(snapchat|pm|notice|globally))?(?:\s+every\s+%(time)s(?:\s+until\s+(cancelled|active))?)?$" % {"time": time_expression})
+    def reminder(self, server, msg, user, after, text, after2, method, repeat, cancel):
+        after = after or after2
         return "user=%(user)s, after=%(after)s, text=%(text)s, method=%(method)s, repeat=%(repeat)s, cancel=%(cancel)s" % locals()
 
 __initialise__ = Reminder
