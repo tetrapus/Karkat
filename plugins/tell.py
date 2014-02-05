@@ -56,11 +56,12 @@ class Reminder(Callback):
         if method == "snapchat":
             return "Snapchat not yet implemented."
 
-        if not after:
+        def _():
             self.reminders.setdefault(server.lower(user), []).append({"sender": msg.address, "message": text, "method": method, "time": time.time()})
             comchans = sorted([i for i in server.channels if server.isIn(user, server.channels[i])], key=lambda x:not server.eq(x, msg.context))
             if comchans:
                 self.send_messages(user, comchans[0])
+        _()
         return "user=%(user)s, after=%(after)s, text=%(text)s, method=%(method)s, repeat=%(repeat)s, cancel=%(cancel)s" % locals()
 
     def privmsg_check(self, server, line) -> "privmsg":
