@@ -194,16 +194,28 @@ class AI(Callback):
         self.tangentrate = 0.164493406685                               # pi^2 / 6
         self.wadsworthrate = 0.20322401432901574                            # sqrt(413)/100
         self.wadsworthconst = 0.3
+        self.continuityrate = 0.08885765876316733                       # tau * sqrt(2)/100
         self.suggestrate = 0                                            # not implemented and this is a terrible idea
         self.grammerifyrate = 0                                         # not implemented and also a terrible idea
         self.internetrate = 90.01                                       # what does this even mean
         self.sentiencerate = 0.32                                       # oh god oh god oh god
 
 
+    def continuity(self, words):
+        # Boost probability of common words being used as the seed
+        common = set(self.last.upper().split()) & set(words)
+        # Add all words from prior text
+        text = words + list(common) + self.last.split()
+        return text
+        
+
     def getline(self, sender, text):
         #return re.sub("binary", sender.upper(), random.choice(self.lines), flags=re.IGNORECASE)
 
-        words = text.split()
+        words = text.upper().split()
+
+        if random.random() < self.continuityrate:
+            words = self.continuity(words)
 
         choices = [i for i in self.lines if random.choice(words).lower() in i.lower() and i.lower().strip() != text.lower().strip()]
         if len(choices) < random.choice([2,3]):
@@ -269,7 +281,7 @@ class AI(Callback):
     @Callback.background
     def capsmsg(self, server, line) -> "privmsg":
         msg = Message(line)
-        if (msg.text.isupper() or "karkat" in msg.text.lower()) and random.randrange(9) and (msg.text[0].isalpha() or msg.text[0] == "\x01"):
+        if (msg.text.isupper() or "karkat" in msg.text.lower() or "pipey" in msg.text.lower()) and random.randrange(9) and (msg.text[0].isalpha() or msg.text[0] == "\x01"):
             server.message(self.getline(msg.address.nick, msg.text.upper()), msg.context)
             if msg.text not in self.lines:
                 self.addline(server.channels[server.lower(msg.context)], msg.text.upper())
