@@ -194,7 +194,7 @@ class AI(Callback):
         self.tangentrate = 0.164493406685                               # pi^2 / 6
         self.wadsworthrate = 0.20322401432901574                            # sqrt(413)/100
         self.wadsworthconst = 0.3
-        self.continuityrate = 0.08885765876316733                       # tau * sqrt(2)/100
+        self.continuityrate = 0.36                                      # tau faggots in a butt
         self.suggestrate = 0                                            # not implemented and this is a terrible idea
         self.grammerifyrate = 0                                         # not implemented and also a terrible idea
         self.internetrate = 90.01                                       # what does this even mean
@@ -217,6 +217,7 @@ class AI(Callback):
         words = text.upper().split()
 
         if random.random() < self.continuityrate:
+            print("Adding continuity.")
             words = self.continuity(words)
 
         choices = [i for i in self.lines if random.choice(words).lower() in i.lower() and i.lower().strip() != text.lower().strip()]
