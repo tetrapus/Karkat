@@ -41,6 +41,14 @@
                 background: #efefef;
             }
 
+            .command pre {
+                border-bottom-right-radius: 0px;
+                border-bottom-left-radius: 0px
+            }
+
+            .response pre {
+            }
+            
             .feature {
                 background: #f4f4f4;
                 border-left-style: solid;
@@ -181,8 +189,8 @@
                 <div class="group web">
                     <div id="lastfm" class="feature lastfm">
                         <h1> Last.FM </h1>
-                        <h2>Set your Last.FM username</h2>
-                        <pre>.save <b>username</b></pre>
+                        <h3>Set your Last.FM username</h3>
+                        <pre class="command">.save <b>username</b></pre>
                     </div>
                     <div id="wolfram" class="feature wolfram">
                         <h1> Wolfram|Alpha </h1>
