@@ -4,6 +4,7 @@
         <title>Karkat User Manual</title>
         <link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
         <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.0/css/bootstrap.min.css">
+        <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.0/js/bootstrap.min.js"></script>
         <style> 
             body { background: #191919; font-family: 'Open Sans'; }
             #header h1 { 
@@ -47,15 +48,16 @@
                 }
 
             #content {
-                margin-left: 70px;
+                margin-left: 80px;
                 margin-right:300px;
                 margin-top: 50px;
             }
 
             .group {
-                border-left-style: solid;
-                border-left-width: 4px;
-                padding-left: 4px;
+                border-right-style: solid;
+                border-right-width: 3px;
+                padding-right: 4px;
+                margin-top: 15px;
             }
 
             .group h1 {
@@ -65,7 +67,8 @@
             }
             
             .group h4 {
-                margin: 0px;4px;
+                margin: 4px 2px;
+                text-align: right;
             }    
 
             .addgame {
@@ -80,14 +83,14 @@
             }
 
             .games {
-                border-left-color: #ef2929;
+                border-right-color: #ef2929;
             }
             .games h4 {
                 color: #ef2929;
             }
 
             .web {
-                border-left-color: #729fcf;
+                border-right-color: #729fcf;
             }
 
             .web h4 {
@@ -115,7 +118,7 @@
                     Yolo swiggity swag.
                 </div>
             </div>
-            <div id="navigation" class="hidden-sm hidden-xs">
+            <div id="navigation" class="hidden-sm hidden-xs hidden-lg">
                 <div class="group games">
                     <h4>Games</h4>
                     <a href="#addgame" class="addgame">Add</a>
