@@ -55,6 +55,7 @@
                 border-top-left-radius: 0px;
                 border-top-right-radius: 0px;
                 margin-top: 0px;
+                border-top-width: 0px;
             }
             
             .feature {
@@ -104,7 +105,13 @@
         </style>
           <script type='text/javascript'>
              $(document).ready(function () {
-             $("b").tooltip({ container: 'body'});
+                $("b").tooltip({ container: 'body'});
+                $("pre.command").on("click", function(e) {
+    e.preventDefault();
+    var $this = $(this);
+    var $collapse = $this.closest('.collapse-group').find('.collapse');
+    $collapse.collapse('toggle');
+                    });
                         });
           </script>
 
