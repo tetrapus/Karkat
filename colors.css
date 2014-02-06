@@ -1,80 +1,34 @@
-.wolfram {
-    border-left-color: #ef2929;
-}
-.filth {
-    border-left-color: #8f5902;
-}
-.google {
-    border-left-color: #73d216;
-}
-.lastfm {
-    border-left-color: #a40000;
-}
-.shorten {
-    border-left-color: #3465a4;
-}
-.snapchat {
-    border-left-color: #edd400;
-}
-.suggest {
-    border-left-color: #75507b;
-}
-.youtube {
-    border-left-color: #888a85;
-}
+.wolfram { border-left-color: #ef2929; }
+.filth { border-left-color: #8f5902; }
+.google { border-left-color: #73d216; }
+.lastfm { border-left-color: #a40000; }
+.shorten { border-left-color: #3465a4; }
+.snapchat { border-left-color: #edd400; }
+.suggest { border-left-color: #75507b; }
+.youtube { border-left-color: #888a85; }
 
-.ai {
-    border-left-color: #555753;
-}
-.bigtext {
-    border-left-color: #d3d7cf;
-}
-.choose {
-    border-left-color: #8ae234;
-}
-.spellchecker {
-    border-left-color: #204a87;
-}
-.reminders {
-    border-left-color: #4e9a06;
-}
-.unicode {
-    border-left-color: #5c3566;
-}
+.ai { border-left-color: #555753; }
+.bigtext { border-left-color: #d3d7cf; }
+.choose { border-left-color: #8ae234; }
+.spellchecker { border-left-color: #204a87; }
+.reminders { border-left-color: #4e9a06; }
+.unicode { border-left-color: #5c3566; }
 
-.addgame {
-    border-left-color: #73d216;
-}
-.lionadventures {
-    border-left-color: #fcaf3e;
-}
+.addgame { border-left-color: #73d216; }
+.lionadventures { border-left-color: #fcaf3e; }
 
-.cardsagainsthumanity {
-    border-left-color: #75507b;
-}
+.cardsagainsthumanity { border-left-color: #75507b; }
 
-.games {
-    border-right-color: #ef2929;
-}
-.games h4 {
-    color: #ef2929;
-}
+.games { border-right-color: #ef2929; }
+.games h4 { color: #ef2929; }
 
-.web {
-    border-right-color: #3465a4;
-}
+.web { border-right-color: #3465a4; }
 
-.web h4 {
-    color: #3465a4;
-}
+.web h4 { color: #3465a4; }
 
-.utilities {
-    border-right-color: #fce94f;
-}
+.utilities { border-right-color: #fce94f; }
 
-.utilities h4 {
-    color: #fce94f;
-}
+.utilities h4 { color: #fce94f; }
 
 .lgbteens {
     border-right-style: dashed;
