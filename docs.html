@@ -142,8 +142,16 @@
                         <h3>Set your Last.FM username</h3>
                         <pre class="command" data-toggle="collapse" data-target="#lastfm-save">.save <b data-toggle="tooltip" data-placement="top" title="Your Last.FM username">username</b></pre>
                         <pre id="lastfm-save" class="explanation collapse">
+This command associates your nickname with a Last.FM account. 
+The stored nickname will be used when anybody requests Last.FM information about you.
+
+If <b>username</b> is not specified, your current nick is used.
+
 Synonyms &#9474; .setlfm <b data-toggle="tooltip" data-placement="top" title="Your Last.FM username">username</b>
-         &#9474; .savelfm <b data-toggle="tooltip" data-placement="top" title="Your Last.FM username">username</b>    
+         &#9474; .savelfm <b data-toggle="tooltip" data-placement="top" title="Your Last.FM username">username</b>
+
+Triggers &#9474; <b>@</b>save &#183; Send feedback to channel (default behaviour)
+         &#9474; <b>!</b>save &#183; Send feedback privately
                         </pre>
                         <pre class="response"><span style="color:#a40000;">&#9474; &#9835; &#9474;</span> Associated <b data-toggle="tooltip" data-placement="top" title="Your IRC nickname">nick</b> with Last.FM user <b data-toggle="tooltip" data-placement="top" title="Your Last.FM username">username</b>.</pre>
                     </div>
