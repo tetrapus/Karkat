@@ -157,11 +157,15 @@ Full Syntax:
 
 
                         <h3>Now Playing</h3>
-                        <pre class="command" data-toggle="collapse" data-target="#lastfm-np">.np <b data-toggle="tooltip" data-placement="top" title="Nick or Last.FM username (optional)"><em>user</em></b></pre>
+                        <pre class="command" data-toggle="collapse" data-target="#lastfm-np">.np
+.np <b data-toggle="tooltip" data-placement="top" title="Nick or Last.FM username"><em>user</em></b>
+.np <em>-<b data-toggle="tooltip" data-placement="top" title="Index into scrobbling history">index</b></em><b data-toggle="tooltip" data-placement="top" title="Nick or Last.FM username (optional)"><em>user</em></b>
+</pre>
                         <pre id="lastfm-np" class="explanation collapse">
 Print information about the currently playing song, or the last played song if none are currently playing.
 
-If <b>username</b> is not specified, your current nick is used.
+If <b>user</b> is not specified, your current nick is used.
+If <b>index</b> is specified, return the <b>index</b>th last played song in your history.
 
 Full Response:
 <pre>
@@ -172,6 +176,24 @@ Full Syntax:
 <img src="svg/lastfm-np.svg"></img>
                         </pre>
                         <pre class="response"><span style="color:#a40000;">&#9474; <em>&#9829;</em></span> &#183; <b>Artist Name</b> &#183; <b>Song Title</b> (&#8987; <b>length</b>) &#183; <em>&#8986; <b>timestamp</b> &#183;</em> <u><a href="http://youtu.be/N_Xq4d9Hkas" style="color:#3465a4;">http://youtu.be/N_Xq4d9Hkas</a></u></pre>
+
+
+                      <h3>Compare Last.FM Accounts (Taste-O-Meter)</h3>
+                        <pre class="command" data-toggle="collapse" data-target="#lastfm-compare">.compare <b data-toggle="tooltip" data-placement="top" title="Nick or Last.FM username"><em>user1</em></b> <b data-toggle="tooltip" data-placement="top" title="Nick or Last.FM username (optional)">user2</b></pre>
+                        <pre id="lastfm-compare" class="explanation collapse">
+Compare two Last.FM profiles.
+
+If <b>user2</b> is not specified, your current nick is used.
+
+Full Response:
+<pre>
+<span style="color:#a40000;">&#9474; &#9835; &#9474;</span> <b>Artist Name</b> &#183; <b>Album Name</b> &#183; <b>Song Title</b>
+<span style="color:#a40000;">&#9474; &#9835; &#9474;</span> &#8634; <b>listens</b> <em>&#8986; <b>timestamp</b></em> &#8987; <b>length</b> <a href="http://youtu.be/6zWlf6TLq5E" style="color:#3465a4;">&#8599; <u>http://youtu.be/6zWlf6TLq5E</u></a>
+</pre>
+Full Syntax:
+<img src="svg/lastfm-compare.svg"></img>
+                        </pre>
+                        <pre class="response"><span style="color:#a40000;">&#9474;</span> <b>Artist Name</b> &#183; <b>Song Title</b> (&#8987; <b>length</b>) &#183; <em>&#8986; <b>timestamp</b> &#183;</em> <u><a href="http://youtu.be/N_Xq4d9Hkas" style="color:#3465a4;">http://youtu.be/N_Xq4d9Hkas</a></u></pre>
                     </div>
                     <div id="wolfram" class="feature wolfram">
                         <h1> Wolfram|Alpha </h1>
