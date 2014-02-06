@@ -4,6 +4,7 @@
         <title>Karkat User Manual</title>
         <link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
         <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.0/css/bootstrap.min.css">
+        <script src="https://code.jquery.com/jquery.js"></script>
         <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.0/js/bootstrap.min.js"></script>
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <style> 
@@ -197,10 +198,9 @@
 
             .feature:nth-child(even) { background: #efefef; }
         </style>
-
           <script type='text/javascript'>
              $(document).ready(function () {
-             $("em").tooltip();
+             $("b").tooltip();
                         });
           </script>
 
@@ -219,7 +219,7 @@
                         <a class="source" href="https://github.com/tetrapus/Karkat/blob/master/plugins/web/lastfm.py">plugins.web.lastfm</a>
                         <h1> Last.FM </h1>
                         <h3>Set your Last.FM username</h3>
-                        <pre class="command">.save <em data-toggle="tooltip" data-placement="top" title="Tooltip on top">username</em></pre>
+                        <pre class="command">.save <b data-toggle="tooltip" data-placement="top" title="Tooltip on top">username</b></pre>
                         <pre class="response"><span style="color:#a40000;">&#9474; &#9835; &#9474;</span> Associated <b>nick</b> with Last.FM user <b>username</b>.</pre>
                     </div>
                     <div id="wolfram" class="feature wolfram">
@@ -320,6 +320,5 @@
             </div>
             </div>
         </div>
-        <script src="https://code.jquery.com/jquery.js"></script>
     </body>
 </html>
