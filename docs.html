@@ -96,12 +96,45 @@ Full Syntax:
                       <h3>Show listening history</h3>
                         <pre class="command" data-toggle="collapse" data-target="#lastfm-listens">.listens
 .listens <b data-toggle="tooltip" data-placement="top" title="Nick or Last.FM username">user</b>
-.listens <em><b data-toggle="tooltip" data-placement="top" title="A code specifying a graph type">graph</b></em> <b data-toggle="tooltip" data-placement="top" title="Nick or Last.FM username (optional)"><em>user</em></b>
+.listens <em><b data-toggle="tooltip" data-placement="top" title="A code specifying a graph type">graph</b></em> <em><b data-toggle="tooltip" data-placement="top" title="Maximum time period to be spanned by the graph">interval</b></em> <b data-toggle="tooltip" data-placement="top" title="Nick or Last.FM username (optional)"><em>user</em></b>
 </pre>
                         <pre id="lastfm-listens" class="explanation collapse">
 Generate a graph of <b>user</b>'s recent listening history.
 
+<b>interval</b> is a time string in days, hours, minutes and seconds
+                written as <em><b>&lt;days&gt;</b></em>d<em><b>&lt;hours&gt;</b></em>h<em><b>&lt;minutes&gt;</b></em>m<em><b>&lt;seconds&gt;</b></em>s.
+                Any of the above time components may be omitted.
+
+<b>graph</b> is a two-character code specifying the type and height of the graph.
+The first character may be one of the following codes:
+     &#9474; &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9474;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9570;
+  -  &#9474; &#9472;&#9516;&#9516;&#9516;&#9472;&#9516;&#9516;&#9516;&#9516;&#9474;&#9472;&#9472;&#9516;&#9516;&#9472;&#9472;&#9474;&#9516;&#9516;&#9472;&#9472;&#9472;&#9472;&#9570;
+     &#9474; &#9552;&#9575;&#9575;&#9575;&#9575;&#9575;&#9575;&#9575;&#9575;&#9575;&#9552;&#9552;&#9575;&#9575;&#9575;&#9575;&#9575;&#9575;&#9575;&#9552;&#9552;&#9552;&#9575;&#9565;<span style="color:#ffffff">
+     &#9474;        <span style="color:#ffffff">&#183;</span>               &#9474;
+  .  │  <span style="color:#ffffff">&#183;</span>15&#183;&#183;15<span style="color:#ffffff">&#183;</span>14&#183;14 <span style="color:#ffffff">&#183;</span>        <span style="color:#ffffff">&#183;&#183;</span>     1404│
+     │  <span style="color:#ffffff">&#183;&#183;&#183;&#183;&#183;</span>14&#183;14<span style="color:#ffffff">&#183;</span>     <span style="color:#ffffff">&#183;&#183;</span>15&#183;15<span style="color:#ffffff">&#183;&#183;</span>15&#183;15 15&#183;15 15&#183;151404│
+     &#9474;<span style="color:#202020">&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;</span><span style="color:#ffffff">&#183;</span><span style="color:#202020">&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;</span>&#9474;
+  :  │&#183;&#183;0014&#183;1415&#183;&#183;1514&#183;&#183;1400&#183;00<span style="color:#ffffff">&#183;</span>00&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;0014&#183;14<span style="color:#ffffff">&#183;</span>00&#183;&#183;&#183;&#183;&#183;001404│
+     │00&#183;&#183;00<span style="color:#ffffff">&#183;&#183;&#183;&#183;&#183;</span>14&#183;14<span style="color:#ffffff">&#183;</span>00&#183;&#183;&#183;&#183;&#183;00<span style="color:#ffffff">&#183;&#183;</span>15&#183;15<span style="color:#ffffff">&#183;&#183;</span>15&#183;1500&#183;0015&#183;1500&#183;0015&#183;151404│
+     │ 
+  #  │ 
+     │ 
+     │ 
+  +  │ 
+     │ 
+     │ 
+  |  │ 
+     │ 
+     │ 
+  !  │ 
+     │ 
+The second character is a digit from 1 to 5. 
+
 If <b>user</b> is not specified, your current nick or associated username is used.
+If <b>interval</b> is not specified, a maximum of 200 songs are considered.
+If <b>graph</b> is not specified, 
+
+
 
 Full Response:
 <pre>
