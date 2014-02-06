@@ -53,9 +53,7 @@ Full Syntax:
 
 
                         <h3>Now Playing</h3>
-                        <pre class="command" data-toggle="collapse" data-target="#lastfm-np">.np
-.np <b data-toggle="tooltip" data-placement="top" title="Nick or Last.FM username"><em>user</em></b>
-.np <em>-<b data-toggle="tooltip" data-placement="top" title="Index into scrobbling history">index</b></em> <b data-toggle="tooltip" data-placement="top" title="Nick or Last.FM username (optional)"><em>user</em></b>
+                        <pre class="command" data-toggle="collapse" data-target="#lastfm-np">.np <em>-<b data-toggle="tooltip" data-placement="top" title="Index into scrobbling history">index</b></em> <b data-toggle="tooltip" data-placement="top" title="Nick or Last.FM username"><em>user</em></b>
 </pre>
                         <pre id="lastfm-np" class="explanation collapse">
 Print information about the currently playing song, or the last played song if none are currently playing.
@@ -74,9 +72,7 @@ Full Syntax:
                         <pre class="response"><span style="color:#a40000;">&#9474; <em>&#9829;</em></span> &#183; <b>Artist Name</b> &#183; <b>Song Title</b> (&#8987; <b>length</b>) &#183; <em>&#8986; <b>timestamp</b> &#183;</em> <u><a href="http://youtu.be/N_Xq4d9Hkas" style="color:#3465a4;">http://youtu.be/N_Xq4d9Hkas</a></u></pre>
 
 
-                      <h3>Compare Last.FM Accounts (Taste-O-Meter)</h3>
-                        <pre class="command" data-toggle="collapse" data-target="#lastfm-compare">.compare <b data-toggle="tooltip" data-placement="top" title="Nick or Last.FM username">user</b>
-.compare <b data-toggle="tooltip" data-placement="top" title="Nick or Last.FM username">user1</b> <b data-toggle="tooltip" data-placement="top" title="Second nick or Last.FM username"><em>user2</em></b></pre>
+                      <h3>Compare Last.FM Accounts (Taste-O-Meter)</h3>.compare <b data-toggle="tooltip" data-placement="top" title="Nick or Last.FM username">user1</b> <b data-toggle="tooltip" data-placement="top" title="Second nick or Last.FM username"><em>user2</em></b></pre>
                         <pre id="lastfm-compare" class="explanation collapse">
 Compare two Last.FM profiles.
 
@@ -94,9 +90,8 @@ Full Syntax:
 
 
                       <h3>Show listening history</h3>
-                        <pre class="command" data-toggle="collapse" data-target="#lastfm-listens">.listens
-.listens <b data-toggle="tooltip" data-placement="top" title="Nick or Last.FM username">user</b>
-.listens <em><b data-toggle="tooltip" data-placement="top" title="A code specifying a graph type">graph</b></em> <em><b data-toggle="tooltip" data-placement="top" title="Maximum time period to be spanned by the graph">interval</b></em> <b data-toggle="tooltip" data-placement="top" title="Nick or Last.FM username (optional)"><em>user</em></b>
+                        <pre class="command" data-toggle="collapse" data-target="#lastfm-listens">
+.listens <em><b data-toggle="tooltip" data-placement="top" title="A code specifying a graph type">graph</b></em> <em><b data-toggle="tooltip" data-placement="top" title="Maximum time period to be spanned by the graph">interval</b></em> <b data-toggle="tooltip" data-placement="top" title="Nick or Last.FM username"><em>user</em></b>
 </pre>
                         <pre id="lastfm-listens" class="explanation collapse">
 Generate a graph of <b>user</b>'s recent listening history.
