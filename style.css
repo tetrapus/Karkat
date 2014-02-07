@@ -113,4 +113,8 @@ td {
     .feature {
         padding:15px 20px;
     }
+    .source {
+        right:25px;
+        top:25px;
+    }
 }
