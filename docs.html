@@ -19,6 +19,13 @@
     $collapse.collapse('toggle');
                     });
                         });
+                $(".group h1").on("click", function(e) {
+    e.preventDefault();
+    var $this = $(this);
+    var $collapse = $this.closest('.collapse-group').find('.collapse');
+    $collapse.collapse('toggle');
+                    });
+                        });
           </script>
 
     </head>
@@ -34,7 +41,8 @@
                 <div class="group web">
                     <div id="lastfm" class="feature lastfm">
                         <a class="source" href="https://github.com/tetrapus/Karkat/blob/master/plugins/web/lastfm.py">plugins.web.lastfm</a>
-                        <h1> Last.FM </h1>
+                        <h1 data-toggle="collapse" data-target="#lastfm-content"> Last.FM </h1>
+                        <div id="lastfm-content">
                         <h3 id="lastfm-save">Set your Last.FM username</h3>
                         <pre class="command" data-toggle="collapse" data-target="#more-lastfm-save">.save <b data-toggle="tooltip" data-placement="top" title="Your Last.FM username"><em>username</em></b></pre>
                         <pre id="more-lastfm-save" class="explanation collapse">
@@ -107,6 +115,7 @@ The first character may be one of the following codes:
     <tr>
         <th> Prefix </th>
         <th> Graph </th>
+    </tr>
     <tr>
         <td>-</td>
         <td>Uses the default style*</td>
@@ -179,6 +188,7 @@ Full Syntax:
 <img src="svg/lastfm-lastfm.svg"></img>
 </pre>
                         <pre class="response"><span style="color:#a40000;">&#9474; &#9835; &#9474;</span> <u style="color:#3465a4;">http://last.fm/user/<b data-toggle="tooltip" data-placement="top" title="Last.FM Username">username</b></u></pre>
+                    </div>
                     </div>
                     <div id="wolfram" class="feature wolfram">
                         <h1> Wolfram|Alpha </h1>
