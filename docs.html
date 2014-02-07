@@ -146,11 +146,16 @@ If <b>user</b> is not specified, your current nick or associated username is use
 If <b>interval</b> is not specified, a maximum of 200 songs are considered.
 If <b>graph</b> is not specified and the trigger is ., #1 is presumed, otherwise -5.
 
+Additionally, larger graphs provide the following information:
+    2nd line: Data represented in the graph
+    3rd line: Time period represented per column
+    4th line: Average listen rate shown in songs per day
+    5th line: Average contiguous playback time
+
 Full Response:
 <pre>
 26 &#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9474;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9570;<span style="color:#a40000;">&#9474; <b>Nick</b> <em>(<b>Username</b>)</em></span>
-   &#9474;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9474;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9570;<span style="color:#a40000;">&#9474;</span>  <b data-toggle="tooltip" data-placement="top" title="Number of songs represented">&lt;# songs&gt;</b>
- songs/<b data-toggle="tooltip" data-placement="top" title="Time period spanned by the graph">&lt;interval&gt;</b>
+   &#9474;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9474;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9570;<span style="color:#a40000;">&#9474;</span>  <b data-toggle="tooltip" data-placement="top" title="Number of songs represented">&lt;# songs&gt;</b> songs/<b data-toggle="tooltip" data-placement="top" title="Time period spanned by the graph">&lt;interval&gt;</b>
  hours
 13 &#9474;&#9516;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9474;&#9516;&#9472;&#9516;&#9516;&#9516;&#9472;&#9472;&#9474;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9570;<span style="color:#a40000;">&#9474;</span>  <b data-toggle="tooltip" data-placement="top" title="Time period represented by a single column">&lt;minutes&gt;</b>m/bar
    &#9474;&#9474;&#9474;&#9474;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9474;&#9474;&#9472;&#9474;&#9474;&#9474;&#9474;&#9516;&#9474;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9570;<span style="color:#a40000;">&#9474;</span>  <b data-toggle="tooltip" data-placement="top" title="Average number of songs played each day within the graphed period">&lt;# songs&gt;</b> songs per day
@@ -160,6 +165,19 @@ Full Syntax:
 <img src="svg/lastfm-listens.svg"></img>
                         </pre>
                         <pre class="response"><span style="color:#a40000;">&#9474;  &#9602;&#9605;&#9602;&#9604;&#9604;&#9602;      &#9601;&#9603;&#9601;&#9604;&#9605;&#9601; &#9601; &#9601;&#9474; <b>Nick</b> <em>(<b>Username</b>)</em></span></pre>
+
+
+                        <h3 id="lastfm-lastfm">Link to a Last.FM profile</h3>
+                        <pre class="command" data-toggle="collapse" data-target="#more-lastfm-lastfm">.lastfm <b data-toggle="tooltip" data-placement="top" title="IRC Nickname"><em>nick</em></b></pre>
+                        <pre id="more-lastfm-lastfm" class="explanation collapse">
+This command links to a nick's associated Last.FM profile.
+
+If <b>nick</b> is not provided, your own nick is used.
+
+Full Syntax:
+<img src="svg/lastfm-lastfm.svg"></img>
+</pre>
+                        <pre class="response"><span style="color:#a40000;">&#9474; &#9835; &#9474;</span> <u style="color:#3465a4;">http://last.fm/user/<b data-toggle="tooltip" data-placement="top" title="Last.FM Username">username</b></u></pre>
                     </div>
                     <div id="wolfram" class="feature wolfram">
                         <h1> Wolfram|Alpha </h1>
