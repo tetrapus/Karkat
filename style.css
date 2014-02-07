@@ -97,3 +97,7 @@ body { background: #191919; font-family: 'Open Sans'; }
 .source a:hover { text-decoration: none; }
 
 .feature:nth-child(even) { background: #efefef; }
+
+td {
+    text-align: center;
+}
