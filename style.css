@@ -101,3 +101,9 @@ body { background: #191919; font-family: 'Open Sans'; }
 td {
     text-align: center;
 }
+
+@media (max-width: 978px) {
+    #docs {
+      margin:0;
+    }
+}
