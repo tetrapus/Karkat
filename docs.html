@@ -35,9 +35,9 @@
                     <div id="lastfm" class="feature lastfm">
                         <a class="source" href="https://github.com/tetrapus/Karkat/blob/master/plugins/web/lastfm.py">plugins.web.lastfm</a>
                         <h1> Last.FM </h1>
-                        <h3>Set your Last.FM username</h3>
-                        <pre class="command" data-toggle="collapse" data-target="#lastfm-save">.save <b data-toggle="tooltip" data-placement="top" title="Your Last.FM username"><em>username</em></b></pre>
-                        <pre id="lastfm-save" class="explanation collapse">
+                        <h3 id="lastfm-save">Set your Last.FM username</h3>
+                        <pre class="command" data-toggle="collapse" data-target="#more-lastfm-save">.save <b data-toggle="tooltip" data-placement="top" title="Your Last.FM username"><em>username</em></b></pre>
+                        <pre id="more-lastfm-save" class="explanation collapse">
 This command associates your nickname with a Last.FM account. 
 The stored nickname will be used when anybody requests Last.FM information about you.
 
@@ -52,10 +52,10 @@ Full Syntax:
                         <pre class="response"><span style="color:#a40000;">&#9474; &#9835; &#9474;</span> Associated <b data-toggle="tooltip" data-placement="top" title="Your IRC nickname">nick</b> with Last.FM user <b data-toggle="tooltip" data-placement="top" title="Your Last.FM username">username</b>.</pre>
 
 
-                        <h3>Now Playing</h3>
-                        <pre class="command" data-toggle="collapse" data-target="#lastfm-np">.np <em>-<b data-toggle="tooltip" data-placement="top" title="Index into scrobbling history">index</b></em> <b data-toggle="tooltip" data-placement="top" title="Nick or Last.FM username"><em>user</em></b>
+                        <h3 id="lastfm-np">Now Playing</h3>
+                        <pre class="command" data-toggle="collapse" data-target="#more-lastfm-np">.np <em>-<b data-toggle="tooltip" data-placement="top" title="Index into scrobbling history">index</b></em> <b data-toggle="tooltip" data-placement="top" title="Nick or Last.FM username"><em>user</em></b>
 </pre>
-                        <pre id="lastfm-np" class="explanation collapse">
+                        <pre id="more-lastfm-np" class="explanation collapse">
 Print information about the currently playing song, or the last played song if none are currently playing.
 
 If <b>user</b> is not specified, your current nick is used.
@@ -72,9 +72,9 @@ Full Syntax:
                         <pre class="response"><span style="color:#a40000;">&#9474; <em>&#9829;</em></span> &#183; <b>Artist Name</b> &#183; <b>Song Title</b> (&#8987; <b>length</b>) &#183; <em>&#8986; <b>timestamp</b> &#183;</em> <u><a href="http://youtu.be/N_Xq4d9Hkas" style="color:#3465a4;">http://youtu.be/N_Xq4d9Hkas</a></u></pre>
 
 
-                      <h3>Compare Last.FM Accounts (Taste-O-Meter)</h3>
-                      <pre class="command" data-toggle="collapse" data-target="#lastfm-compare">.compare <b data-toggle="tooltip" data-placement="top" title="Nick or Last.FM username">user1</b> <b data-toggle="tooltip" data-placement="top" title="Second nick or Last.FM username"><em>user2</em></b></pre>
-                        <pre id="lastfm-compare" class="explanation collapse">
+                      <h3 id="lastfm-compare">Compare Last.FM Accounts (Taste-O-Meter)</h3>
+                      <pre class="command" data-toggle="collapse" data-target="#more-lastfm-compare">.compare <b data-toggle="tooltip" data-placement="top" title="Nick or Last.FM username">user1</b> <b data-toggle="tooltip" data-placement="top" title="Second nick or Last.FM username"><em>user2</em></b></pre>
+                        <pre id="more-lastfm-compare" class="explanation collapse">
 Compare two Last.FM profiles.
 
 If <b>user2</b> is not specified, your current nick or associated username is used.
@@ -90,11 +90,11 @@ Full Syntax:
                         <pre class="response"><span style="color:#a40000;">&#9474;</span> <span style="color:#4e9a06;"><b>Similarity</b>%</span> <span style="color:#a40000;">&#9474;</span> <b>[list of common bands]</b>...</pre>
 
 
-                      <h3>Show listening history</h3>
-                        <pre class="command" data-toggle="collapse" data-target="#lastfm-listens">
+                      <h3 id="lastfm-listens">Show listening history</h3>
+                        <pre class="command" data-toggle="collapse" data-target="#more-lastfm-listens">
 .listens <em><b data-toggle="tooltip" data-placement="top" title="A code specifying a graph type">graph</b></em> <em><b data-toggle="tooltip" data-placement="top" title="Maximum time period to be spanned by the graph">interval</b></em> <b data-toggle="tooltip" data-placement="top" title="Nick or Last.FM username"><em>user</em></b>
 </pre>
-                        <pre id="lastfm-listens" class="explanation collapse">
+                        <pre id="more-lastfm-listens" class="explanation collapse">
 Generate a graph of <b>user</b>'s recent listening history.
 
 <b>interval</b> is a time string in days, hours, minutes and seconds
@@ -107,30 +107,35 @@ The first character may be one of the following codes:
   -  &#9474; &#9472;&#9516;&#9516;&#9516;&#9472;&#9516;&#9516;&#9516;&#9516;&#9474;&#9472;&#9472;&#9516;&#9516;&#9472;&#9472;&#9474;&#9516;&#9516;&#9472;&#9472;&#9472;&#9472;&#9570;
      &#9474; &#9552;&#9575;&#9575;&#9575;&#9575;&#9575;&#9575;&#9575;&#9575;&#9575;&#9552;&#9552;&#9575;&#9575;&#9575;&#9575;&#9575;&#9575;&#9575;&#9552;&#9552;&#9552;&#9575;&#9565;
 * If the command prefix is ., # is used instead.
-
-     &#9474;        <span style="color:#ffffff">&#183;</span>               &#9474;
-  .  &#9474;  <span style="color:#ffffff">&#183;</span><span style="color:#606060">&#183;&#183;</span><span style="color:#ffffff">&#183;</span><span style="color:#9A9A9A">&#183;</span> <span style="color:#ffffff">&#183;</span>        <span style="color:#ffffff">&#183;&#183;</span>     &#9474;
-     &#9474;  <span style="color:#ffffff">&#183;&#183;&#183;&#183;&#183;</span><span style="color:#9A9A9A">&#183;</span><span style="color:#ffffff">&#183;</span>     <span style="color:#ffffff">&#183;&#183;</span><span style="color:#606060">&#183;</span><span style="color:#ffffff">&#183;&#183;</span><span style="color:#606060">&#183; &#183; &#183;</span>&#9474;
-
-     &#9474;<span style="color:#303030">&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;</span><span style="color:#ffffff">&#183;</span><span style="color:#303030">&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;</span>&#9474;
-  :  &#9474;<span style="color:#303030">&#183;&#183;</span><span style="color:#9A9A9A">&#183;</span><span style="color:#606060">&#183;&#183;</span><span style="color:#9A9A9A">&#183;&#183;</span><span style="color:#303030">&#183;</span><span style="color:#ffffff">&#183;</span><span style="color:#303030">&#183;&#183;&#183;&#183;&#183;&#183;&#183;&#183;</span><span style="color:#9A9A9A">&#183;</span><span style="color:#ffffff">&#183;</span><span style="color:#303030">&#183;&#183;&#183;&#183;&#183;</span>&#9474;
-     &#9474;<span style="color:#303030">&#183;&#183;</span><span style="color:#ffffff">&#183;&#183;&#183;&#183;&#183;</span><span style="color:#9A9A9A">&#183;</span><span style="color:#ffffff">&#183;</span><span style="color:#303030">&#183;&#183;&#183;&#183;&#183;</span><span style="color:#ffffff">&#183;&#183;</span><span style="color:#606060">&#183;</span><span style="color:#ffffff">&#183;&#183;</span><span style="color:#606060">&#183;</span><span style="color:#303030">&#183;</span><span style="color:#606060">&#183;</span><span style="color:#303030">&#183;</span><span style="color:#606060">&#183;</span>&#9474;
-
-     &#9474;        <span style="background-color:#d0d0d0"> </span>               &#9474;
-  #  &#9474;   &#9606; &#9605;&#9605; <span style="background-color:#d0d0d0"> </span>      &#9602; &#9603;&#9608;     &#9474; 
-     &#9474;  <span style="background-color:#d0d0d0">  </span>&#9607;<span style="background-color:#d0d0d0">  </span>&#9604;<span style="background-color:#d0d0d0"> </span>     &#9604;<span style="background-color:#d0d0d0"> </span>&#9603;<span style="background-color:#d0d0d0">  </span>&#9603; &#9602; &#9604;&#9474;
-
-     &#9474;        &#9474;               &#9474; 
-  +  &#9474;   &#9591; &#9591;&#9591; &#9474;        &#9591;&#9474;     &#9474;
-     &#9474;  &#9474;&#9474;&#9591;&#9474;&#9474;&#9591;&#9474;     &#9591;&#9474;&#9591;&#9474;&#9474;&#9591;   &#9591;&#9474; 
-
-     &#9474;&#9474;&#9474;&#9474;&#9474;&#9474;&#9474;&#9474;&#9474;&#9475;&#9474;&#9474;&#9474;&#9474;&#9474;&#9474;&#9474;&#9474;&#9474;&#9474;&#9474;&#9474;&#9474;&#9474;&#9474;&#9474;
-  |  &#9474;&#9474;&#9474;&#9474;&#9475;&#9474;&#9597;&#9597;&#9474;&#9475;&#9474;&#9474;&#9474;&#9474;&#9474;&#9474;&#9474;&#9474;&#9597;&#9475;&#9474;&#9474;&#9474;&#9474;&#9474;&#9474;
-     &#9474;&#9474;&#9474;&#9475;&#9475;&#9597;&#9475;&#9475;&#9597;&#9475;&#9474;&#9474;&#9474;&#9474;&#9474;&#9597;&#9475;&#9597;&#9475;&#9475;&#9597;&#9474;&#9474;&#9474;&#9597;&#9474;
-
-     &#9474;        &#9475;               &#9474; 
-  !  &#9474;   &#9595; &#9595;&#9595; &#9475;        &#9595;&#9475;     &#9474; 
-     &#9474;  &#9475;&#9475;&#9595;&#9475;&#9475;&#9595;&#9475;     &#9595;&#9475;&#9595;&#9475;&#9475;&#9595;   &#9595;&#9474; 
+<table>
+    <tr>
+        <td>-</td>
+        <td>Uses the default style*</td>
+    </tr>
+    <tr>
+        <td>.</td>
+        <td><img src="listens-dot.png" /></td>
+    </tr>
+    <tr>
+        <td>:</td>
+        <td><img src="listens-colon.png" /></td>
+    </tr>
+    <tr>
+        <td>#</td>
+        <td><img src="listens-hash.png" /></td>
+    </tr>
+    <tr>
+        <td>+</td>
+        <td><img src="listens-plus.png" /></td>
+    </tr>
+    <tr>
+        <td>|</td>
+        <td><img src="listens-pipe.png" /></td>
+    </tr>
+    <tr>
+        <td>!</td>
+        <td><img src="listens-bang.png" /></td>
+    </tr>
 
 The second character is a digit from 1 to 5. 
 
