@@ -102,8 +102,12 @@ td {
     text-align: center;
 }
 
+.container-fluid {
+    padding:0px;
+}
+
 @media (max-width: 978px) {
     #docs {
-      margin:0;
+      padding:0px;
     }
 }
