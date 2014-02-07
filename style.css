@@ -110,4 +110,7 @@ td {
     #docs {
       padding:0px;
     }
+    .feature {
+        padding:15px 20px;
+    }
 }
