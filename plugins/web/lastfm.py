@@ -158,7 +158,7 @@ class LastFM(Callback):
             trackdata["album"] = " · %s" % album.get_name()
         return trackdata
 
-    @command("setlfm savelfm save", "([^ ]*)")
+    @command("setlfm savelfm save", r"(\S*)")
     def setlfm(self, server, message, username):
         nick = server.lower(message.address.nick)
         if not username:
@@ -248,7 +248,7 @@ class LastFM(Callback):
             yield i
 
     @Callback.threadsafe
-    @command("np", "(-\d+)?\s*([^ ]*)", 
+    @command("np", r"(-\d+)?\s*(\S*)", 
              templates={Callback.USAGE: "04│ ♫ │ Usage: [.!@]np [-d] [user]",
                         Callback.ERROR: "04│ ♫ │ Couldn't retrieve Last.FM playing history."},
              prefixes=("!", ".@"))
@@ -303,7 +303,7 @@ class LastFM(Callback):
         return template % trackdata
 
     @Callback.threadsafe
-    @command("compare", "([^ ]+)(?:\s+([^ ]+))?",
+    @command("compare", r"(\S+)(?:\s+(\S+))?",
      templates={Callback.USAGE: "04│ ♫ │ Usage: [.@]compare user1 [user2]",
                 Callback.ERROR: "04│ ♫ │ Couldn't retrieve Last.FM user data.",
                 ValueError: "04│ ♫ │ Last.FM compatibility service is down."})
@@ -352,15 +352,15 @@ class LastFM(Callback):
     def besties(self, server, message, user):
         raise NotImplementedError
 
-    @command("lastfm", "(.*)")
+    @command("lastfm", "(\S*)", templates={Callback.USAGE: "04│ ♫ │ Usage: [.@]lastfm nick"})
     def lastfm(self, server, message, user):
         if not user:
             user = message.address.nick
 
         lowername = server.lower(user)
         if lowername in self.users:
-            return "04│04 http://last.fm/user/" + self.users[lowername]
-        return "04│04 %s has not associated their last.fm." % user
+            return "04│ ♫ │ 12http://last.fm/user/" + self.users[lowername]
+        return "04│ ♫ │ %s has not associated their Last.FM" % user
 
 
     def savefile(self):

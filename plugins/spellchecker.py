@@ -137,7 +137,10 @@ else:
                         pattern = re.sub(r"(.+?)\1\1+", r"(\1)+", string, flags=re.IGNORECASE)
                         truncated = re.sub(r"(.+?)\1\1+", r"\1\1", word, flags=re.IGNORECASE)
                         truncated2 = re.sub(r"(.+?)\1\1+", r"\1", word, flags=re.IGNORECASE)
-                        suggestions[i] |= set(self.alternate.suggest(truncated)) | set(self.dictionary.suggest(truncated)) | set(self.alternate.suggest(truncated2)) | set(self.dictionary.suggest(truncated2))
+                        suggestions[i] |= set(self.alternate.suggest(truncated) 
+                                              + self.dictionary.suggest(truncated) 
+                                              + self.alternate.suggest(truncated2) 
+                                              + self.dictionary.suggest(truncated2))
                         if not any(re.match(pattern, x) for x in suggestions[i]):
                             wrong.append(word)
 

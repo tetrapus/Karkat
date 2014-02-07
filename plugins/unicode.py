@@ -80,13 +80,13 @@ def search(server, message, data):
                 "category": categories.get(result[2], "Unknown")
                 }
 
-        yield "\x0310%(module)s│\x03 %(symbol)s \x0310│\x03"\
-              " U+%(code)s %(name)s \x0310│\x03"\
+        yield "\x0306%(module)s│\x03 %(symbol)s \x0306│\x03"\
+              " U+%(code)s %(name)s \x0306│\x03"\
               " %(block)s · %(category)s" % info
  
     # If the user requested more than 4 results, inform them of omitted results
     if nresults > 4:
-        yield "\x0310Unicode│\x03 %d of %d results shown." % (4, nresults)
+        yield "\x0306Unicode│\x03 %d of %d results shown." % (4, nresults)
 
 @Callback.threadsafe
 @command("symbols", "(.+)")
@@ -126,7 +126,7 @@ def symbols(server, msg, data):
     if not chars:
         chars = ["No results."]
 
-    return "\x0310%s│\x03 %s" % ("Unicode" if msg.prefix != "." else "",
+    return "\x0306%s│\x03 %s" % ("Unicode" if msg.prefix != "." else "",
                                  " ".join(chars))
 
 __callbacks__ = {"privmsg":[search, symbols]}

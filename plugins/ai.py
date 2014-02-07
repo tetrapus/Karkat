@@ -188,37 +188,38 @@ class AI(Callback):
         self.server = server
         super().__init__(server)
 
-        self.constructrate = 0.314159265359                             # pi/10
-        self.lowerrate = 0.115572734979                                 # pi/10e
-        self.correctionrate = 0.66180339887498948                       # (1 + sqrt(5)) / 20 + 0.5
-        self.tangentrate = 0.164493406685                               # pi^2 / 6
-        self.wadsworthrate = 0.20322401432901574                            # sqrt(413)/100
-        self.wadsworthconst = 0.3
-        self.continuityrate = 0.36                                      # tau faggots in a butt
-        self.suggestrate = 0                                            # not implemented and this is a terrible idea
-        self.grammerifyrate = 0                                         # not implemented and also a terrible idea
-        self.internetrate = 90.01                                       # what does this even mean
-        self.sentiencerate = 0.32                                       # oh god oh god oh god
-
+        self.settings = {
+            "construct": 0.314159265359,                             # pi/10
+            "lower": 0.115572734979,                                 # pi/10e
+            "correction": 0.66180339887498948,                       # (1 + sqrt(5)) / 20 + 0.5
+            "tangent": 0.164493406685,                               # pi^2 / 6
+            "wadsworth": 0.20322401432901574,                            # sqrt(413)/100
+            "wadsworthconst": 0.3,
+            "suggest": 0,                                            # not implemented and this is a terrible idea
+            "grammerify": 0,                                         # not implemented and also a terrible idea
+            "internet": 90.01,                                       # what does this even mean
+            "sentience": 0.32,                                       # oh god oh god oh god
+        }
         self.last = ""
+        self.context = []
 
 
-    def continuity(self, words):
+    def continuity(self, words, retain):
         # Boost probability of common words being used as the seed
-        common = set(self.last.upper().split()) & set(words)
+        self.context.append(list(set(self.last.upper().split()) & set(words)) + self.last.split())
+        random.shuffle(self.context)
+        # Calculate # of words to keep
+        retain = int(len(self.context) * retain * 0.85)
+        self.context = self.context[:retain]
         # Add all words from prior text
-        text = words + list(common) + self.last.split()
+        text = words + list(self.context)
         return text
         
 
     def getline(self, sender, text):
-        #return re.sub("binary", sender.upper(), random.choice(self.lines), flags=re.IGNORECASE)
-
         words = text.upper().split()
 
-        if random.random() < self.continuityrate:
-            print("Adding continuity.")
-            words = self.continuity(words)
+        words = self.continuity(words, random.random())
 
         choices = [i for i in self.lines if random.choice(words).lower() in i.lower() and i.lower().strip() != text.lower().strip()]
         if len(choices) < random.choice([2,3]):
@@ -229,7 +230,7 @@ class AI(Callback):
 
         self.last = answer
 
-        if choices[1:] and random.random() < self.constructrate:
+        if choices[1:] and random.random() < self.settings["construct"]:
             common = set()
             stuff = set(choices)
             stuff.remove(answer)
@@ -243,15 +244,15 @@ class AI(Callback):
                 print(("Value constructed. Baseword: %r :: Seeds: %r & %r" % (word, answer, other)))
                 answer = " ".join(answer.split()[:answer.lower().split().index(word)] + other.split()[other.lower().split().index(word):])
         
-        if random.random() < self.wadsworthrate and answer[0] != "\x01":
-            truncate = int(self.wadsworthconst * len(answer))
+        if random.random() < self.settings["wadsworth"] and answer[0] != "\x01":
+            truncate = int(self.settings["wadsworthconst"] * len(answer))
             truncate, keep = answer[:truncate], answer[truncate:]
             answer = keep.lstrip() if keep.startswith(" ") else (truncate.split(" ")[-1] + keep).lstrip()
             print(("Wadsworthing. Throwing away %r, product is %r" % (truncate, answer)))
         
         answer = answer.split(" ")
         
-        if hasattr(self.server, "spellcheck") and random.random() < self.correctionrate:
+        if hasattr(self.server, "spellcheck") and random.random() < self.settings["correction"]:
             fixed = []
             for i in answer:
                 correction = self.server.spellcheck(i.lower())
@@ -260,13 +261,13 @@ class AI(Callback):
                 print(("Spellchecked. Original phrase: %r ==> %r" % (" ".join(answer), " ".join(fixed))))
                 answer = fixed
             
-        if random.random() < self.tangentrate:
+        if random.random() < self.settings["tangent"]:
             print(("Reprocessing data. Current state: %r" % (" ".join(answer))))
             answer = self.getline(sender, " ".join(answer)).split(" ")
         
         rval = [sender if "".join(k for k in i if i.isalnum()).lower() in list(map(str.lower, self.server.nicks)) + ["binary", "disconcerted"] else (i.lower().replace("bot", random.choice(["human","person"])) if i.lower().find("bot") == 0 and (i.lower() == "bot" or i[3].lower() not in "ht") else i) for i in answer]
             
-        rval = " ".join(rval).strip().upper().replace("BINARY", sender)
+        rval = " ".join(rval).strip().upper().replace("BINARY", sender.upper())
 
         # Fix mismatching \x01s
         if rval[0] == "\x01" and rval[-1] != "\x01": 
@@ -286,8 +287,8 @@ class AI(Callback):
         msg = Message(line)
         if (msg.text.isupper() or "karkat" in msg.text.lower() or "pipey" in msg.text.lower()) and random.randrange(9) and (msg.text[0].isalpha() or msg.text[0] == "\x01"):
             server.message(self.getline(msg.address.nick, msg.text.upper()), msg.context)
-            if msg.text not in self.lines:
-                self.addline(server.channels[server.lower(msg.context)], msg.text.upper())
+        if msg.text.isupper() and msg.text not in self.lines:
+            self.addline(server.channels[server.lower(msg.context)], msg.text.upper())
 
     @command("purge", admin=True)
     def purge(self, server, message):

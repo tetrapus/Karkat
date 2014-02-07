@@ -12,7 +12,7 @@ from uuid import uuid4
 import requests
 from Crypto.Cipher import AES
 
-URL = 'https://feelinsonice-hrd.appspot.com/bq/'
+URL = 'http://napcats.tensorstudios.com/bq/'
 
 SECRET = b'iEk21fuwZApXlz93750dmW22pw389dPwOk'
 STATIC_TOKEN = 'm198sOkJEn37DjqZ32lpRu76xmw288xSQ9'
