@@ -37,7 +37,7 @@ def urban_lookup(bot, msg, arg, index):
     except:
         return failmsg() % params['term']
 
-    output = output.strip().replace("\n", "")
+    output = " ".join(output.split())
     sentences = re.split("([!.?]+)", output)
     output = sentences.pop(0)
     i = 1
