@@ -190,7 +190,6 @@ class AI(Callback):
         super().__init__(server)
 
         self.settings = {
-            "cobed": 
             "construct": 0.314159265359,                             # pi/10
             "lower": 0.115572734979,                                 # pi/10e
             "correction": 0.66180339887498948,                       # (1 + sqrt(5)) / 20 + 0.5
