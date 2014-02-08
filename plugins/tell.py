@@ -54,7 +54,7 @@ class Reminder(Callback):
         except FileNotFoundError:
             self.reminders = {}
         else:
-            for user in [i["sender"] for i in self.reminders]:
+            for user in [i["sender"] for i in sum(self.reminders.values(), [])]:
                 comchans = [i for i in server.channels if server.isIn(user, server.channels[i])]
                 if comchans:
                     self.send_messages([i for i in server.channels[comchans[0]] if server.lower(i) == server.lower(user)][0], comchans[0])
