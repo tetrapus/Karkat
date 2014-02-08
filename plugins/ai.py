@@ -209,7 +209,7 @@ class AI(Callback):
         self.context.append(list(set(self.last.upper().split()) & set(words)) + self.last.split())
         random.shuffle(self.context)
         # Calculate # of words to keep
-        retain = int(len(self.context) * retain * 0.85)
+        retain = int(len(self.context) * retain * 1.15)
         self.context = self.context[:retain]
         # Add all words from prior text
         text = words + list(self.context)

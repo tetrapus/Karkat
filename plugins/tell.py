@@ -62,7 +62,7 @@ class Reminder(Callback):
         self.server = server
         super().__init__(server)
 
-    @command("remind tell note send", r"^(?:to\s+)?(\S+):?\s+(?:(?:in|after)\s+%(time)s\s+)?(?:that|to\s+)?(what to \S+|.+?)(?:\s+(?:in|after)\s+%(time)s)?(?:\s+via\s+(snapchat|pm|notice|channel message|message|private message))?(?:\s+every\s+%(time)s(?:\s+until\s+(cancelled|active))?)?$" % {"time": time_expression})
+    @command("remind tell note send", r"^(?:to\s+)?(\S+):?\s+(?:(?:in|after)\s+%(time)s\s+)?(?:that|to\s+)?(what to \S+|.+?)(?:\s+(?:in|after)\s+%(time)s)?(?:\s+via\s+(snapchat|pm|notice|channel message|message|private message|#\S+))?(?:\s+every\s+%(time)s(?:\s+until\s+(cancelled|active))?)?$" % {"time": time_expression})
     def reminder(self, server, msg, user, after, text, after2, method, repeat, cancel):
         # TODO: handle inactive people
         # TODO: print reminders in last-spoke channel
@@ -79,7 +79,7 @@ class Reminder(Callback):
             return "Not yet implemented"
 
         jobid = uuid.uuid4().hex
-        job = {"id": jobid, "sender": msg.address.nick, "message": text, "method": method, "time": time.time(), "after": after + time.time()}
+        job = {"id": jobid, "sender": msg.address.nick, "message": text, "method": method, "time": time.time(), "after": after + time.time(), "channel": msg.context}
 
         def setreminder(job):
             self.waiting.setdefault(server.lower(user), {}).pop(jobid, None)
@@ -98,6 +98,11 @@ class Reminder(Callback):
             json.dump(self.reminders, f)
 
         return "user=%(user)s, after=%(after)s, text=%(text)s, method=%(method)s, repeat=%(repeat)s, cancel=%(cancel)s" % locals()
+
+    def common_channels(self, user, user2=None):
+        common = [i for i in self.server.channels if self.server.isIn(user, self.server.channels[i])]
+        if user2:
+            common = [i for i in common if self.server.isIn(user2, self.server.channels[i])]
 
     def privmsg_check(self, server, line) -> "privmsg":
         msg = Message(line)
