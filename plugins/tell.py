@@ -120,9 +120,9 @@ class Reminder(Callback):
         if server.lower(nick) in self.reminders:
             self.send_messages(nick, channel)
 
-    def send_messages(self, user, context):
+    def send_messages(self, user, context, immediate=False):
         for i in self.reminders[self.server.lower(user)]:
-            if time.time() < i["after"]:
+            if time.time() >= i["after"] - 1: # Fudge factor
                 method = {"pm": (user, "PRIVMSG"),
                          "private message": (user, "PRIVMSG"),
                          "message": (context, "PRIVMSG"),
