@@ -50,7 +50,7 @@ class Scheduler(threading.Thread):
                 except BaseException:
                     traceback.print_exc()
             else:
-                if job is None:
+                if job[0] < 0:
                     self.__class__._scheduler = None
                     return
                 waiting.put(job)
@@ -61,7 +61,7 @@ class Scheduler(threading.Thread):
         self.incoming.put((time, job, args, kwargs))
 
     def stop(self):
-        self.incoming.put(None)
+        self.incoming.put((-1,))
 
 class Job(object):
     def __init__(self, job, seconds=0, stop_after=1):
