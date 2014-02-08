@@ -273,7 +273,7 @@ class AI(Callback):
 
         if random.random() < self.settings["cobedise"]:
             print("Cobedising. In: %s" % rval)
-            rval = requests.get("http://cobed.gefjun.rfw.name/", params={"q": rval}, headers={"X-Cobed-Auth": "kobun:nowbunbun"}).text.upper()
+            rval = requests.get("http://cobed.gefjun.rfw.name/", params={"q": rval.lower()}, headers={"X-Cobed-Auth": "kobun:nowbunbun"}).text.upper()
             print("           Out: %s" % rval)
 
         # Fix mismatching \x01s
