@@ -206,7 +206,7 @@ class AI(Callback):
 
     def continuity(self, words, retain):
         # Boost probability of common words being used as the seed
-        self.context.append(list(set(self.last.upper().split()) & set(words)) + self.last.split())
+        self.context.extend(list(set(self.last.upper().split()) & set(words)) + self.last.split())
         random.shuffle(self.context)
         # Calculate # of words to keep
         retain = int(len(self.context) * retain * 1.15)
