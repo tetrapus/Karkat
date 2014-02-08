@@ -58,6 +58,7 @@ class Reminder(Callback):
                 comchans = [i for i in server.channels if server.isIn(user, server.channels[i])]
                 if comchans:
                     self.send_messages([i for i in server.channels[comchans[0]] if server.lower(i) == server.lower(user)][0], comchans[0])
+            # TODO: spawn jobs for the rest of the reminders
 
         self.server = server
         super().__init__(server)
@@ -98,11 +99,6 @@ class Reminder(Callback):
             json.dump(self.reminders, f)
 
         return "user=%(user)s, after=%(after)s, text=%(text)s, method=%(method)s, repeat=%(repeat)s, cancel=%(cancel)s" % locals()
-
-    def common_channels(self, user, user2=None):
-        common = [i for i in self.server.channels if self.server.isIn(user, self.server.channels[i])]
-        if user2:
-            common = [i for i in common if self.server.isIn(user2, self.server.channels[i])]
 
     def privmsg_check(self, server, line) -> "privmsg":
         msg = Message(line)

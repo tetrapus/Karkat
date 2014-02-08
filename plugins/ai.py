@@ -172,6 +172,7 @@
 import os
 import re
 import random
+import requests
 
 from bot.events import Callback, command
 from util.irc import Message
@@ -189,12 +190,14 @@ class AI(Callback):
         super().__init__(server)
 
         self.settings = {
+            "cobed": 
             "construct": 0.314159265359,                             # pi/10
             "lower": 0.115572734979,                                 # pi/10e
             "correction": 0.66180339887498948,                       # (1 + sqrt(5)) / 20 + 0.5
             "tangent": 0.164493406685,                               # pi^2 / 6
             "wadsworth": 0.20322401432901574,                            # sqrt(413)/100
             "wadsworthconst": 0.3,
+            "cobedise": 0.0429,                                      # Kobun's filth ratio
             "suggest": 0,                                            # not implemented and this is a terrible idea
             "grammerify": 0,                                         # not implemented and also a terrible idea
             "internet": 90.01,                                       # what does this even mean
@@ -268,6 +271,11 @@ class AI(Callback):
         rval = [sender if "".join(k for k in i if i.isalnum()).lower() in list(map(str.lower, self.server.nicks)) + ["binary", "disconcerted"] else (i.lower().replace("bot", random.choice(["human","person"])) if i.lower().find("bot") == 0 and (i.lower() == "bot" or i[3].lower() not in "ht") else i) for i in answer]
             
         rval = " ".join(rval).strip().upper().replace("BINARY", sender.upper())
+
+        if random.random() < self.settings["cobedise"]:
+            print("Cobedising. In: %s" % rval)
+            rval = requests.get("http://cobed.gefjun.rfw.name/", params={"q": rval}, headers={"X-Cobed-Auth": "kobun:nowbunbun"}).text.upper()
+            print("           Out: %s" % rval)
 
         # Fix mismatching \x01s
         if rval[0] == "\x01" and rval[-1] != "\x01": 
