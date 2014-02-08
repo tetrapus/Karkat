@@ -276,6 +276,7 @@ class AI(Callback):
             print("Cobedising. In: %s" % rval)
             rval = requests.get("http://cobed.gefjun.rfw.name/", params={"q": ircstrip(rval.lower())}, headers={"X-Cobed-Auth": "kobun:nowbunbun"}).text.upper()
             print("           Out: %s" % rval)
+            rval = re.sub(r"^\S+:\s*", "", rval)
 
         # Fix mismatching \x01s
         if rval[0] == "\x01" and rval[-1] != "\x01": 
