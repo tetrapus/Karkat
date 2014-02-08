@@ -133,7 +133,7 @@ class Reminder(Callback):
         with open(self.server.get_config_dir(self.REMINDERF), "w") as f:
             json.dump(self.reminders, f)
 
-    def __destroy__(self):
+    def __destroy__(self, server):
         for i in self.waiting:
             for job in i.values():
                 job["job"].cancel()
