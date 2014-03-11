@@ -173,6 +173,7 @@ import os
 import re
 import random
 import requests
+import time
 
 from bot.events import Callback, command
 from util.irc import Message
@@ -204,12 +205,16 @@ class AI(Callback):
             "sentience": 0.32,                                       # oh god oh god oh god
         }
         self.last = ""
+        self.lasttime = 0
+        self.lastmsg = ""
         self.context = []
 
 
     def continuity(self, words, retain):
         # Boost probability of common words being used as the seed
         self.context.extend(list(set(self.last.upper().split()) & set(words)) + self.last.split())
+        if "\x01ACTION" in words:
+            self.context.extend("\x01ACTION") # Increase probability of repeated actions in context
         random.shuffle(self.context)
         # Calculate # of words to keep
         retain = int(len(self.context) * retain * 1.15)
@@ -294,8 +299,13 @@ class AI(Callback):
     @Callback.background
     def capsmsg(self, server, line) -> "privmsg":
         msg = Message(line)
-        if msg.text.lower().startswith("%s:" % server.nick.lower()) or ((msg.text.isupper() or "karkat" in msg.text.lower() or "pipey" in msg.text.lower()) and (msg.text[0].isalpha() or msg.text[0] == "\x01")):
-            server.message(self.getline(msg.address.nick, msg.text.upper()), msg.context)
+        if not (msg.text[0].isalpha() or msg.text[0] == "\x01"):
+            return
+        if msg.text.lower().startswith("%s:" % server.nick.lower()) or (msg.text.isupper() or "karkat" in msg.text.lower() or "pipey" in msg.text.lower()):
+            response = self.getline(msg.address.nick, msg.text.upper())
+            server.message(response, msg.context)
+            self.lasttime = time.time()
+            self.lastmsg = response
         if msg.text.isupper() and msg.text not in self.lines:
             self.addline(server.channels[server.lower(msg.context)], msg.text.upper())
 
@@ -306,6 +316,16 @@ class AI(Callback):
         with open(self.configdir + "caps.txt", "w") as f:
             f.write("\n".join(self.lines))
         return "Removed %d instance(s) of %r from shouts." % (start - len(self.lines), self.last)
+
+    def shh(self, server, line) -> "privmsg":
+        if re.match("shh+", Message(line).text) and time.time() - self.lasttime < 30:
+            msg = ""
+            for i in self.lastmsg:
+                if i in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
+                    msg += "ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘǫʀꜱᴛᴜᴠᴡxʏᴢ"[ord(i) - 65]
+                else:
+                    msg += i                    
+            server.message(msg, Message(line).context)
 
 __initialise__ = AI
 

@@ -26,6 +26,8 @@ else:
         literalprefixes = ".!/@<`:~=+>"
         dataprefixes = list("#$<[/") + ["r/", "u/", "http://"]
         contractions = ["s", "d", "ve", "nt", "m"]
+        prefixes = ["un", "de"]
+        suffixes = ["ness", "ed", "s", "er", "y"]
 
         def __init__(self, server):
             self.name = server.name
