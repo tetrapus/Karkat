@@ -11,8 +11,8 @@ exceptions = {Callback.USAGE: "12Google Images│ "\
                               "Error: Could not fetch google image results."}
 
 
-templates = {'@': "%(color).2d│ 02%(title)s (%(width)s×%(height)s)\n%(color).2d│"\
-                  " %(content)s ·03 %(fullurl)s\n%(color).2d│ 12↗ %(url)s",
+templates = {'@': "%(color).2d│ 02%(title)s · %(content)s\n"\
+                  "%(color).2d│ 12↗ %(url)s · %(width)s×%(height)s · 03%(fullurl)s",
              '.': "%(color).2d│ 12↗ %(url)s · %(width)s×%(height)s · 03%(fullurl)s",
              '!': "%(color).2d│ 12↗ %(url)s · %(width)s×%(height)s · 03%(fullurl)s"}
 
