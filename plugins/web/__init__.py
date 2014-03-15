@@ -1,1 +1,1 @@
-__modules__ = ["wolfram", "google", "lastfm", "shorten", "suggest", "youtube", "filth", "snapchat"]
+__modules__ = ["wolfram", "google", "lastfm", "shorten", "suggest", "youtube", "filth", "snapchat", "images"]

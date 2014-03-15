@@ -40,7 +40,7 @@ def format(url):
 if apikeys is not None:
     def shorten(url):
         """ Shorten a URL with bit.ly """
-        if not url.lower().startswith("http://"):
+        if not url.lower().startswith("http"):
             url = "http://" + url
 
         args = {'login': apikeys["user"],
