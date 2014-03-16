@@ -397,8 +397,8 @@ class AI(Callback):
         self.lastlines = [i for i in self.lastlines if now - 90 < i[0]]
         for t, weights, inputs in self.lastlines:
             c = self.learningrate * score * (now - t) / 90
-            for k in weights:
-                self.settings[k] += c
+            for k, v in weights.items():
+                self.settings[k] += c * v
             for i in inputs:
                 self.istats.setdefault(i, 1)
                 self.istats[i] += c
