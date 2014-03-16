@@ -380,9 +380,9 @@ class AI(Callback):
 
         # Activations:
         if msg.startswith("%s:" % self.server.nick.lower()) or (text.isupper() or "karkat" in msg or "pipey" in msg):
-            score += 0.3
+            score += 0.4
         else:
-            score -= 0.03
+            score -= 0.025
 
         # Emotional aggravators
         coeff = 1
