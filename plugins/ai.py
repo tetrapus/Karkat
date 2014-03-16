@@ -388,7 +388,6 @@ class AI(Callback):
         coeff = 1
         for i in self.coeff:
             coeff += 0.3 * msg.count(i)
-        print("%r scored %s" % (text, score * coeff))
         return score * coeff
 
     def adjust_weights(self, server, line) -> "privmsg":
@@ -399,6 +398,7 @@ class AI(Callback):
         for t, channel, weights, inputs in self.lastlines:
             if server.eq(channel, msg.context):
                 c = self.learningrate * score * (1 - (now - t) / 60)
+                print("Addding %s to weights." % c)
                 for k, v in weights.items():
                     self.settings[k] += c * v
                 for i in inputs:
