@@ -192,7 +192,7 @@ class Mutators(object):
         return line
 
 class AI(Callback):
-    learningrate = 0.02
+    learningrate = 0.005
     laughter = {"lol": 1, "lmao": 1, "rofl": 1, "ha": 0.5, "lmfao": 1.5}
     positive = "amazing woah cool nice sweet awesome yay ++ good great true yep".split()
     negative = "lame boring what ? uh why wtf confuse terrible awful -- wrong nope sucks".split()
@@ -379,14 +379,14 @@ class AI(Callback):
 
         # Activations:
         if msg.startswith("%s:" % self.server.nick.lower()) or (text.isupper() or "karkat" in msg or "pipey" in msg):
-            score += 0.5
+            score += 0.3
         else:
-            score -= 0.05
+            score -= 0.03
 
         # Emotional aggravators
         coeff = 1
         for i in self.coeff:
-            coeff += 0.5 * msg.count(i)
+            coeff += 0.3 * msg.count(i)
         print("%r scored %s" % (text, score * coeff))
         return score * coeff
 
@@ -394,9 +394,9 @@ class AI(Callback):
         msg = Message(line)
         score = self.score(msg.text)
         now = time.time()
-        self.lastlines = [i for i in self.lastlines if now - 90 < i[0]]
+        self.lastlines = [i for i in self.lastlines if now - 60 < i[0]]
         for t, weights, inputs in self.lastlines:
-            c = self.learningrate * score * (now - t) / 90
+            c = self.learningrate * score * (1 - (now - t) / 60)
             for k, v in weights.items():
                 self.settings[k] += c * v
             for i in inputs:
