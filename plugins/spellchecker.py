@@ -5,13 +5,14 @@ import re
 import sqlite3
 import time
 from util.text import ircstrip, strikethrough
-from util.irc import Address, Message, Callback, command
+from util.irc import Address, Message, command
+from bot.events import Callback
 try:
     import enchant
 except ImportError:
     print("Enchant dependancy found, spellchecker not loaded.", file=sys.stderr)
 else:
-    class SpellChecker(object):
+    class SpellChecker(Callback):
         DBFILE = "spellchecker.db"
         LOCKFILE = "ircwords_locked"
         users = {}
@@ -39,7 +40,7 @@ else:
             self.alternate = enchant.Dict("en_GB")
 
             try:
-                self.locked = [open(server.get_config_dir(self.LOCKFILE)).read().split("\n")]
+                self.locked = open(server.get_config_dir(self.LOCKFILE)).read().split("\n")
             except:
                 self.locked = []
                 open(server.get_config_dir(self.LOCKFILE), "w")
@@ -54,11 +55,9 @@ else:
 
             self.dictionary._add = self.dictionary.add
             self.dictionary.add = lambda x: self.dictionary._add(x) if "\n" not in x else sys.__stdout__.write("fuck you.")
-            server.register("privmsg", self.correctChannel)
-            server.register("privmsg", self.updateKnown)
-            server.register("privmsg", self.activeCorrector)
-            server.register("privmsg", self.passiveCorrector)
+
             server.spellcheck = self.spellcheck
+            super().__init__(server)
 
         def getSettings(self, context):
             with sqlite3.connect(self.db) as db:
@@ -153,7 +152,7 @@ else:
                 return wrong # Give a dictionary of words : [suggestions]
         
         @Callback.background
-        def passiveCorrector(self, server, line):
+        def passiveCorrector(self, server, line) -> "privmsg":
             msg = Message(line)
             nick = msg.address.nick
             if not self.dictionary.check(nick):
@@ -206,7 +205,7 @@ else:
                 suggestions = self.alternate.suggest(query)[:6]
                 return "Suggestions: %s" % ("/".join(suggestions))
         
-        def updateKnown(self, server, y):
+        def updateKnown(self, server, y) -> "privmsg":
             x = y.split(" ")
             newword = re.match(r":(%s[^\a]?\s*)?([^\s]+)( i|')s a( real)? word(!| FORCE| LOCK)?.*" % server.nick, " ".join(x[3:]), flags=re.IGNORECASE)
             notword = re.match(r":(%s[^\a]?\s*)?([^\s]+)( isn't| is not|'s not) a( real)? word(!| FORCE| LOCK)?.*" % server.nick, " ".join(x[3:]), flags=re.IGNORECASE)
