@@ -174,12 +174,19 @@ import re
 import random
 import requests
 import time
+import json
 
 from bot.events import Callback, command
 from util.irc import Message
 from util.text import ircstrip
 
 class AI(Callback):
+    learningrate = 0.02
+    laughter = {"lol": 1, "lmao": 1, "rofl": 1, "ha": 0.5, "lmfao": 1.5}
+    positive = "amazing woah cool nice sweet awesome yay ++ good great true yep".split()
+    negative = "lame boring what ? uh why wtf confuse terrible awful -- wrong nope".split()
+    coeff = "wow fucking ur really"
+
     def __init__(self, server):
         self.configdir = server.get_config_dir("AI")
         if not os.path.exists(self.configdir):
@@ -191,23 +198,29 @@ class AI(Callback):
         self.server = server
         super().__init__(server)
 
-        self.settings = {
-            "construct": 0.314159265359,                             # pi/10
-            "lower": 0.115572734979,                                 # pi/10e
-            "correction": 0.66180339887498948,                       # (1 + sqrt(5)) / 20 + 0.5
-            "tangent": 0.164493406685,                               # pi^2 / 6
-            "wadsworth": 0.20322401432901574,                            # sqrt(413)/100
-            "wadsworthconst": 0.3,
-            "cobedise": 0.0429,                                      # Kobun's filth ratio
-            "suggest": 0,                                            # not implemented and this is a terrible idea
-            "grammerify": 0,                                         # not implemented and also a terrible idea
-            "internet": 90.01,                                       # what does this even mean
-            "sentience": 0.32,                                       # oh god oh god oh god
-        }
+        try:
+            self.settings = json.load(open(self.configdir + "/settings.json"))
+        except:
+            self.settings = {
+                "construct": 0.314159265359,                             # pi/10
+                "lower": 0.115572734979,                                 # pi/10e
+                "correction": 0.66180339887498948,                       # (1 + sqrt(5)) / 20 + 0.5
+                "tangent": 0.164493406685,                               # pi^2 / 6
+                "wadsworth": 0.20322401432901574,                            # sqrt(413)/100
+                "wadsworthconst": 0.3,
+                "cobedise": 0.0429,                                      # Kobun's filth ratio
+                "suggest": 0,                                            # not implemented and this is a terrible idea
+                "grammerify": 0,                                         # not implemented and also a terrible idea
+                "internet": 90.01,                                       # what does this even mean
+                "sentience": 0.32,                                       # oh god oh god oh god
+            }
+
         self.last = ""
         self.lasttime = 0
         self.lastmsg = ""
         self.context = []
+
+        self.lastlines = []
 
 
     def continuity(self, words, retain):
@@ -225,6 +238,8 @@ class AI(Callback):
         
 
     def getline(self, sender, text):
+        weights = {i: 0 for i in self.settings}
+
         words = text.upper().split()
 
         words = self.continuity(words, random.random())
@@ -251,12 +266,16 @@ class AI(Callback):
                 other = random.choice([i for i in stuff if word in i.lower().split()])
                 print(("Value constructed. Baseword: %r :: Seeds: %r & %r" % (word, answer, other)))
                 answer = " ".join(answer.split()[:answer.lower().split().index(word)] + other.split()[other.lower().split().index(word):])
+                # Using construct algorithm
+                weights["construct"] += 1
         
         if random.random() < self.settings["wadsworth"] and answer[0] != "\x01":
             truncate = int(self.settings["wadsworthconst"] * len(answer))
             truncate, keep = answer[:truncate], answer[truncate:]
             answer = keep.lstrip() if keep.startswith(" ") else (truncate.split(" ")[-1] + keep).lstrip()
             print(("Wadsworthing. Throwing away %r, product is %r" % (truncate, answer)))
+            # Using wadsworth algorithm
+            weights["wadsworth"] += 1
         
         answer = answer.split(" ")
         
@@ -268,26 +287,36 @@ class AI(Callback):
             if " ".join(answer) != " ".join(fixed):
                 print(("Spellchecked. Original phrase: %r ==> %r" % (" ".join(answer), " ".join(fixed))))
                 answer = fixed
+                # Using spellchecker algorithm
+                weights["correction"] += 1
             
         if random.random() < self.settings["tangent"]:
             print(("Reprocessing data. Current state: %r" % (" ".join(answer))))
-            answer = self.getline(sender, " ".join(answer)).split(" ")
+            answer, child_weights = self.getline(sender, " ".join(answer))
+            answer = answer.split(" ")
+            # Using tangent algorithm
+            weights = {k: v/2 + child_weights[k] for k, v in weights.items()}
+            weights["tangent"] += 1
         
         rval = [sender if "".join(k for k in i if i.isalnum()).lower() in list(map(str.lower, self.server.nicks)) + ["binary", "disconcerted"] else (i.lower().replace("bot", random.choice(["human","person"])) if i.lower().find("bot") == 0 and (i.lower() == "bot" or i[3].lower() not in "ht") else i) for i in answer]
             
         rval = " ".join(rval).strip().upper().replace("BINARY", sender.upper())
 
         if random.random() < self.settings["cobedise"]:
-            print("Cobedising. In: %s" % rval)
-            rval = requests.get("http://cobed.gefjun.rfw.name/", params={"q": ircstrip(rval.lower())}, headers={"X-Cobed-Auth": "kobun:nowbunbun"}).text.upper()
-            print("           Out: %s" % rval)
-            rval = re.sub(r"^\S+:\s*", "", rval)
+            try:
+                print("Cobedising. In: %s" % rval)
+                rval = requests.get("http://cobed.gefjun.rfw.name/", params={"q": ircstrip(rval.lower())}, headers={"X-Cobed-Auth": "kobun:nowbunbun"}).text.upper()
+                print("           Out: %s" % rval)
+                rval = re.sub(r"^\S+:\s*", "", rval)
+                weights["cobedise"] += 1
+            except:
+                print("Cobed failed.")
 
         # Fix mismatching \x01s
         if rval[0] == "\x01" and rval[-1] != "\x01": 
             rval += "\x01"
 
-        return rval
+        return rval, weights
 
     def addline(self, users, line):
         for i in users:
@@ -302,10 +331,11 @@ class AI(Callback):
         if not (msg.text[0].isalpha() or msg.text[0] == "\x01"):
             return
         if msg.text.lower().startswith("%s:" % server.nick.lower()) or (msg.text.isupper() or "karkat" in msg.text.lower() or "pipey" in msg.text.lower()):
-            response = self.getline(msg.address.nick, msg.text.upper())
+            response, weights = self.getline(msg.address.nick, msg.text.upper())
             server.message(response, msg.context)
             self.lasttime = time.time()
             self.lastmsg = response
+            self.lastlines.append((time.time(), weights))
         if msg.text.isupper() and msg.text not in self.lines:
             self.addline(server.channels[server.lower(msg.context)], msg.text.upper())
 
@@ -316,6 +346,45 @@ class AI(Callback):
         with open(self.configdir + "caps.txt", "w") as f:
             f.write("\n".join(self.lines))
         return "Removed %d instance(s) of %r from shouts." % (start - len(self.lines), self.last)
+
+    def score(self, text):
+        msg = text.lower()
+        # Positive reactions include:
+        # Laughter
+        score = 0
+        for i in self.laughter:
+            score += self.laughter[i] * msg.count(i)
+        # Positivity
+        for i in self.positive:
+            score += msg.count(i)
+        # Negativity
+        for i in self.negative:
+            score -= msg.count(i)
+
+        # Activations:
+        if msg.startswith("%s:" % self.server.nick.lower()) or (text.isupper() or "karkat" in msg or "pipey" in msg):
+            score += 0.5
+        else:
+            score -= 0.05
+
+        # Emotional aggravators
+        coeff = 1
+        for i in self.coeff:
+            coeff += 0.5 * msg.count(i)
+
+        return score * coeff
+
+    def adjust_weights(self, server, line) -> "privmsg":
+        msg = Message(line)
+        score = self.score(msg.text)
+        now = time.time()
+        self.lastlines = [i for i in self.lastlines if now - 90 < i[0]]
+        for t, weights in self.lastlines:
+            for k, v in weights.items():
+                self.settings[k] += self.learningrate * score * v * (now - t) / 90
+        self.settings = {k: min(1, max(0, v)) for k, v in self.settings.items()}
+        with open(self.configdir + "/settings.json", "w") as f:
+            json.dump(self.settings, f)
 
     def shh(self, server, line) -> "privmsg":
         if re.match("shh+", Message(line).text) and time.time() - self.lasttime < 30:
