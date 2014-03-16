@@ -355,10 +355,11 @@ class AI(Callback):
         if msg.text.isupper() and msg.text not in self.lines:
             self.addline(server.channels[server.lower(msg.context)], msg.text.upper())
 
-    @command("purge", admin=True)
-    def purge(self, server, message):
+    @command("purge", "(.*)", admin=True)
+    def purge(self, server, message, query):
         start = len(self.lines)
-        self.lines = [i for i in self.lines if i.upper() != self.last.upper()]
+        last = query or self.last
+        self.lines = [i for i in self.lines if i.upper() != last.upper()]
         with open(self.configdir + "caps.txt", "w") as f:
             f.write("\n".join(self.lines))
         return "Removed %d instance(s) of %r from shouts." % (start - len(self.lines), self.last)
