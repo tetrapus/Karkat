@@ -398,7 +398,7 @@ class AI(Callback):
         for t, channel, weights, inputs in self.lastlines:
             if server.eq(channel, msg.context):
                 c = self.learningrate * score * (1 - (now - t) / 60)
-                print("Addding %s to weights." % c)
+                print("Addding %s%% to weights." % (100*c))
                 for k, v in weights.items():
                     self.settings[k] += c * v
                 for i in inputs:
