@@ -192,11 +192,11 @@ class Mutators(object):
         return line
 
 class AI(Callback):
-    learningrate = 0.005
+    learningrate = 0.01
     laughter = {"lol": 1, "lmao": 1, "rofl": 1, "ha": 0.5, "lmfao": 1.5}
-    positive = "amazing woah cool nice sweet awesome yay ++ good great true yep".split()
+    positive = "amazing woah cool nice sweet awesome yay ++ good great true yep <3 :D".split()
     negative = "lame boring what ? uh why wtf confuse terrible awful -- wrong nope sucks".split()
-    coeff = "wow fucking ur really"
+    coeff = "wow fucking ur really !".split()
 
     def __init__(self, server):
         self.configdir = server.get_config_dir("AI")
