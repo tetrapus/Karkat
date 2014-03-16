@@ -282,7 +282,7 @@ class AI(Callback):
             if common:
                 word = list(common)[0]
                 other = random.choice([i for i in stuff if word in i.lower().split()])
-                inputs.append(other)
+                inputs.extend(other)
                 print(("Value constructed. Baseword: %r :: Seeds: %r & %r" % (word, answer, other)))
                 answer = " ".join(answer.split()[:answer.lower().split().index(word)] + other.split()[other.lower().split().index(word):])
                 # Using construct algorithm
