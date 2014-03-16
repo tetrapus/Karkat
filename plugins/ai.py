@@ -194,7 +194,7 @@ class Mutators(object):
 class AI(Callback):
     learningrate = 0.01
     laughter = {"lol": 1, "lmao": 1, "rofl": 1, "ha": 0.5, "lmfao": 1.5}
-    positive = "amazing woah cool nice sweet awesome yay ++ good great true yep <3 :D".split()
+    positive = "amazing woah cool nice sweet awesome yay ++ good great true yep <3 :D impressive".split()
     negative = "lame boring what ? uh why wtf confuse terrible awful -- wrong nope sucks".split()
     coeff = "wow fucking ur really !".split()
 
@@ -351,7 +351,7 @@ class AI(Callback):
             server.message(response, msg.context)
             self.lasttime = time.time()
             self.lastmsg = response
-            self.lastlines.append((time.time(), weights, inputs))
+            self.lastlines.append((time.time(), msg.context, weights, inputs))
         if msg.text.isupper() and msg.text not in self.lines:
             self.addline(server.channels[server.lower(msg.context)], msg.text.upper())
 
@@ -396,13 +396,14 @@ class AI(Callback):
         score = self.score(msg.text)
         now = time.time()
         self.lastlines = [i for i in self.lastlines if now - 60 < i[0]]
-        for t, weights, inputs in self.lastlines:
-            c = self.learningrate * score * (1 - (now - t) / 60)
-            for k, v in weights.items():
-                self.settings[k] += c * v
-            for i in inputs:
-                self.istats.setdefault(i, 1)
-                self.istats[i] += c
+        for t, channel, weights, inputs in self.lastlines:
+            if server.eq(channel, msg.context):
+                c = self.learningrate * score * (1 - (now - t) / 60)
+                for k, v in weights.items():
+                    self.settings[k] += c * v
+                for i in inputs:
+                    self.istats.setdefault(i, 1)
+                    self.istats[i] += c
         self.settings = {k: min(1, max(0, v)) for k, v in self.settings.items()}
 
         with open(self.configdir + "/settings.json", "w") as f:
