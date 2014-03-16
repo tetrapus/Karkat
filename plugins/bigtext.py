@@ -117,6 +117,7 @@ def bigvars(server, message):
 def smallvars(server, line):
     msg = Message(line)
     if msg.text.startswith("$") and msg.text[1:].lower() in mapping:
-        server.message(mapping[msg.text[1:].lower()], msg.context)
+        text = re.sub(r"\$[a-z]+", subs, msg.text, flags=re.IGNORECASE)
+        server.message(text, msg.context)
 
 __callbacks__ = {"privmsg":[bigtext, bigvars, smallvars]}
