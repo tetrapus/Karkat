@@ -116,7 +116,7 @@ else:
             wrong = []
             append = {}
             for i, word in enumerate(errors):
-                suffixless = {i.rstrip(suffix) for suffix in self.suffixes} - {word}
+                suffixless = {word.rstrip(suffix) for suffix in self.suffixes} - {word}
                 if any(self.spellcheck(i) for i in suffixless):
                     continue
                 elif "".join(i for i in word if i.isalpha()).lower() not in suggestions[i]:
