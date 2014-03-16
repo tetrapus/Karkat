@@ -180,11 +180,22 @@ from bot.events import Callback, command
 from util.irc import Message
 from util.text import ircstrip
 
+
+class Mutators(object):
+    @staticmethod
+    def cobed(line, weights):
+        print("Cobedising. In: %s" % line)
+        line = requests.get("http://cobed.gefjun.rfw.name/", params={"q": ircstrip(line.lower())}, headers={"X-Cobed-Auth": "kobun:nowbunbun"}).text.upper()
+        print("           Out: %s" % line)
+        line = re.sub(r"^\S+:\s*", "", line)
+        weights["cobedise"] += 1
+        return line
+
 class AI(Callback):
-    learningrate = 0.02
+    learningrate = 0.025
     laughter = {"lol": 1, "lmao": 1, "rofl": 1, "ha": 0.5, "lmfao": 1.5}
     positive = "amazing woah cool nice sweet awesome yay ++ good great true yep".split()
-    negative = "lame boring what ? uh why wtf confuse terrible awful -- wrong nope".split()
+    negative = "lame boring what ? uh why wtf confuse terrible awful -- wrong nope sucks".split()
     coeff = "wow fucking ur really"
 
     def __init__(self, server):
@@ -215,6 +226,11 @@ class AI(Callback):
                 "sentience": 0.32,                                       # oh god oh god oh god
             }
 
+        try:
+            self.istats = json.load(open(self.configdir + "/inputs.json"))
+        except:
+            self.istats = {}
+
         self.last = ""
         self.lasttime = 0
         self.lastmsg = ""
@@ -239,6 +255,7 @@ class AI(Callback):
 
     def getline(self, sender, text):
         weights = {i: 0 for i in self.settings}
+        inputs = []
 
         words = text.upper().split()
 
@@ -250,6 +267,7 @@ class AI(Callback):
             for i in range(random.randrange(3,9)):
                 choices.append(random.choice(tuple(self.lines)))
         answer = random.choice(choices)
+        inputs.append(answer)
 
         self.last = answer
 
@@ -264,6 +282,7 @@ class AI(Callback):
             if common:
                 word = list(common)[0]
                 other = random.choice([i for i in stuff if word in i.lower().split()])
+                inputs.append(other)
                 print(("Value constructed. Baseword: %r :: Seeds: %r & %r" % (word, answer, other)))
                 answer = " ".join(answer.split()[:answer.lower().split().index(word)] + other.split()[other.lower().split().index(word):])
                 # Using construct algorithm
@@ -292,8 +311,9 @@ class AI(Callback):
             
         if random.random() < self.settings["tangent"]:
             print(("Reprocessing data. Current state: %r" % (" ".join(answer))))
-            answer, child_weights = self.getline(sender, " ".join(answer))
+            answer, child_weights, child_inputs = self.getline(sender, " ".join(answer))
             answer = answer.split(" ")
+            inputs.append(child_inputs)
             # Using tangent algorithm
             weights = {k: v/2 + child_weights[k] for k, v in weights.items()}
             weights["tangent"] += 1
@@ -304,11 +324,7 @@ class AI(Callback):
 
         if random.random() < self.settings["cobedise"]:
             try:
-                print("Cobedising. In: %s" % rval)
-                rval = requests.get("http://cobed.gefjun.rfw.name/", params={"q": ircstrip(rval.lower())}, headers={"X-Cobed-Auth": "kobun:nowbunbun"}).text.upper()
-                print("           Out: %s" % rval)
-                rval = re.sub(r"^\S+:\s*", "", rval)
-                weights["cobedise"] += 1
+                rval = Mutators.cobed(rval, weights)
             except:
                 print("Cobed failed.")
 
@@ -316,7 +332,7 @@ class AI(Callback):
         if rval[0] == "\x01" and rval[-1] != "\x01": 
             rval += "\x01"
 
-        return rval, weights
+        return rval, weights, inputs
 
     def addline(self, users, line):
         for i in users:
@@ -331,11 +347,11 @@ class AI(Callback):
         if not (msg.text[0].isalpha() or msg.text[0] == "\x01"):
             return
         if msg.text.lower().startswith("%s:" % server.nick.lower()) or (msg.text.isupper() or "karkat" in msg.text.lower() or "pipey" in msg.text.lower()):
-            response, weights = self.getline(msg.address.nick, msg.text.upper())
+            response, weights, inputs = self.getline(msg.address.nick, msg.text.upper())
             server.message(response, msg.context)
             self.lasttime = time.time()
             self.lastmsg = response
-            self.lastlines.append((time.time(), weights))
+            self.lastlines.append((time.time(), weights, inputs))
         if msg.text.isupper() and msg.text not in self.lines:
             self.addline(server.channels[server.lower(msg.context)], msg.text.upper())
 
@@ -379,12 +395,19 @@ class AI(Callback):
         score = self.score(msg.text)
         now = time.time()
         self.lastlines = [i for i in self.lastlines if now - 90 < i[0]]
-        for t, weights in self.lastlines:
-            for k, v in weights.items():
-                self.settings[k] += self.learningrate * score * v * (now - t) / 90
+        for t, weights, inputs in self.lastlines:
+            c = self.learningrate * score * (now - t) / 90
+            for k in weights:
+                self.settings[k] += c
+            for i in inputs:
+                self.istats.setdefault(i, 1)
+                self.istats[i] += c
         self.settings = {k: min(1, max(0, v)) for k, v in self.settings.items()}
+
         with open(self.configdir + "/settings.json", "w") as f:
             json.dump(self.settings, f)
+        with open(self.configdir + "/inputs.json", "w") as f:
+            json.dump(self.istats, f)
 
     def shh(self, server, line) -> "privmsg":
         if re.match("shh+", Message(line).text) and time.time() - self.lasttime < 30:
