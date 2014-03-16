@@ -362,7 +362,7 @@ class AI(Callback):
         self.lines = [i for i in self.lines if i.upper() != last.upper()]
         with open(self.configdir + "caps.txt", "w") as f:
             f.write("\n".join(self.lines))
-        return "Removed %d instance(s) of %r from shouts." % (start - len(self.lines), self.last)
+        return "Removed %d instance(s) of %r from shouts." % (start - len(self.lines), last)
 
     def score(self, text):
         msg = text.lower()
