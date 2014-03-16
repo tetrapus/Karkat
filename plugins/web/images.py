@@ -24,8 +24,8 @@ deflines = {'@': 1,
             '!': 4}
 
 
-@command("image img", r"(-[fgpclsn\d]\s+)?(.+)", templates=exceptions)
-def image(server, msg, nresults, query):
+@command("image img", r"(-[fpclgsn\d]\s+)?(.+)", templates=exceptions)
+def image(server, msg, flags, query):
     """
     Image search.
 
@@ -35,24 +35,36 @@ def image(server, msg, nresults, query):
     Code adapted from kochira :v
     """
 
-    if nresults:
-        nresults = min(-int(nresults), maxlines[msg.prefix])
-    else:
-        nresults = deflines[msg.prefix]
+    params = {
+            "safe": "off",
+            "v": "1.0",
+            "rsz": deflines[msg.prefix],
+            "q": query
+        }
+
+    if flags:
+        for i in flags[1:]:
+            if i.isdigit():
+                params["rsz"] = min(int(i), maxlines[msg.prefix])
+            elif i == "n":
+                pass
+                #nsfw = True # TODO
+            else:
+                params.update({"f": {"imgtype": "face"},
+                               "p": {"imgtype": "photo"},
+                               "c": {"imgtype": "clipart"},
+                               "l": {"imgtype": "lineart"},
+                               "g": {"as_filetype": "gif"},
+                               "s": {"safe": "active"}
+                }[i])
+                
 
     r = requests.get(
         "https://ajax.googleapis.com/ajax/services/search/images",
-        params={
-            "safe": "off",
-            "v": "1.0",
-            "rsz": nresults,
-            "q": query
-        }
+        params=params
     ).json()
 
     results = r.get("responseData", {}).get("results", [])
-
-    results = results[:nresults]
 
     for i, result in enumerate(results):
         yield templates[msg.prefix] % {"color" : [12, 5, 8, 3][i % 4],
