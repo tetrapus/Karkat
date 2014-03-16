@@ -24,7 +24,7 @@ deflines = {'@': 1,
             '!': 4}
 
 
-@command("image img", r"(-[fpclgs\d]\s+)?(.+)", templates=exceptions)
+@command("image img", r"(-[fpclgs\d]+\s+)?(.+)", templates=exceptions)
 def image(server, msg, flags, query):
     """
     Image search.
