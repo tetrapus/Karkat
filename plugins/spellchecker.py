@@ -28,7 +28,7 @@ else:
         dataprefixes = list("#$<[/") + ["r/", "u/", "http://"]
         contractions = ["s", "d", "ve", "nt", "m"]
         prefixes = ["un", "de"]
-        suffixes = ["ness", "ed", "s", "er", "y"]
+        suffixes = ["ness", "ed", "s", "er", "y", "ey", "dom", "ism", "ship", "ment", "ity", "ify", "ful", "ish", "ess", "ize", "ise"]
 
         def __init__(self, server):
             self.name = server.name
@@ -106,7 +106,9 @@ else:
         def spellcheck(self, sentence):
             sentence = ircstrip(sentence)
             if self.isLiteral(sentence): return
-            sentence = [self.stripContractions(i) for i in sentence.split() if self.isWord(i)]
+            words = set(sentence.split())
+
+            sentence = [self.stripContractions(i) for i in words if self.isWord(i)]
             errors = [i for i in sentence if not (self.dictionary.check(i) or self.alternate.check(i))]
             suggestions = [set(self.alternate.suggest(i)) | set(self.dictionary.suggest(i)) for i in errors]
             # reduce the suggestions
@@ -114,7 +116,10 @@ else:
             wrong = []
             append = {}
             for i, word in enumerate(errors):
-                if "".join(i for i in word if i.isalpha()).lower() not in suggestions[i]:
+                suffixless = {i.rstrip(suffix) for suffix in self.suffixes} - {word}
+                if any(self.spellcheck(i) for i in suffixless):
+                    continue
+                elif "".join(i for i in word if i.isalpha()).lower() not in suggestions[i]:
                 
                     token = set(word) & set(self.wordsep)
                     if token:
