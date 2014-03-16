@@ -24,7 +24,7 @@ deflines = {'@': 1,
             '!': 4}
 
 
-@command("image img", r"(-[fpclgsn\d]\s+)?(.+)", templates=exceptions)
+@command("image img", r"(-[fpclgs\d]\s+)?(.+)", templates=exceptions)
 def image(server, msg, flags, query):
     """
     Image search.
@@ -46,9 +46,6 @@ def image(server, msg, flags, query):
         for i in flags[1:].strip():
             if i.isdigit():
                 params["rsz"] = min(int(i), maxlines[msg.prefix])
-            elif i == "n":
-                pass
-                #nsfw = True # TODO
             else:
                 params.update({"f": {"imgtype": "face"},
                                "p": {"imgtype": "photo"},
@@ -79,4 +76,29 @@ def image(server, msg, flags, query):
     if not results:
         yield "12Google Images│ No results."
 
-__callbacks__ = {"privmsg": [image]}
+@command("gif", r"(-[fpclgs\d]\s+)?(.+)", templates=exceptions)
+def gif(server, msg, flags, query):
+    flags = "-g" + (flags or "").strip("-")
+    yield from image.funct(server, msg, flags, query)
+    
+@command("face", r"(-[fpclgs\d]\s+)?(.+)", templates=exceptions)
+def face(server, msg, flags, query):
+    flags = "-f" + (flags or "").strip("-")
+    yield from image.funct(server, msg, flags, query)
+
+@command("photo", r"(-[fpclgs\d]\s+)?(.+)", templates=exceptions)
+def photo(server, msg, flags, query):
+    flags = "-p" + (flags or "").strip("-")
+    yield from image.funct(server, msg, flags, query)
+
+@command("clipart", r"(-[fpclgs\d]\s+)?(.+)", templates=exceptions)
+def clipart(server, msg, flags, query):
+    flags = "-c" + (flags or "").strip("-")
+    yield from image.funct(server, msg, flags, query)
+
+@command("lineart", r"(-[fpclgs\d]\s+)?(.+)", templates=exceptions)
+def lineart(server, msg, flags, query):
+    flags = "-l" + (flags or "").strip("-")
+    yield from image.funct(server, msg, flags, query)
+
+__callbacks__ = {"privmsg": [image, gif, face, photo, clipart, lineart]}

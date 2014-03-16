@@ -209,5 +209,6 @@ def command(name=None,
         _.private = private
         _.public = public
         _.triggers = triggers
+        _.funct = funct
         return _
     return decorator
