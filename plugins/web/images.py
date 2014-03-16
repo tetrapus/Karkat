@@ -43,7 +43,7 @@ def image(server, msg, flags, query):
         }
 
     if flags:
-        for i in flags[1:]:
+        for i in flags[1:].strip():
             if i.isdigit():
                 params["rsz"] = min(int(i), maxlines[msg.prefix])
             elif i == "n":
