@@ -192,7 +192,7 @@ class Mutators(object):
         return line
 
 class AI(Callback):
-    learningrate = 0.025
+    learningrate = 0.02
     laughter = {"lol": 1, "lmao": 1, "rofl": 1, "ha": 0.5, "lmfao": 1.5}
     positive = "amazing woah cool nice sweet awesome yay ++ good great true yep".split()
     negative = "lame boring what ? uh why wtf confuse terrible awful -- wrong nope sucks".split()
@@ -387,7 +387,7 @@ class AI(Callback):
         coeff = 1
         for i in self.coeff:
             coeff += 0.5 * msg.count(i)
-
+        print("%r scored %s" % (text, score * coeff))
         return score * coeff
 
     def adjust_weights(self, server, line) -> "privmsg":
