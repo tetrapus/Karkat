@@ -1,6 +1,7 @@
 import re
 
 from bot.events import command, Callback
+from util.irc import Message
 from util.text import ircstrip, minify
 
 def parse(btf):
@@ -113,4 +114,9 @@ def bigtext(server, message, flags, lines, text):
 def bigvars(server, message):
     return "│ " + (", ".join("$" + x for x in mapping))
 
-__callbacks__ = {"privmsg":[bigtext, bigvars]}
+def smallvars(server, line):
+    msg = Message(line)
+    if msg.text.startswith("$") and msg.text[1:].lower() in mapping:
+        server.message(mapping[msg.text[1:].lower()], msg.context)
+
+__callbacks__ = {"privmsg":[bigtext, bigvars, smallvars]}
