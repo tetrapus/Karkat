@@ -28,6 +28,17 @@ class IRC2048(Callback):
             self.games[server.lower(msg.context)] = Board()
         board = self.games[server.lower(msg.context)]
         board.move({"up":"^", "down":"v", "left":"<", "right":">"}[msg.command])
+        if board.is_endgame():
+            if board.won():
+                yield """1413╷ 13╷╭4─╮4╷ 8╷   12╷ 12╷╭13─╮13┌─9╮
+144╰┬4╯│8 │8│ 12│   13││13││9 │9│ 11│
+148 ╵8 ╰12─╯12╰─13┘   9╰┴9┘╰11─╯11╵ 12╵"""
+            else:
+                yield """╻  ┏━┓┏━┓┏━━┏┓
+┃  ┃ ┃┗━┓┣━ ┣┻┓
+┗━━┗━┛┗━┛┗━━╹ ╹"""
+            del self.games[server.lower(msg.context)]
+
         yield from self.print_board(board)
 
 __initialise__ = IRC2048
