@@ -69,9 +69,9 @@ thicker = {"╮": "┓", "╭":"┏", "╰": "┗", "╯":"┛", '╿': '┃', '
 
 
 def subs(g):
-    key = g.group(0)[1:].lower()
-    if key in mapping:
-        return mapping[key]
+    key = g.group(0)[1:]
+    if key.lower() in mapping:
+        return mapping[key.lower()]
     else:
         return "$" + key
 
@@ -117,7 +117,7 @@ def bigvars(server, message):
 def smallvars(server, line):
     msg = Message(line)
     text = re.sub(r"\$[a-z]+", subs, msg.text, flags=re.IGNORECASE)
-    if text != msg.text:
+    if text != msg.text and msg.text[0] not in ".!@:":
         server.message("│ "+text, msg.context)
 
 __callbacks__ = {"privmsg":[bigtext, bigvars, smallvars]}

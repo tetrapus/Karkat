@@ -175,10 +175,14 @@ import random
 import requests
 import time
 import json
+import math
 
 from bot.events import Callback, command
 from util.irc import Message
 from util.text import ircstrip
+
+def sigmoid(x):
+    return 2 / (1 + math.e**(-x)) - 1
 
 
 class Mutators(object):
@@ -313,7 +317,7 @@ class AI(Callback):
             print(("Reprocessing data. Current state: %r" % (" ".join(answer))))
             answer, child_weights, child_inputs = self.getline(sender, " ".join(answer))
             answer = answer.split(" ")
-            inputs.append(child_inputs)
+            inputs.extend(child_inputs)
             # Using tangent algorithm
             weights = {k: v/2 + child_weights[k] for k, v in weights.items()}
             weights["tangent"] += 1
@@ -338,7 +342,7 @@ class AI(Callback):
         for i in users:
             line = re.sub(r"\b%s\b" % re.escape(i), "BINARY", line, flags=re.IGNORECASE)
         self.lines.append(re.sub(r"\b(pipey|karkat|\|)\b", "BINARY", line, flags=re.IGNORECASE))
-        with open(self.configdir + "caps.txt", "w") as f:
+        with open(self.configdir + "/caps.txt", "w") as f:
             f.write("\n".join(self.lines))
 
     @Callback.background
@@ -351,7 +355,7 @@ class AI(Callback):
             server.message(response, msg.context)
             self.lasttime = time.time()
             self.lastmsg = response
-            self.lastlines.append((time.time(), msg.context, weights, inputs))
+            self.lastlines.append((time.time(), msg.context, weights, inputs, {}))
         if msg.text.isupper() and msg.text not in self.lines:
             self.addline(server.channels[server.lower(msg.context)], msg.text.upper())
 
@@ -360,7 +364,7 @@ class AI(Callback):
         start = len(self.lines)
         last = query or self.last
         self.lines = [i for i in self.lines if i.upper() != last.upper()]
-        with open(self.configdir + "caps.txt", "w") as f:
+        with open(self.configdir + "/caps.txt", "w") as f:
             f.write("\n".join(self.lines))
         return "Removed %d instance(s) of %r from shouts." % (start - len(self.lines), last)
 
@@ -394,16 +398,23 @@ class AI(Callback):
         msg = Message(line)
         score = self.score(msg.text)
         now = time.time()
+        adjust = [i for i in self.lastlines if now - 60 >= i[0]]
+        for t, channel, weights, inputs, adjustments in adjust:
+            # Commit changes
+            for k, v in adjustments.items():
+                pass
+                # self.settings[k] += sigmoid(v) * self.learningrate
+
         self.lastlines = [i for i in self.lastlines if now - 60 < i[0]]
-        for t, channel, weights, inputs in self.lastlines:
+        for t, channel, weights, inputs, adjustments in self.lastlines:
             if server.eq(channel, msg.context):
-                c = self.learningrate * score * (1 - (now - t) / 60)
-                print("Addding %s%% to weights %s and %d inputs." % ((100*c), ", ".join(i for i in weights if weights[i]), len(inputs)))
+                c = score * (1 - (now - t) / 60)
                 for k, v in weights.items():
-                    self.settings[k] += c * v
+                    adjustments.setdefault(k, 0)
+                    adjustments[k] += c * v
                 for i in inputs:
                     self.istats.setdefault(i, 1)
-                    self.istats[i] += c
+                    self.istats[i] += c * self.learningrate
         self.settings = {k: min(1, max(0, v)) for k, v in self.settings.items()}
 
         with open(self.configdir + "/settings.json", "w") as f:
