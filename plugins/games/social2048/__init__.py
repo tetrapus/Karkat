@@ -5,7 +5,7 @@ from .board import Board
 from bot.events import Callback, command
 
 class IRC2048(Callback):
-    colors = [15, 14, 7, 8, 4, 5, 8, 9, 3, 11, 10]
+    colors = [15, 14, 7, 4, 5, 8, 9, 3, 11, 10, 12]
     
     def __init__(self, server):
         self.games = {}
@@ -22,12 +22,12 @@ class IRC2048(Callback):
         board = self.games[server.lower(msg.context)]
         yield from self.print_board(board)
 
-    @command("up down left right")
+    @command("up down left right u d l r")
     def move(self, server, msg):
         if server.lower(msg.context) not in self.games:
             self.games[server.lower(msg.context)] = Board()
         board = self.games[server.lower(msg.context)]
-        board.move({"up":"^", "down":"v", "left":"<", "right":">"}[msg.command])
+        board.move({"up":"^", "down":"v", "left":"<", "right":">", "u":"^", "d":"v", "l":"<", "r":">"}[msg.command])
         if board.is_endgame():
             if board.won():
                 yield """1413╷ 13╷╭4─╮4╷ 8╷   12╷ 12╷╭13─╮13┌─9╮
