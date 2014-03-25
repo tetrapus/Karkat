@@ -71,7 +71,7 @@ class IRC2048(Callback):
             self.games[server.lower(msg.context)] = boards.Board()
         board = self.games[server.lower(msg.context)]
         for i in moves:
-            board.move({"up":"^", "down":"v", "left":"<", "right":">", "u":"^", "d":"v", "l":"<", "r":">", "top":"+", "bottom": "-", "t": "+", "b":"-"}[move.lower()])
+            board.move({"up":"^", "down":"v", "left":"<", "right":">", "u":"^", "d":"v", "l":"<", "r":">", "top":"+", "bottom": "-", "t": "+", "b":"-"}[i.lower()])
         if board.is_endgame():
             if board.won():
                 yield """1413╷ 13╷╭4─╮4╷ 8╷   12╷ 12╷╭13─╮13┌─9╮
