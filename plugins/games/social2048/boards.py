@@ -62,7 +62,7 @@ class Board(object):
 
     def move(self, move):
         board, scores = self.moves[move]()
-        scores = sum(score)
+        score = sum(scores)
         if score == 0:
             return
         else:
