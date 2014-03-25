@@ -132,7 +132,7 @@ class DeterministicBoard:
                         break
                 if tile is not None:
                     break
-        self.board[tile[2]][tile[1]][tile[0]] = 2
+        boards[tile[2]][tile[1]][tile[0]] = 2
         return tile
 
 class Easy2048:
