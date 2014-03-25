@@ -99,7 +99,7 @@ class Board(object):
     def __repr__(self):
         return "\n".join(" | ".join(str(i) for i in j) for j in self.board)
 
-class FibBoard(Board):
+class FibBoard:
     fibs = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584, 4181, 6765]
 
     def __init__(goal=377, **kwargs):
@@ -115,12 +115,12 @@ class FibBoard(Board):
         if all(x) and sum(x) in FibBoard.fibs:
             return sum(x)
 
-class ZeroBoard(Board):
+class ZeroBoard:
     @staticmethod
     def random_tile():
         return random.choice([2, 2, 2, 2, 2, 2, 2, 2, 4, 0])
 
-class DeterministicBoard(Board):
+class DeterministicBoard:
     def spawn_tile(self):
         # Get empty tiles
         tile = None
@@ -139,7 +139,7 @@ class DeterministicBoard(Board):
         self.board[tile[2]][tile[1]][tile[0]] = 2
         return tile
 
-class Easy2048(Board):
+class Easy2048:
     def __init__(self, size=(3, 3, 3), goal=2048, tiles=None, score=0):
         self.size = size
         self.score = 0
