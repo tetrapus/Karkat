@@ -82,7 +82,6 @@ class IRC2048(Callback):
             once = False
             for i in seq:
                 board.move(self.symbols[i.lower()])
-                print("Score:", board.score)
                 if board.is_endgame():
                     repeat = False
                     break
