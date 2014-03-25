@@ -78,9 +78,9 @@ class Board(object):
     def random_tile(self):
         return random.choice(self.newtiles)
 
-    def merge(self, x1, x2):
-        if self.is_tile(x1 + x2) and x1 is not None:
-            return x1 + x2
+    def merge(self, *x):
+        if not any(i is None for i in x) and self.is_tile(sum(x)):
+            return sum(x)
 
     def reduce(self, vector):
         # Remove 0s
