@@ -11,6 +11,7 @@ class IRC2048(Callback):
     colors = [15, 14, 7, 4, 5, 8, 9, 3, 11, 10, 12, 2, 6, 13]
     
     boards = {"easy": boards.Easy2048, "fibbonacci": boards.FibBoard, "zero": boards.ZeroBoard, "deterministic": boards.DeterministicBoard, "classic": boards.Board}
+    symbols = {'<': '<', '^': '^', 'left': '<', 'u': '^', 't': '+', 'top': '+', 'v': 'v', 'r': '>', '-': '-', 'l': '<', '>': '>', 'right': '>', 'bottom': '-', '+': '+', 'd': 'v', 'up': '^', 'down': 'v', 'b': '-'}
 
     @classmethod
     def get_board(cls, board):
@@ -62,11 +63,16 @@ class IRC2048(Callback):
     def endgame(self, server, msg):
         del self.games[server.lower(msg.context)]
 
-    @command("up down left right top bottom u d l r t b", r"((?:(?:up|down|left|right|top|bottom|[udlrtb])\s*)*)(repeat)?")
+    @command("up down left right top bottom u d l r t b", r"((?:(?:up|down|left|right|top|bottom|[udlrtb^v<>+-])\s*)*)(repeat)?")
     def move(self, server, msg, args, repeat):
         moves = [msg.command]
         if args: 
             moves += args.split()
+        seq = "".join(self.symbols[i.lower()] for i in moves)
+        yield from self.moves(server, msg, seq, repeat)
+    
+    @command("move", r"([udlrtb^v<>+-]+)(\s+repeat)?")
+    def moves(self, server, msg, seq, repeat):
         if server.lower(msg.context) not in self.games:
             self.games[server.lower(msg.context)] = boards.Board()
         board = self.games[server.lower(msg.context)]
@@ -74,34 +80,13 @@ class IRC2048(Callback):
         once = True
         while repeat or once:
             once = False
-            for i in moves:
-                board.move({"up":"^", "down":"v", "left":"<", "right":">", "u":"^", "d":"v", "l":"<", "r":">", "top":"+", "bottom": "-", "t": "+", "b":"-"}[i.lower()])
+            for i in seq:
+                board.move(self.symbols[i.lower()])
                 if board.is_endgame():
                     repeat = False
                     break
             if board.score == score:
                 repeat = False
-
-        if board.is_endgame():
-            if board.won():
-                yield """1413╷ 13╷╭4─╮4╷ 8╷   12╷ 12╷╭13─╮13┌─9╮
-144╰┬4╯│8 │8│ 12│   13││13││9 │9│ 11│
-148 ╵8 ╰12─╯12╰─13┘   9╰┴9┘╰11─╯11╵ 12╵"""
-            else:
-                yield """╻  ┏━┓┏━┓┏━━┏┓
-┃  ┃ ┃┗━┓┣━ ┣┻┓
-┗━━┗━┛┗━┛┗━━╹ ╹"""
-            del self.games[server.lower(msg.context)]
-        self.savestate()
-        yield from self.print_board(board)
-    
-    @command("move", "([udlrtb]+)")
-    def moves(self, server, msg, seq):
-        if server.lower(msg.context) not in self.games:
-            self.games[server.lower(msg.context)] = boards.Board()
-        board = self.games[server.lower(msg.context)]
-        for i in seq:
-            board.move({"u":"^", "d":"v", "l":"<", "r":">", "t": "+", "b":"-"}[i.lower()])
         if board.is_endgame():
             if board.won():
                 yield """1413╷ 13╷╭4─╮4╷ 8╷   12╷ 12╷╭13─╮13┌─9╮

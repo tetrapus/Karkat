@@ -65,7 +65,7 @@ class Board(object):
         if score == 0:
             return
         else:
-            self.score += score
+            self.score += sum(score)
             self.board = board
             self.spawn_tile()
             return self
