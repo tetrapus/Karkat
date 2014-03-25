@@ -69,7 +69,7 @@ class IRC2048(Callback):
         if args: 
             moves += args.split()
         seq = "".join(self.symbols[i.lower()] for i in moves)
-        yield from self.moves.funct(server, msg, seq, repeat)
+        yield from self.moves.funct(self, server, msg, seq, repeat)
     
     @command("move", r"([udlrtb^v<>+-]+)(\s+repeat)?")
     def moves(self, server, msg, seq, repeat):
