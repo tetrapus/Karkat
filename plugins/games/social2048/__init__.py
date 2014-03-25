@@ -26,7 +26,7 @@ class IRC2048(Callback):
             b = [board.board]
         else:
             b = board.board
-        board = zip(*board)
+        board = zip(*b)
         for y, slice_ in enumerate(board):
             yield " ".join("│%s│" % ("│".join(("\x030,%.2d%s\x0f" % (self.colors[int(log(cell, 2)) - 1], str(cell).center(4))) if cell else {0: " 0  ", None:"    "}[cell] for cell in row)) for row in slice_)
 
