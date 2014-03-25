@@ -1,11 +1,16 @@
 import pprint
 import random
-
+import math
 
 class Board(object):
     """
     Represents a game of 2048.
     """
+
+    newtiles = [2, 2, 2, 2, 2, 2, 2, 2, 2, 4]
+
+    def is_tile(self, tile):
+        return abs(math.log(tile, 2) - int(math.log(tile, 2))) < 0.001
 
     def __init__(self, size=(4, 4), goal=2048, tiles=None, score=0):
         self.size = size
@@ -70,13 +75,11 @@ class Board(object):
         states = self.up(), self.down(), self.left(), self.right()
         return all(self.board == i for i in states) or self.won()
 
-    @staticmethod
-    def random_tile():
-        return random.choice([2, 2, 2, 2, 2, 2, 2, 2, 2, 4])
+    def random_tile(self):
+        return random.choice(self.newtiles)
 
-    @staticmethod
-    def merge(x1, x2):
-        if x1 == x2 and x1 is not None:
+    def merge(self, x1, x2):
+        if self.is_tile(x1 + x2) and x1 is not None:
             return x1 + x2
 
     @classmethod
@@ -100,21 +103,20 @@ class Board(object):
         return "\n".join(" | ".join(str(i) for i in j) for j in self.board)
 
 class FibBoard:
-    fibs = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584, 4181, 6765]
+    fibs = [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584, 4181, 6765]
 
-    @staticmethod
-    def random_tile():
-        return 1
+    def is_tile(self, x):
+        return x in fibs
 
-    @staticmethod
-    def merge(*x):
-        if all(x) and sum(x) in FibBoard.fibs:
-            return sum(x)
+    def random_tile(self):
+        return super().random_tile() / 2
 
 class ZeroBoard:
-    @staticmethod
     def random_tile():
-        return random.choice([2, 2, 2, 2, 2, 2, 2, 2, 4, 0])
+        if random.random() > 0.9:
+            return 0
+        else:
+            return super().random_tile()
 
 class DeterministicBoard:
     def spawn_tile(self):
@@ -134,7 +136,7 @@ class DeterministicBoard:
                     break
             if tile is not None:
                 break
-        boards[tile[2]][tile[1]][tile[0]] = 2
+        boards[tile[2]][tile[1]][tile[0]] = 1
         return tile
 
 class Easy2048:
