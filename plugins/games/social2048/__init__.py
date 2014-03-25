@@ -21,7 +21,7 @@ class IRC2048(Callback):
 
     def print_board(self, board):
         for y, row in enumerate(board.board):
-            yield "│%s%s" % ("\x1f" if y != board.size[1]-1 else "", "".join(("\x03,%.2d%s\x03│" % (self.colors[int(log(cell, 2)) - 1], str(cell).center(5))) if cell is not None else "    " for cell in row))
+            yield "│%s│" % ("│".join(("\x03,%.2d%s\x0f" % (self.colors[int(log(cell, 2)) - 1], str(cell).center(5))) if cell is not None else "    " for cell in row))
 
     @command("2048 1024 512 256 128 64 32 16 8")
     def start(self, server, msg):
