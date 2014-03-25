@@ -61,11 +61,12 @@ class Board(object):
         return [list(x) for x in zip(*[self.reduce(i[::-1], acc)[::-1] for i in zip(*self.board)])], acc
 
     def move(self, move):
-        board, score = self.moves[move]()
+        board, scores = self.moves[move]()
+        scores = sum(score)
         if score == 0:
             return
         else:
-            self.score += sum(score)
+            self.score += score
             self.board = board
             self.spawn_tile()
             return self
