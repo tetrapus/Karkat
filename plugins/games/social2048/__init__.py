@@ -62,7 +62,7 @@ class IRC2048(Callback):
     def endgame(self, server, msg):
         del self.games[server.lower(msg.context)]
 
-    @command("up down left right top bottom u d l r t b", r"((?:(?:up|down|left|right|top|bottom|u|d|l|r|t|b)\s+)*)")
+    @command("up down left right top bottom u d l r t b", r"((?:(?:up|down|left|right|top|bottom|u|d|l|r|t|b)\s*)*)")
     def move(self, server, msg, args):
         moves = [msg.command]
         if args: 
