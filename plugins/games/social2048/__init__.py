@@ -1,4 +1,5 @@
 import json
+import time
 
 from math import log
 
@@ -78,7 +79,10 @@ class IRC2048(Callback):
         board = self.games[server.lower(msg.context)]
         score = board.score
         once = True
+        t = time.time()
         while repeat or once:
+            if time.time() - t > 5:
+                break
             once = False
             for i in seq:
                 board.move(self.symbols[i.lower()])
