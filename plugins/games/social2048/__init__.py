@@ -7,7 +7,7 @@ from . import board as boards
 from bot.events import Callback, command
 
 class IRC2048(Callback):
-    colors = [14, 15, 7, 4, 5, 8, 9, 3, 11, 10, 12]
+    colors = [15, 14, 7, 4, 5, 8, 9, 3, 11, 10, 12]
     
     def __init__(self, server):
         self.savefile = server.get_config_dir("2048.json")
@@ -21,7 +21,7 @@ class IRC2048(Callback):
 
     def print_board(self, board):
         for y, row in enumerate(board.board):
-            yield "│%s│" % ("│".join(("\x03,%.2d%s\x0f" % (self.colors[int(log(cell, 2)) - 1], str(cell).center(5))) if cell is not None else "    " for cell in row))
+            yield "│%s│" % ("│".join(("\x030,%.2d%s\x0f" % (self.colors[int(log(cell, 2)) - 1], str(cell).center(4))) if cell is not None else "    " for cell in row))
 
     @command("2048 1024 512 256 128 64 32 16 8")
     def start(self, server, msg):
