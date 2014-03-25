@@ -143,8 +143,6 @@ class Easy2048:
         self.goal = goal
         if tiles is None:
             self.board = [[int(goal/2) for i in range(size[0])] for j in range(size[1])]
-            self.spawn_tile()
-            self.spawn_tile()
         else:
             self.board = tiles
 
