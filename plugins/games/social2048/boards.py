@@ -87,7 +87,7 @@ class Board(object):
         length = len(vector)
         v = [i for i in vector if i is not None]
         for i, n in enumerate(v[:-1]):
-            merged = cls.merge(v[i], v[i+1])
+            merged = self.merge(v[i], v[i+1])
             if merged is not None:
                 v[i], v[i+1] = merged, None
 
