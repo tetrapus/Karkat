@@ -125,13 +125,15 @@ class DeterministicBoard:
         else:
             boards = self.board
         for z, board in enumerate(boards):
-            for y, row in enumerate(self.board):
+            for y, row in enumerate(board):
                 for x, cell in enumerate(row):
                     if cell is None:
                         tile = (x, y, z)
                         break
                 if tile is not None:
                     break
+            if tile is not None:
+                break
         boards[tile[2]][tile[1]][tile[0]] = 2
         return tile
 
