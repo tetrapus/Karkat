@@ -50,7 +50,7 @@ class IRC2048(Callback):
             bases.append(boards.FibBoard)
         if typ:
             for i in typ.split():
-                bases.append(self.boards[typ.lower().strip()])
+                bases.append(self.boards[i.lower().strip()])
         Board = type(":".join(i.__name__ for i in bases), tuple(bases), {})
         if server.lower(msg.context) not in self.games:
             self.games[server.lower(msg.context)] = Board(goal=int(msg.command), size=dim)
