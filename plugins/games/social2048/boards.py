@@ -9,9 +9,6 @@ class Board(object):
 
     newtiles = [2, 2, 2, 2, 2, 2, 2, 2, 2, 4]
 
-    def is_tile(self, tile):
-        return abs(math.log(tile, 2) - int(math.log(tile, 2))) < 0.001
-
     def __init__(self, size=(4, 4), goal=2048, tiles=None, score=0):
         self.size = size
         self.score = 0
@@ -78,9 +75,9 @@ class Board(object):
     def random_tile(self):
         return random.choice(self.newtiles)
 
-    def merge(self, *x):
-        if not any(i is None for i in x) and self.is_tile(sum(x)):
-            return sum(x)
+    def merge(self, x1, x2):
+        if x1 is not None and x2 is not None and x1 == x2:
+            return x1 + x2
 
     def reduce(self, vector):
         # Remove 0s
@@ -104,8 +101,9 @@ class Board(object):
 class FibBoard:
     fibs = [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584, 4181, 6765]
 
-    def is_tile(self, x):
-        return x in self.fibs
+    def merge(self, x1, x2):
+        if x1 is not None and x2 is not None and x1 + x2 in self.fibs:
+            return x1 + x2
 
     def random_tile(self):
         return super().random_tile() / 2
