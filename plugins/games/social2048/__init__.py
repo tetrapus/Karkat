@@ -26,7 +26,7 @@ class IRC2048(Callback):
     @command("2048 1024 512 256 128 64 32 16 8")
     def start(self, server, msg):
         if server.lower(msg.context) not in self.games:
-            self.games[server.lower(msg.context)] = Board(goal=int(msg.command))
+            self.games[server.lower(msg.context)] = boards.Board(goal=int(msg.command))
         board = self.games[server.lower(msg.context)]
         self.savestate()
         yield from self.print_board(board)
@@ -34,7 +34,7 @@ class IRC2048(Callback):
     @command("up down left right u d l r")
     def move(self, server, msg):
         if server.lower(msg.context) not in self.games:
-            self.games[server.lower(msg.context)] = Board()
+            self.games[server.lower(msg.context)] = boards.Board()
         board = self.games[server.lower(msg.context)]
         board.move({"up":"^", "down":"v", "left":"<", "right":">", "u":"^", "d":"v", "l":"<", "r":">"}[msg.command])
         if board.is_endgame():
