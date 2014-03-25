@@ -82,8 +82,7 @@ class Board(object):
         if self.is_tile(x1 + x2) and x1 is not None:
             return x1 + x2
 
-    @classmethod
-    def reduce(cls, vector):
+    def reduce(self, vector):
         # Remove 0s
         length = len(vector)
         v = [i for i in vector if i is not None]
@@ -112,7 +111,7 @@ class FibBoard:
         return super().random_tile() / 2
 
 class ZeroBoard:
-    def random_tile():
+    def random_tile(self):
         if random.random() > 0.9:
             return 0
         else:
