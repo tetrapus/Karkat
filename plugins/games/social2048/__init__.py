@@ -17,7 +17,7 @@ class IRC2048(Callback):
         bases = []
         for i in board.split(":"):
             bases.append(getattr(boards, i.split(".")[-1]))
-        return type(board, tuple(bases), {})
+        return type(board, tuple(bases[::-1]), {})
 
     def __init__(self, server):
         self.savefile = server.get_config_dir("2048.json")
@@ -51,7 +51,7 @@ class IRC2048(Callback):
         if typ:
             for i in typ.split():
                 bases.append(self.boards[i.lower().strip()])
-        Board = type(":".join(i.__name__ for i in bases), tuple(bases), {})
+        Board = type(":".join(i.__name__ for i in bases), tuple(bases[::-1]), {})
         if server.lower(msg.context) not in self.games:
             self.games[server.lower(msg.context)] = Board(goal=int(msg.command), size=dim)
         board = self.games[server.lower(msg.context)]
