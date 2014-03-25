@@ -106,7 +106,7 @@ class FibBoard:
             return x1 + x2
 
     def random_tile(self):
-        return super().random_tile() / 2
+        return int(super().random_tile() / 2)
 
 class ZeroBoard:
     def random_tile(self):
