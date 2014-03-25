@@ -88,6 +88,7 @@ class IRC2048(Callback):
                     break
             if board.score == score:
                 repeat = False
+            score = board.score
         if board.is_endgame():
             if board.won():
                 yield """1413╷ 13╷╭4─╮4╷ 8╷   12╷ 12╷╭13─╮13┌─9╮
