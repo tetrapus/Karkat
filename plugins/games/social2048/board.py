@@ -132,12 +132,16 @@ class DeterministicBoard(Board):
         return tile
 
 class Easy2048(Board):
-
-    def __init__(self, size=(4, 4), goal=2048):
-        self.board = [[goal/2 for i in range(size[0])] for j in range(size[1])]
+    def __init__(self, size=(3, 3, 3), goal=2048, tiles=None, score=0):
         self.size = size
         self.score = 0
         self.goal = goal
+        if tiles is None:
+            self.board = [[int(goal/2) for i in range(size[0])] for j in range(size[1])]
+            self.spawn_tile()
+            self.spawn_tile()
+        else:
+            self.board = tiles
 
 class Board3D(Board):
 
@@ -179,12 +183,14 @@ class Board3D(Board):
     def top(self):
         vecs = list(list(zip(*i)) for i in zip(*self.board))
         vecs = [[self.reduce(v) for v in r] for r in vecs]
-        return list(zip(*[list(zip(*i)) for i in vecs]))
+        vecs = list(zip(*[list(zip(*i)) for i in vecs]))
+        return [[list(y) for y in x] for x in vecs]
 
     def bottom(self):
         vecs = list(list(zip(*i)) for i in zip(*self.board))
         vecs = [[self.reduce(v[::-1])[::-1] for v in r] for r in vecs]
-        return list(zip(*[list(zip(*i)) for i in vecs]))
+        vecs = list(zip(*[list(zip(*i)) for i in vecs]))
+        return [[list(y) for y in x] for x in vecs]
 
     def move(self, move):
         moves = {"^": self.up, "v": self.down, "<": self.left, ">": self.right, "+": self.top, "-": self.bottom}
