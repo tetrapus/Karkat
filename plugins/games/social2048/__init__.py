@@ -25,12 +25,12 @@ class IRC2048(Callback):
         for y, row in enumerate(board.board):
             yield "│%s│" % ("│".join(("\x030,%.2d%s\x0f" % (self.colors[int(log(cell, 2)) - 1], str(cell).center(4))) if cell is not None else "    " for cell in row))
 
-    @command("4096 2048 1024 512 256 128 64 32 16 8", r"(?:(easy|fibbonacci|zero|deterministic|classic)?\s+)(\d+x\d+)?")
+    @command("4096 2048 1024 512 256 128 64 32 16 8", r"(?:(easy|fibbonacci|zero|deterministic|classic)\s+)?(\d+x\d+)?")
     def start(self, server, msg, typ, dim):
         dim = dim or "4x4"
         dim = tuple(int(i) for i in dim.split("x"))
         if server.lower(msg.context) not in self.games:
-            self.games[server.lower(msg.context)] = self.boards[typ.lower()](goal=int(msg.command), size=dim)
+            self.games[server.lower(msg.context)] = self.boards[typ.lower().strip()](goal=int(msg.command), size=dim)
         board = self.games[server.lower(msg.context)]
         self.savestate()
         yield from self.print_board(board)
