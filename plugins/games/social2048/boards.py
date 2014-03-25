@@ -19,6 +19,8 @@ class Board(object):
             self.spawn_tile()
         else:
             self.board = tiles
+        self.moves = {"^": self.up, "v": self.down, "<": self.left, ">": self.right}
+
 
     @classmethod
     def unserialise(cls, js):
@@ -43,23 +45,27 @@ class Board(object):
         return spawn
 
     def left(self):
-        return [self.reduce(i) for i in self.board]
+        acc = []
+        return [self.reduce(i, acc) for i in self.board], acc
 
     def right(self):
-        return [self.reduce(i[::-1])[::-1] for i in self.board]
+        acc = []
+        return [self.reduce(i[::-1], acc)[::-1] for i in self.board], acc
 
     def up(self):
-        return [list(x) for x in zip(*[self.reduce(i) for i in zip(*self.board)])]
+        acc = []
+        return [list(x) for x in zip(*[self.reduce(i, acc) for i in zip(*self.board)])], acc
 
     def down(self):
-        return [list(x) for x in zip(*[self.reduce(i[::-1])[::-1] for i in zip(*self.board)])]
+        acc = []
+        return [list(x) for x in zip(*[self.reduce(i[::-1], acc)[::-1] for i in zip(*self.board)])], acc
 
     def move(self, move):
-        moves = {"^": self.up, "v": self.down, "<": self.left, ">": self.right}
-        board = moves[move]()
-        if board == self.board:
+        board, score = self.moves[move]()
+        if score == 0:
             return
         else:
+            self.score += score
             self.board = board
             self.spawn_tile()
             return self
@@ -69,8 +75,8 @@ class Board(object):
 
     def is_endgame(self):
         # Easy test: Check if any move can be made
-        states = self.up(), self.down(), self.left(), self.right()
-        return all(self.board == i for i in states) or self.won()
+        states = [i() for i in self.moves.keys()]
+        return all(i[1] == 0 for i in states) or self.won()
 
     def random_tile(self):
         return random.choice(self.newtiles)
@@ -79,17 +85,20 @@ class Board(object):
         if x1 is not None and x2 is not None and x1 == x2:
             return x1 + x2
 
-    def reduce(self, vector):
-        # Remove 0s
+    def reduce(self, vector, acc=None):
+        score = 0
         length = len(vector)
         v = [i for i in vector if i is not None]
         for i, n in enumerate(v[:-1]):
             merged = self.merge(v[i], v[i+1])
             if merged is not None:
                 v[i], v[i+1] = merged, None
+                score += merged
 
         v = [i for i in v if i is not None]
         v += [None] * (length - len(v))
+        if acc is not None: 
+            acc.append(score)
         return v
 
     def __str__(self):
@@ -158,6 +167,8 @@ class Board3D(Board):
             self.spawn_tile()
         else:
             self.board = tiles
+        self.moves = {"^": self.up, "v": self.down, "<": self.left, ">": self.right, "+": self.top, "-": self.bottom}
+
 
     def spawn_tile(self):
         # Get empty tiles
@@ -172,46 +183,37 @@ class Board3D(Board):
         return spawn
 
     def left(self):
-        return [[self.reduce(i) for i in plane] for plane in self.board]
+        acc = []
+        return [[self.reduce(i, acc) for i in plane] for plane in self.board], acc
 
     def right(self):
-        return [[self.reduce(i[::-1])[::-1] for i in plane] for plane in self.board]
+        acc = []
+        return [[self.reduce(i[::-1], acc)[::-1] for i in plane] for plane in self.board], acc
 
     def up(self):
-        return [[list(x) for x in zip(*[self.reduce(i) for i in zip(*plane)])] for plane in self.board]
+        acc = []
+        return [[list(x) for x in zip(*[self.reduce(i, acc) for i in zip(*plane)])] for plane in self.board], acc
 
     def down(self):
-        return [[list(x) for x in zip(*[self.reduce(i[::-1])[::-1] for i in zip(*plane)])] for plane in self.board]
+        acc = []
+        return [[list(x) for x in zip(*[self.reduce(i[::-1], acc)[::-1] for i in zip(*plane)])] for plane in self.board], acc
 
     def top(self):
+        acc = []
         vecs = list(list(zip(*i)) for i in zip(*self.board))
-        vecs = [[self.reduce(v) for v in r] for r in vecs]
+        vecs = [[self.reduce(v, acc) for v in r] for r in vecs]
         vecs = list(zip(*[list(zip(*i)) for i in vecs]))
-        return [[list(y) for y in x] for x in vecs]
+        return [[list(y) for y in x] for x in vecs], acc
 
     def bottom(self):
+        acc = []
         vecs = list(list(zip(*i)) for i in zip(*self.board))
-        vecs = [[self.reduce(v[::-1])[::-1] for v in r] for r in vecs]
+        vecs = [[self.reduce(v[::-1], acc)[::-1] for v in r] for r in vecs]
         vecs = list(zip(*[list(zip(*i)) for i in vecs]))
-        return [[list(y) for y in x] for x in vecs]
-
-    def move(self, move):
-        moves = {"^": self.up, "v": self.down, "<": self.left, ">": self.right, "+": self.top, "-": self.bottom}
-        board = moves[move]()
-        if board == self.board:
-            return
-        else:
-            self.board = board
-            self.spawn_tile()
-            return self
+        return [[list(y) for y in x] for x in vecs], acc
 
     def won(self):
         return any(any(any(i is not None and i >= self.goal for i in rows) for rows in plane) for plane in self.board)
-
-    def is_endgame(self):
-        # Easy test: Check if any move can be made
-        states = self.up(), self.down(), self.left(), self.right(), self.top(), self.bottom()
-        return all(self.board == i for i in states) or self.won()
 
     def __repr__(self):
         return "\n....................\n".join("\n".join(" | ".join(str(i) for i in j) for j in self.board))

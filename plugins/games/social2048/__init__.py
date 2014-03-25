@@ -62,16 +62,26 @@ class IRC2048(Callback):
     def endgame(self, server, msg):
         del self.games[server.lower(msg.context)]
 
-    @command("up down left right top bottom u d l r t b", r"((?:(?:up|down|left|right|top|bottom|u|d|l|r|t|b)\s*)*)")
-    def move(self, server, msg, args):
+    @command("up down left right top bottom u d l r t b", r"((?:(?:up|down|left|right|top|bottom|[udlrtb])\s*)*)(repeat)?")
+    def move(self, server, msg, args, repeat):
         moves = [msg.command]
         if args: 
             moves += args.split()
         if server.lower(msg.context) not in self.games:
             self.games[server.lower(msg.context)] = boards.Board()
         board = self.games[server.lower(msg.context)]
-        for i in moves:
-            board.move({"up":"^", "down":"v", "left":"<", "right":">", "u":"^", "d":"v", "l":"<", "r":">", "top":"+", "bottom": "-", "t": "+", "b":"-"}[i.lower()])
+        score = board.score
+        once = True
+        while repeat or once:
+            once = False
+            for i in moves:
+                board.move({"up":"^", "down":"v", "left":"<", "right":">", "u":"^", "d":"v", "l":"<", "r":">", "top":"+", "bottom": "-", "t": "+", "b":"-"}[i.lower()])
+                if board.is_endgame():
+                    repeat = False
+                    break
+            if board.score == score:
+                repeat = False
+
         if board.is_endgame():
             if board.won():
                 yield """1413╷ 13╷╭4─╮4╷ 8╷   12╷ 12╷╭13─╮13┌─9╮
