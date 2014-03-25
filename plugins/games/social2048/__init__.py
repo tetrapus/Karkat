@@ -35,6 +35,10 @@ class IRC2048(Callback):
         self.savestate()
         yield from self.print_board(board)
 
+    @command("endgame", admin=True)
+    def endgame(self, server, msg):
+        del self.games[server.lower(msg.context)]
+
     @command("up down left right u d l r")
     def move(self, server, msg):
         if server.lower(msg.context) not in self.games:
