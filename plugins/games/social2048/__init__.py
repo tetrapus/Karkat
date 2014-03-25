@@ -9,7 +9,7 @@ from bot.events import Callback, command
 class IRC2048(Callback):
     colors = [15, 14, 7, 4, 5, 8, 9, 3, 11, 10, 12]
     
-    boards = {"easy": boards.Easy2048, "fibbonacci": boards.FibBoard, "zero": boards.ZeroBoard, "deterministic": boards.DeterminisicBoard, "classic": boards.Board}
+    boards = {"easy": boards.Easy2048, "fibbonacci": boards.FibBoard, "zero": boards.ZeroBoard, "deterministic": boards.DeterministicBoard, "classic": boards.Board}
 
     def __init__(self, server):
         self.savefile = server.get_config_dir("2048.json")
