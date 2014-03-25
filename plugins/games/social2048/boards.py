@@ -63,7 +63,7 @@ class Board(object):
     def move(self, move):
         board, scores = self.moves[move]()
         score = sum(scores)
-        if score == 0:
+        if board == self.board:
             return
         else:
             self.score += score
@@ -77,7 +77,7 @@ class Board(object):
     def is_endgame(self):
         # Easy test: Check if any move can be made
         states = [i() for i in self.moves.values()]
-        return all(i[1] == 0 for i in states) or self.won()
+        return all(i[0] == self.board for i in states) or self.won()
 
     def random_tile(self):
         return random.choice(self.newtiles)
