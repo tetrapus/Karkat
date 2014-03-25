@@ -75,7 +75,7 @@ class Board(object):
 
     def is_endgame(self):
         # Easy test: Check if any move can be made
-        states = [i() for i in self.moves.keys()]
+        states = [i() for i in self.moves.values()]
         return all(i[1] == 0 for i in states) or self.won()
 
     def random_tile(self):
