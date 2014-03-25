@@ -39,7 +39,7 @@ class IRC2048(Callback):
             yield " ".join("│%s│" % ("│".join(("\x030,%.2d%s\x0f" % (self.colors[int(log(cell, 2)) - 1], str(cell).center(4))) if cell else {0: " 0  ", None:"    "}[cell] for cell in row)) for row in slice_)
 
     @command("4096 2048 1024 512 256 128 64 32 16 8 13 21 34 55 89 144 233 377 610 987 1597 2584 4181 6765", r"((?:(?:easy|fibbonacci|zero|deterministic)\s+)+)?(\d+x\d+(?:x\d+)?)?")
-    def start(self server msg, typ, dim):
+    def start(self, server, msg, typ, dim):
         dim = dim or "4x4"
         dim = tuple(min(int(i), 5) for i in dim.split("x"))
         if len(dim) == 3:
