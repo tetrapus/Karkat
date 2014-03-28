@@ -33,14 +33,16 @@ class Board(object):
                 "score": self.score,
                 "tiles": self.board}      
 
-    def spawn_tile(self):
-        # Get empty tiles
+    def get_empty(self):
         empty = []
         for i in range(self.size[0]):
             for j in range(self.size[1]):
                 if self.board[j][i] is None:
                     empty.append((i, j))
-        spawn = random.choice(empty)
+        return empty
+
+    def spawn_tile(self):
+        spawn = random.choice(self.get_empty())
         self.board[spawn[1]][spawn[0]] = self.random_tile()
         return spawn
 
@@ -72,7 +74,7 @@ class Board(object):
             return self
 
     def won(self):
-        return any(any(i is not None and i >= self.goal for i in rows) for rows in self.board)
+        return any(any(i is not None and abs(i) >= self.goal for i in rows) for rows in self.board)
 
     def is_endgame(self):
         # Easy test: Check if any move can be made
@@ -109,7 +111,7 @@ class Board(object):
         return "\n".join(" | ".join(str(i) for i in j) for j in self.board)
 
 class FibBoard:
-    fibs = [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584, 4181, 6765]
+    fibs = [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584, 4181, 6765, -1, -1, -2, -3, -5, -8, -13, -21, -34, -55, -89, -144, -233, -377, -610, -987, -1597, -2584, -4181, -6765]
 
     def merge(self, x1, x2):
         if x1 is not None and x2 is not None and x1 + x2 in self.fibs:
@@ -127,22 +129,13 @@ class ZeroBoard:
 
 class DeterministicBoard:
     def spawn_tile(self):
-        # Get empty tiles
-        tile = None
+        boards = self.board
         if len(self.size) == 2:
-            boards = [self.board]
-        else:
-            boards = self.board
-        for z, board in enumerate(boards):
-            for y, row in enumerate(board):
-                for x, cell in enumerate(row):
-                    if cell is None:
-                        tile = (x, y, z)
-                        break
-                if tile is not None:
-                    break
-            if tile is not None:
-                break
+            boards = [boards]
+    
+        empty = self.get_empty()
+        if len(empty) == 2:
+            empty += [1]
         boards[tile[2]][tile[1]][tile[0]] = 1
         return tile
 
@@ -171,7 +164,7 @@ class Board3D(Board):
         self.moves = {"^": self.up, "v": self.down, "<": self.left, ">": self.right, "+": self.top, "-": self.bottom}
 
 
-    def spawn_tile(self):
+    def get_empty(self):
         # Get empty tiles
         empty = []
         for i in range(self.size[0]):
@@ -179,7 +172,9 @@ class Board3D(Board):
                 for k in range(self.size[2]):
                     if self.board[k][j][i] is None:
                         empty.append((i, j, k))
-        spawn = random.choice(empty)
+
+    def spawn_tile(self):
+        spawn = random.choice(self.get_empty())
         self.board[spawn[2]][spawn[1]][spawn[0]] = self.random_tile()
         return spawn
 
@@ -214,10 +209,15 @@ class Board3D(Board):
         return [[list(y) for y in x] for x in vecs], acc
 
     def won(self):
-        return any(any(any(i is not None and i >= self.goal for i in rows) for rows in plane) for plane in self.board)
+        return any(any(any(i is not None and abs(i) >= self.goal for i in rows) for rows in plane) for plane in self.board)
 
     def __repr__(self):
         return "\n....................\n".join("\n".join(" | ".join(str(i) for i in j) for j in self.board))
 
-class NegaBoard(Board):
-    pass
+class NegaBoard:
+    def __init__(self, **kwargs):
+        self.turn = 1
+        super().__init__(kwargs)
+
+    def random_tile(self):
+        self.turn * super().random_tile()
