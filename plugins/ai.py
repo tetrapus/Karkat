@@ -352,7 +352,7 @@ class AI(Callback):
             return
         if msg.text.lower().startswith("%s:" % server.nick.lower()) or (msg.text.isupper() or "karkat" in msg.text.lower() or "pipey" in msg.text.lower()):
             response, weights, inputs = self.getline(msg.address.nick, msg.text.upper())
-            server.message(response, msg.context)
+            yield response
             self.lasttime = time.time()
             self.lastmsg = response
             self.lastlines.append((time.time(), msg.context, weights, inputs, {}))

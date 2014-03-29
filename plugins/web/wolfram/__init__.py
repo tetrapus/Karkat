@@ -224,9 +224,9 @@ class WolframAlpha(Callback):
     @msghandler
     def shorthand_trigger(self, server, message):
         user, context = message.address, message.context
-        if not message.text or (message.text[0] == message.text[-1] and message.text[0] in "~`"):
+        if not message.text or (message.text[0] == message.text[-1] and message.text[0] in "~"):
             return
-        pattern = re.match(r"([~`])(.*?\1 ?|([\"']).*?\3 ?|[^ ]+ )(.+)", message.text)
+        pattern = re.match(r"([~])(.*?\1 ?|([\"']).*?\3 ?|[^ ]+ )(.+)", message.text)
         if pattern:
             prefix, category, quoted, query = pattern.groups()
             category = category.rstrip()
@@ -235,10 +235,7 @@ class WolframAlpha(Callback):
             elif category and category[-1] == prefix:
                 category = category[:-1]
 
-            target, msgtype = {"~": (context,   "PRIVMSG"),
-                             "`": (user.nick, "NOTICE")}[prefix]
-
-            self.printer.message(self.wolfram_format(query, category, h_max=self.getoutputsettings(target), wasettings=self.getusersettings(user.nick)), target, msgtype)
+            return self.wolfram_format(query, category, h_max=self.getoutputsettings(message.context), wasettings=self.getusersettings(user.nick))
 
     @Callback.threadsafe
     @command(["wa", "wolfram"], "(.+)", templates={
