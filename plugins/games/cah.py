@@ -35,7 +35,7 @@ class CardsAgainstHumanity(object):
         reddit = reddit["data"]["children"]
         titles = [i["data"]["title"] for i in reddit if i["data"]["title"].endswith("?")]
         # 5% of cards max should be reddit cards
-        self.questions.extend(titles[:int(len(self.questions) * 0.05)])
+        self.questions.extend(titles)
 
         random.shuffle(self.questions)
         
@@ -44,23 +44,18 @@ class CardsAgainstHumanity(object):
         # Get trends from google
         trends = requests.get("http://www.google.com/trends/hottrends/atom/hourly").text
         trends = re.findall(">([^<]+)</a></span></li>", trends)
-        random.shuffle(trends)
-        # 2.5% of cards max should be trend cards
-        self.answers.extend(trends[:int(len(self.answers) * 0.025)])
+        self.answers.extend(trends)
 
         # Get trends from twitter
         twit = requests.get("https://api.twitter.com/1.1/trends/place.json?id=2458410", headers={"Authorization": "Bearer AAAAAAAAAAAAAAAAAAAAAG8uWwAAAAAA%2BKplZ2OgC1RPLd64ac9OIdP%2FHc4%3DEFiiimJ2pmK8UICRFzeO6zgmDIFwcMd7xiA0iH7pr0gZzqbmld"}).json()
         twit = [i["name"] for i in twit[0]["trends"]]
-        random.shuffle(twit)
-        # 2.5% of cards max should be twit cards
-        self.answers.extend(twit[:int(len(self.answers) * 0.025)])
+        self.answers.extend(twit)
         # Get trends from Know Your Meme
         memes = requests.get("http://knowyourmeme.com/").text
         memes = re.findall("<h5 class='left'>Also Trending:</h5>(.+?)</div>", memes)
         memes = re.findall(">(.+?)</a>", memes[0])
-        random.shuffle(memes)
-        # 3% of cards max should be meme cards
-        self.answers.extend(memes[:int(len(self.answers) * 0.03)])
+
+        self.answers.extend(memes)
 
         random.shuffle(self.answers)
         
