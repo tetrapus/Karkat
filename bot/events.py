@@ -7,7 +7,7 @@ import inspect
 import sys
 import traceback
 
-from util.irc import Command
+from util.irc import Command, Message
 
 
 # Constants
@@ -212,3 +212,31 @@ def command(name=None,
         _.funct = funct
         return _
     return decorator
+
+def msghandler(funct):
+    @functools.wraps(funct)
+    def _(*argv): 
+        try:
+            bot = argv[-2]
+            msg = Message(argv[-1])
+        except IndexError:
+            return
+        else:
+            # Check if we're a bound method.
+            if len(argv) == 3:
+                fargs = [argv[0], bot, msg]
+            else:
+                fargs = [bot, msg]
+            output = bot.printer.buffer(msg.context, "PRIVMSG")
+            if inspect.isgeneratorfunction(funct):
+                with output as out:
+                    for line in funct(*fargs):
+                        out += line
+            else:
+                rval = funct(*fargs)
+                if rval is not None:
+                    with output as out:
+                        out += rval
+    _.__annotations__["return"] = "privmsg"
+    _.funct = funct
+    return _

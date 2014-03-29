@@ -177,7 +177,7 @@ import time
 import json
 import math
 
-from bot.events import Callback, command
+from bot.events import Callback, command, msghandler
 from util.irc import Message
 from util.text import ircstrip
 
@@ -346,8 +346,8 @@ class AI(Callback):
             f.write("\n".join(self.lines))
 
     @Callback.background
-    def capsmsg(self, server, line) -> "privmsg":
-        msg = Message(line)
+    @msghandler
+    def capsmsg(self, server, msg):
         if not (msg.text[0].isalpha() or msg.text[0] == "\x01"):
             return
         if msg.text.lower().startswith("%s:" % server.nick.lower()) or (msg.text.isupper() or "karkat" in msg.text.lower() or "pipey" in msg.text.lower()):

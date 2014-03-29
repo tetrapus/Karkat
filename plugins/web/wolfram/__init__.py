@@ -13,8 +13,7 @@ import yaml
 from . import parser
 
 from util.services import url as URL
-from util.irc import Message
-from bot.events import Callback, command
+from bot.events import Callback, command, msghandler
 from util.text import striplen, spacepad, justifiedtable
 from util import parallelise
 
@@ -222,8 +221,8 @@ class WolframAlpha(Callback):
 
 
     @Callback.threadsafe
-    def shorthand_trigger(self, server, line) -> "privmsg":
-        message = Message(line)
+    @msghandler
+    def shorthand_trigger(self, server, message):
         user, context = message.address, message.context
         if not message.text or (message.text[0] == message.text[-1] and message.text[0] in "~`"):
             return

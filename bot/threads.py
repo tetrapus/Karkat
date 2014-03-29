@@ -123,9 +123,9 @@ class PrinterBuffer(object):
                                 self.recipient,
                                 self.method)
         print(self.__class__.adpool)
-        if len(self.__class__.adpool) and time.time() - self.__class__.lastad > 600 and random.random() > 0.5:
+        if len(self.__class__.adpool) and time.time() - self.__class__.lastad > 600 and random.random() > 0.8:
             ad = self.__class__.adpool.pop()
-            self.sender.message("⎪SPONSORED⎪ %s" % ad, self.recipient, self.method)
+            self.sender.message("│ SPONSORED │ %s" % ad, self.recipient, self.method)
             with open("ads.json", "w") as f:
                 json.dump(self.__class__.adpool, f)
             self.__class__.lastad = time.time()
