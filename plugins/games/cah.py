@@ -168,7 +168,7 @@ class CardsAgainstHumanity(object):
         elif x.group(1) == "^":
             return sub.upper()
         elif x.group(1) == "*":
-            return "" + (" ".join(i[0].upper() + i[1:] for i in sub[1:].split())) + ""
+            return "" + (" ".join(i[0].upper() + i[1:] for i in sub[1:].split(" "))) + ""
         else:
             return x.group(1) + sub[:2].upper() + sub[2:]
            
