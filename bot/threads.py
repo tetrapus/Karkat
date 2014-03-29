@@ -122,6 +122,7 @@ class PrinterBuffer(object):
             self.sender.message("\n".join(self.buffer),
                                 self.recipient,
                                 self.method)
+        print(self.adpool)
         if len(self.adpool) and time.time() - self.lastad > 600 and random.random() > 0.5:
             ad = self.adpool.pop()
             self.sender.message("⎪SPONSORED⎪ %s" % ad, self.recipient, self.method)
