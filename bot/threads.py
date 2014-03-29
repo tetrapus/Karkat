@@ -10,6 +10,7 @@ import collections
 import socket
 import inspect
 import fnmatch
+import random
 
 import yaml
 
@@ -87,6 +88,8 @@ class PrinterBuffer(object):
     """
     Context manager for prettier printing.
     """
+    adpool = []
+    lastad = 0
 
     def __init__(self, printer, recipient, method):
         """
@@ -115,7 +118,10 @@ class PrinterBuffer(object):
             self.sender.message("\n".join(self.buffer),
                                 self.recipient,
                                 self.method)
-
+        if len(self.adpool) and time.time() - self.lastad > 1800 and random.random() > 0.75:
+            ad = self.adpool.pop()
+            self.sender.message("⎪SPONSORED⎪ %s" % ad, self.recipient, self.method)
+            self.lastad = time.time()
 
 class Printer(WorkerThread):
     """ This queue-like thread controls the output to a socket."""
