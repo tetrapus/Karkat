@@ -11,6 +11,7 @@ import socket
 import inspect
 import fnmatch
 import random
+import json
 
 import yaml
 
@@ -88,7 +89,10 @@ class PrinterBuffer(object):
     """
     Context manager for prettier printing.
     """
-    adpool = []
+    try:
+        adpool = json.load(open("ads.json"))
+    except:
+        adpool = []
     lastad = 0
 
     def __init__(self, printer, recipient, method):
@@ -118,9 +122,11 @@ class PrinterBuffer(object):
             self.sender.message("\n".join(self.buffer),
                                 self.recipient,
                                 self.method)
-        if len(self.adpool) and time.time() - self.lastad > 1800 and random.random() > 0.75:
+        if len(self.adpool) and time.time() - self.lastad > 600 and random.random() > 0.5:
             ad = self.adpool.pop()
             self.sender.message("⎪SPONSORED⎪ %s" % ad, self.recipient, self.method)
+            with open("ads.json", "w") as f:
+                json.dump(self.adpool, f)
             self.lastad = time.time()
 
 class Printer(WorkerThread):
