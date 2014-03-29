@@ -6,6 +6,7 @@ import time
 import sys
 import os
 import functools
+import requests
 
 from util import cmp
 from util.text import ordinal
@@ -13,6 +14,11 @@ from util.irc import Callback, Address, Message, command
 
 CAHPREFIX = "01│14│15│ "
 datadir = "data/CardsAgainstHumanity"
+
+
+# Dynamic cards:
+# Black: Askreddit, yahoo answers
+# White: Random username, google trends, random player, random song, twitter trending
 
 class CardsAgainstHumanity(object):
     black = [i.strip() for i in open(datadir + "/black.txt").read().split("\n")]
@@ -23,9 +29,39 @@ class CardsAgainstHumanity(object):
 
         self.lock = threading.Lock()
         self.questions = self.black[:] + black[:]
+
+        # Get questions from reddit
+        reddit = requests.get("http://www.reddit.com/r/AskReddit/hot.json", headers={"User-Agent": "Karkat-CardsAgainstHumanity-Scraper"}).json()
+        reddit = reddit["data"]["children"]
+        titles = [i["data"]["title"] for i in reddit if i["data"]["title"].endswith("?")]
+        # 5% of cards max should be reddit cards
+        self.questions.extend(titles[:int(len(self.questions) * 0.05)])
+
         random.shuffle(self.questions)
         
         self.answers = self.white[:] + white[:]
+
+        # Get trends from google
+        trends = requests.get("http://www.google.com/trends/hottrends/atom/hourly").text
+        trends = re.findall(">([^<]+)</a></span></li>", trends)
+        random.shuffle(trends)
+        # 2.5% of cards max should be trend cards
+        self.answers.extend(trends[:int(len(self.answers) * 0.025)])
+
+        # Get trends from twitter
+        twit = requests.get("https://api.twitter.com/1.1/trends/place.json?id=2458410", headers={"Authorization": "Bearer AAAAAAAAAAAAAAAAAAAAAG8uWwAAAAAA%2BKplZ2OgC1RPLd64ac9OIdP%2FHc4%3DEFiiimJ2pmK8UICRFzeO6zgmDIFwcMd7xiA0iH7pr0gZzqbmld"}).json()
+        twit = [i["name"] for i in twit[0]["trends"]]
+        random.shuffle(twit)
+        # 2.5% of cards max should be twit cards
+        self.answers.extend(twit[:int(len(self.answers) * 0.025)])
+        # Get trends from Know Your Meme
+        memes = requests.get("http://knowyourmeme.com/").text
+        memes = re.findall("<h5 class='left'>Also Trending:</h5>(.+?)</div>", memes)
+        memes = re.findall(">(.+?)</a>", memes[0])
+        random.shuffle(memes)
+        # 3% of cards max should be meme cards
+        self.answers.extend(memes[:int(len(self.answers) * 0.03)])
+
         random.shuffle(self.answers)
         
         self.usedanswers = []
@@ -66,11 +102,6 @@ class CardsAgainstHumanity(object):
             open(directory + "/answers.txt", "w")
             cls.expansionas, cls.expansionqs = [], []
 
-    def getvar(self, varname):
-        if varname == "PLAYER":
-            return random.choice(self.players)
-        if varname == "ASKREDDIT": pass
-
     def addPlayer(self, player):
         if player in [x.nick for x in self.players]:
             return False
@@ -80,6 +111,8 @@ class CardsAgainstHumanity(object):
             p = CAHPlayer(player)
             self.allplayers.append(p)
             self.repopulate(p)
+            self.answers.append(player)
+            random.shuffle(self.answers)
 
         self.players.append(p)
         if self.state == "collect":
