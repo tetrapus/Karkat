@@ -172,6 +172,7 @@ class Board3D(Board):
                 for k in range(self.size[2]):
                     if self.board[k][j][i] is None:
                         empty.append((i, j, k))
+        return empty
 
     def spawn_tile(self):
         spawn = random.choice(self.get_empty())
