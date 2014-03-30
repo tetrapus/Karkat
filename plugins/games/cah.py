@@ -113,7 +113,11 @@ class CardsAgainstHumanity(object):
         if self.state == "collect":
             p.getHand()
         return True
-        
+
+    def var(self, v):
+        if v[1:].upper() == "PLAYER":
+            return random.choice(self.players).nick
+
     def addRando(self):
         try:
             self.rando = self.getPlayer("Rando Cardrissian")
@@ -146,6 +150,7 @@ class CardsAgainstHumanity(object):
         while len(player.hand) < self.maxcards:
             try:
                 card = self.answers.pop()
+                card = re.sub(r"$([A-Z]+)", lambda x: self.var(x.group(1)), card)
             except IndexError:
                 self.printer.message(CAHPREFIX + "Reshuffling deck...", self.channel)
                 self.answers = self.usedanswers[:]
@@ -316,7 +321,7 @@ class CardsAgainstHumanity(object):
             for i in self.order:
                 response = i.popResponses() or i.popBets()
                 if response:
-                    reveal.append("\x02%s\x02 %s" % (i.nick, " ".join("[ %s ]" % ((i[0].upper() + i[1:]).rstrip(".")) for i in response)))
+                    reveal.append("\x02%s\x02 %s" % (i.nick, " ".join("01,00 %s " % ((i[0].upper() + i[1:]).rstrip(".")) for i in response)))
             output = [[]]
             for i in reveal:
                 if sum(len(i) + 2 for i in output) + len(i) < 375:
