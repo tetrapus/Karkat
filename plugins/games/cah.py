@@ -115,8 +115,9 @@ class CardsAgainstHumanity(object):
         return True
 
     def var(self, v):
-        if v[1:].upper() == "PLAYER":
+        if v == "PLAYER":
             return random.choice(self.players).nick
+        elif v == "CZAR": return self.czar
 
     def addRando(self):
         try:
