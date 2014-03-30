@@ -150,7 +150,7 @@ class CardsAgainstHumanity(object):
         while len(player.hand) < self.maxcards:
             try:
                 card = self.answers.pop()
-                card = re.sub(r"$([A-Z]+)", lambda x: self.var(x.group(1)), card)
+                card = re.sub(r"\$([A-Z]+)", lambda x: self.var(x.group(1)), card)
             except IndexError:
                 self.printer.message(CAHPREFIX + "Reshuffling deck...", self.channel)
                 self.answers = self.usedanswers[:]
@@ -243,6 +243,8 @@ class CardsAgainstHumanity(object):
         time.sleep(0.5)
         self.printer.message(CAHPREFIX + "%s will be the Card Czar for Round %d%s." % (self.czar.nick, self.round, "of %d" % self.rounds if self.rounds else ""), self.channel)
         self.question = self.questions.pop()
+        self.question = re.sub(r"\$([A-Z]+)", lambda x: self.var(x.group(1)), self.question)
+
         time.sleep(2)
         self.printer.message("01│00,01 %s " % re.sub("[*^]_+", "_______", self.question), self.channel)
         numanswers = self.numcards()
