@@ -55,7 +55,7 @@ class CardsAgainstHumanity(object):
         memes = re.findall("<h5 class='left'>Also Trending:</h5>(.+?)</div>", memes)
         memes = re.findall(">(.+?)</a>", memes[0])
 
-        self.answers.extend([i + "." for i in memes])
+        self.answers.extend([unescape(i) + "." for i in memes])
 
         ud = requests.get("http://urbandictionary.com/").text
         ud = re.findall(r"define\.php.*?>(.+?)<", ud)[1:]
@@ -180,7 +180,7 @@ class CardsAgainstHumanity(object):
         elif x.group(1) == "^":
             return sub.upper()
         elif x.group(1) == "*":
-            return (" ".join(i[0].upper() + i[1:] for i in sub[1:].split(" ")))
+            return "" + (" ".join(i[0].upper() + i[1:] for i in sub[1:].split(" ")))
         else:
             return x.group(1) + sub[:2].upper() + sub[2:]
            
@@ -532,11 +532,18 @@ class CAHBot(object):
                             game.remove(player)
                             if game.state != 'failed':
                                 if player == game.czar:
-                                    # TODO: Just change the czar.
-                                    for i in game.players:
-                                        i.responses = None
-                                        i.bets = None
-                                    game.next()
+                                    game.czar = game.players.pop()
+                                    game.players.insert(0, game.czar)
+                                    if game.czar == game.rando:
+                                        game.czar = game.players.pop()
+                                        game.players.insert(0, game.czar)
+                                    
+                                    game.czar.responses = None
+                                    game.czar.bets = None
+                                    if game.state == "judge":
+                                        game.state = "collect"
+                                    printer.message(CAHPREFIX + "%s is the new czar." % game.czar.nick, channel)
+
                                 game.judge()
                     elif x[3].lower() == ":!score":
                         game.printplayers()
