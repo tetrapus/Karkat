@@ -324,7 +324,7 @@ class CardsAgainstHumanity(object):
             for i in self.order:
                 response = i.popResponses() or i.popBets()
                 if response:
-                    reveal.append("\x02%s\x02 %s" % (i.nick, " ".join("01,00 %s " % ((i[0].upper() + i[1:]).rstrip(".")) for i in response)))
+                    reveal.append("\x02%s\x02 %s" % (i.nick, " ".join("01,00 %s " % ((i[0].upper() + i[1:]).rstrip(".")) for i in response)))
             output = [[]]
             for i in reveal:
                 if sum(len(i) + 2 for i in output) + len(i) < 375:
