@@ -281,6 +281,7 @@ class CardsAgainstHumanity(object):
                     self.usedanswers.append(response)
                     buffer += CAHPREFIX + "%d. %s" % (i+1, self.substitute(response))
             self.state = "judge"
+            # TODO: Add judgement timer
 
     def logwinner(self, wins, logdir):
         with sqlite3.connect(logdir + "/statistics.db") as logdata:
