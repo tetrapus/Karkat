@@ -296,6 +296,7 @@ class Caller(WorkerThread):
     def __init__(self, work=None):
         WorkerThread.__init__(self)
         self.last = None
+        self.lastf = (None, None)
 
     def queue(self, funct, args):
         """
