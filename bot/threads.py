@@ -340,6 +340,7 @@ class Caller(WorkerThread):
     def run(self):
         for funct, args in self.work:
             self.last = time.time()
+            self.lastf = (funct, args)
             try:
                 funct(*args)
             except BaseException:
@@ -534,7 +535,7 @@ class Bot(Connection):
         for c in self.callers[2:]:
             ltime = c.last
             if ltime and time.time() - ltime > 8:
-                print("Caller is taking too long: forking.")
+                print("Caller is taking too long executing %s%s: forking." % (c.lastf[0].name, c.lastf[1]))
                 self.callers.remove(c)
                 self.callers.append(Caller(c.dump()))
                 self.callers[-1].start()
