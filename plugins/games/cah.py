@@ -247,7 +247,7 @@ class CardsAgainstHumanity(object):
         self.question = re.sub(r"\$([A-Z]+)", lambda x: self.var(x.group(1)), self.question)
 
         time.sleep(2)
-        self.printer.message("01│00,01 %s " % re.sub("[*^]_+", "_______", self.question), self.channel)
+        self.printer.message("01│00,01 %s " % re.sub("[*^]_+", "_______", self.question), self.channel)
         numanswers = self.numcards()
         numanswers = "a card" if numanswers == 1 else ("%d cards" % numanswers)
 
