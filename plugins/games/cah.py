@@ -9,7 +9,7 @@ import functools
 import requests
 
 from util import cmp
-from util.text import ordinal
+from util.text import ordinal, unescape
 from util.irc import Callback, Address, Message, command
 
 CAHPREFIX = "01│14│15│ "
@@ -56,6 +56,12 @@ class CardsAgainstHumanity(object):
         memes = re.findall(">(.+?)</a>", memes[0])
 
         self.answers.extend([i + "." for i in memes])
+
+        ud = requests.get("http://urbandictionary.com/").text
+        ud = re.findall(r"define\.php.*?>(.+?)<", ud)[1:]
+        ud = [unescape(i) for i in ud]
+        ud = [i[0].upper() + i[1:] + ("." * i[-1].isalpha()) for i in ud]
+        self.answers.extend(ud)
 
         random.shuffle(self.answers)
         
