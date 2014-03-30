@@ -525,26 +525,23 @@ class CAHBot(object):
                                 printer.message(CAHPREFIX + "Invalid arguments.", nick, "NOTICE")
                                 
                     elif x[3].lower() in [":!leave", ":!quit"]:
-                        if player == game.czar and game.state == "judge":
-                            printer.message(CAHPREFIX + "HEY GODDAMNIT COME BACK %s" % player.nick.upper(), channel)
-                        else:
-                            printer.message(CAHPREFIX + "%s is quitting the game, quitter." % player.nick, channel)
-                            game.remove(player)
-                            if game.state != 'failed':
-                                if player == game.czar:
+                        printer.message(CAHPREFIX + "%s is quitting the game, quitter." % player.nick, channel)
+                        game.remove(player)
+                        if game.state != 'failed':
+                            if player == game.czar:
+                                game.czar = game.players.pop()
+                                game.players.insert(0, game.czar)
+                                if game.czar == game.rando:
                                     game.czar = game.players.pop()
                                     game.players.insert(0, game.czar)
-                                    if game.czar == game.rando:
-                                        game.czar = game.players.pop()
-                                        game.players.insert(0, game.czar)
-                                    
-                                    game.czar.responses = None
-                                    game.czar.bets = None
-                                    if game.state == "judge":
-                                        game.state = "collect"
-                                    printer.message(CAHPREFIX + "%s is the new czar." % game.czar.nick, channel)
+                                
+                                game.czar.responses = None
+                                game.czar.bets = None
+                                if game.state == "judge":
+                                    game.state = "collect"
+                                printer.message(CAHPREFIX + "%s is the new czar." % game.czar.nick, channel)
 
-                                game.judge()
+                            game.judge()
                     elif x[3].lower() == ":!score":
                         game.printplayers()
         elif x[3].lower() in [":!cah", ":!cards"]:
