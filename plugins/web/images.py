@@ -141,8 +141,8 @@ def asciiart(server, msg, url):
     img = Image.open(data)
     scalefactor = min(img.size[0]*3/k, img.size[1]/k)
     img = img.resize((int(img.size[0]*3/scalefactor), int(img.size[1]/scalefactor)))
-    if img.size[0] > 60:
-        scalefactor = 60 / img.size[0]
+    if img.size[0] > 50:
+        scalefactor = 50 / img.size[0]
         img = img.resize((int(scalefactor * img.size[0]), int(scalefactor * img.size[1])))
     return "\n".join("".join(colors[nearestColor(img.getpixel((i, j)))] for i in range(img.size[0])) for j in range(img.size[1]))
 
