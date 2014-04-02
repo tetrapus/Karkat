@@ -179,10 +179,10 @@ def asciiart2(server, msg, url):
     if img.size[0] > 100:
         scalefactor = 100 / img.size[0]
         img = img.resize((int(scalefactor * img.size[0]), int(scalefactor * img.size[1])))
-    return "\n".join("".join(blocks[img.getpixel((x, y)) == 0,
-                                    img.getpixel((x+1, y)) == 0,
-                                    img.getpixel((x+1, y+1)) == 0,
-                                    img.getpixel((x, y+1)) == 0] for x in range(int(img.size[0]/2))) for y in range(int(img.size[1]/2)))
+    return "\n".join("".join(blocks[img.getpixel((2*x, 2*y)) == 0,
+                                    img.getpixel((2*x+1, 2*y)) == 0,
+                                    img.getpixel((2*x+1, 2*y+1)) == 0,
+                                    img.getpixel((2*x, 2*y+1)) == 0] for x in range(int(img.size[0]/2))) for y in range(int(img.size[1]/2)))
 
 @msghandler
 def urlcache(server, msg):
