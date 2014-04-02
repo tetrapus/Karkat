@@ -179,6 +179,7 @@ def asciiart2(server, msg, url):
     if img.size[0] > 100:
         scalefactor = 100 / img.size[0]
         img = img.resize((int(scalefactor * img.size[0]), int(scalefactor * img.size[1])))
+    img = img.convert('1')
     return "\n".join("".join(blocks[img.getpixel((2*x, 2*y)) != 255,
                                     img.getpixel((2*x+1, 2*y)) != 255,
                                     img.getpixel((2*x+1, 2*y+1)) != 255,
