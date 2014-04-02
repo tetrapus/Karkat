@@ -126,7 +126,7 @@ def asciiart(server, msg, url):
         r = requests.get(
           "https://ajax.googleapis.com/ajax/services/search/images",
           params=params
-        ).json()["responseData"][0]["url"]
+        ).json()["responseData"]["results"][0]["url"]
 
     if msg.prefix == "!": 
         k = 16
