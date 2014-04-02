@@ -111,7 +111,7 @@ def lineart(server, msg, flags, query):
     flags = "-l" + (flags or "").strip("-")
     yield from image.funct(server, msg, flags, query)
 
-def nearestColor(c):
+def nearestColor(c, colors=colors):
     return min(colors.keys(), key=lambda x: math.sqrt(sum((v-c[i])**2 for i, v in enumerate(x))))
 
 @command("view", "(.*)")
@@ -147,7 +147,7 @@ def asciiart(server, msg, url):
     return "\n".join("".join(colors[nearestColor(img.getpixel((i, j)))] for i in range(img.size[0])) for j in range(img.size[1]))
 
 blocks = {(True, True, False, True): '▛', (True, False, True, True): '▙', (True, True, True, False): '▜', (False, False, False, False): ' ', (True, False, True, False): '▚', (False, False, False, True): '▖', (False, True, False, True): '▞', (True, False, False, True): '▌', (False, True, False, False): '▝', (True, True, True, True): '█', (False, True, True, False): '▐', (False, False, True, False): '▗', (True, True, False, False): '▀', (True, False, False, False): '▘', (False, False, True, True): '▄', (False, True, True, True): '▟'}
-
+defaults = {(128, 38, 127): '\x036', (195, 59, 59): '\x034', (25, 85, 85): '\x0310', (69, 69, 230): '\x0312', (217, 166, 65): '\x038', (199, 50, 50): '\x035', (42, 140, 42): '\x033', (76, 76, 76): '\x0314', (102, 54, 31): '\x037', (53, 53, 179): '\x032', (46, 140, 116): '\x0311', (0, 0, 0): '\x031', (176, 55, 176): '\x0313', (204, 204, 204): '\x030', (61, 204, 61): '\x039', (149, 149, 149): '\x0315'}
 
 @command("render", "(.*)")
 @Callback.threadsafe
@@ -179,11 +179,14 @@ def asciiart2(server, msg, url):
     if img.size[0] > 100:
         scalefactor = 100 / img.size[0]
         img = img.resize((int(scalefactor * img.size[0]), int(scalefactor * img.size[1])))
+    cmap = img.resize((int(img.size[0]/2), int(img.size[1]/2)))
     img = img.convert('1')
-    return "\n".join("".join(blocks[img.getpixel((2*x, 2*y)) != 255,
+    units = [[defaults[nearestColor(cmap.getpixel((x, y)), defaults)] + blocks[img.getpixel((2*x, 2*y)) != 255,
                                     img.getpixel((2*x+1, 2*y)) != 255,
                                     img.getpixel((2*x+1, 2*y+1)) != 255,
-                                    img.getpixel((2*x, 2*y+1)) != 255] for x in range(int(img.size[0]/2))) for y in range(int(img.size[1]/2)))
+                                    img.getpixel((2*x, 2*y+1)) != 255] for x in range(int(img.size[0]/2))] for y in range(int(img.size[1]/2))]
+    return "\n".join("".join(colors[nearestColor(img.getpixel((i, j)))] for i in range(img.size[0])) for j in range(img.size[1]))
+
 
 @msghandler
 def urlcache(server, msg):
