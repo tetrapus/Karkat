@@ -181,11 +181,10 @@ def asciiart2(server, msg, url):
         img = img.resize((int(scalefactor * img.size[0]), int(scalefactor * img.size[1])))
     cmap = img.resize((int(img.size[0]/2), int(img.size[1]/2)))
     img = img.convert('1')
-    units = [[defaults[nearestColor(cmap.getpixel((x, y)), defaults)] + blocks[img.getpixel((2*x, 2*y)) != 255,
+    return "\n".join("".join(defaults[nearestColor(cmap.getpixel((x, y)), defaults)] + blocks[img.getpixel((2*x, 2*y)) != 255,
                                     img.getpixel((2*x+1, 2*y)) != 255,
                                     img.getpixel((2*x+1, 2*y+1)) != 255,
-                                    img.getpixel((2*x, 2*y+1)) != 255] for x in range(int(img.size[0]/2))] for y in range(int(img.size[1]/2))]
-    return "\n".join("".join(colors[nearestColor(img.getpixel((i, j)))] for i in range(img.size[0])) for j in range(img.size[1]))
+                                    img.getpixel((2*x, 2*y+1)) != 255] for x in range(int(img.size[0]/2))) for y in range(int(img.size[1]/2)))
 
 
 @msghandler
