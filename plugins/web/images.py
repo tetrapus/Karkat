@@ -167,7 +167,7 @@ def asciiart2(server, msg, url):
         ).json()["responseData"]["results"][0]["url"]
     server.lasturl = url
     if msg.prefix == "!": 
-        k = 16
+        k = 20
     else: 
         k = 6
 
@@ -176,8 +176,8 @@ def asciiart2(server, msg, url):
     img = Image.open(data)
     scalefactor = min(img.size[0]*3/k, img.size[1]/k)
     img = img.resize((int(img.size[0]*3/scalefactor) * 2, int(img.size[1]/scalefactor)*2))
-    if img.size[0] > 100:
-        scalefactor = 100 / img.size[0]
+    if img.size[0] > 110:
+        scalefactor = 110 / img.size[0]
         img = img.resize((int(scalefactor * img.size[0]), int(scalefactor * img.size[1])))
     cmap = img.resize((int(img.size[0]/2), int(img.size[1]/2)))
     img = img.convert('1')
