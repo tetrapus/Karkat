@@ -146,10 +146,45 @@ def asciiart(server, msg, url):
         img = img.resize((int(scalefactor * img.size[0]), int(scalefactor * img.size[1])))
     return "\n".join("".join(colors[nearestColor(img.getpixel((i, j)))] for i in range(img.size[0])) for j in range(img.size[1]))
 
+blocks = {{(True, True, False, True): '▛', (True, False, True, True): '▙', (True, True, True, False): '▜', (False, False, False, False): ' ', (True, False, True, False): '▚', (False, False, False, True): '▖', (False, True, False, True): '▞', (True, False, False, True): '▌', (False, True, False, False): '▝', (True, True, True, True): '█', (False, True, True, False): '▐', (False, False, True, False): '▗', (True, True, False, False): '▀', (True, False, False, False): '▘', (False, False, True, True): '▄', (False, True, True, True): '▟'}
+
+
+@command("render", "(.*)")
+@Callback.threadsafe
+def asciiart2(server, msg, url):
+    if not url:
+        url = server.lasturl
+    elif not url.startswith("http"):
+        params = {
+            "safe": "off",
+            "v": "1.0",
+            "rsz": 1,
+            "q": url
+        }
+        url = requests.get(
+          "https://ajax.googleapis.com/ajax/services/search/images",
+          params=params
+        ).json()["responseData"]["results"][0]["url"]
+    server.lasturl = url
+    if msg.prefix == "!": 
+        k = 16
+    else: 
+        k = 6
+
+    data = requests.get(url).content
+    data = BytesIO(data)
+    img = Image.open(data)
+    scalefactor = min(img.size[0]*3/k, img.size[1]/k)
+    img = img.resize((int(img.size[0]*3/scalefactor) * 2, int(img.size[1]/scalefactor)*2))
+    if img.size[0] > 100:
+        scalefactor = 100 / img.size[0]
+        img = img.resize((int(scalefactor * img.size[0]), int(scalefactor * img.size[1])))
+    return "\n".join("".join(blocks[img.getpixel((x, y)) == 0] for x in range(int(img.size[0]/2))) for y in range(int(img.size[1]/2)))
+
 @msghandler
 def urlcache(server, msg):
     urls = [i for i in msg.text.split() if i.startswith("http")]
     if urls:
         server.lasturl = urls[-1]
 
-__callbacks__ = {"privmsg": [image, gif, face, photo, clipart, lineart, asciiart, urlcache]}
+__callbacks__ = {"privmsg": [image, gif, face, photo, clipart, lineart, asciiart, urlcache, asciiart2]}
