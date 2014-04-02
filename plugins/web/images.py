@@ -146,7 +146,7 @@ def asciiart(server, msg, url):
         img = img.resize((int(scalefactor * img.size[0]), int(scalefactor * img.size[1])))
     return "\n".join("".join(colors[nearestColor(img.getpixel((i, j)))] for i in range(img.size[0])) for j in range(img.size[1]))
 
-blocks = {{(True, True, False, True): '▛', (True, False, True, True): '▙', (True, True, True, False): '▜', (False, False, False, False): ' ', (True, False, True, False): '▚', (False, False, False, True): '▖', (False, True, False, True): '▞', (True, False, False, True): '▌', (False, True, False, False): '▝', (True, True, True, True): '█', (False, True, True, False): '▐', (False, False, True, False): '▗', (True, True, False, False): '▀', (True, False, False, False): '▘', (False, False, True, True): '▄', (False, True, True, True): '▟'}
+blocks = {(True, True, False, True): '▛', (True, False, True, True): '▙', (True, True, True, False): '▜', (False, False, False, False): ' ', (True, False, True, False): '▚', (False, False, False, True): '▖', (False, True, False, True): '▞', (True, False, False, True): '▌', (False, True, False, False): '▝', (True, True, True, True): '█', (False, True, True, False): '▐', (False, False, True, False): '▗', (True, True, False, False): '▀', (True, False, False, False): '▘', (False, False, True, True): '▄', (False, True, True, True): '▟'}
 
 
 @command("render", "(.*)")
