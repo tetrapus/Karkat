@@ -114,10 +114,12 @@ def lineart(server, msg, flags, query):
 def nearestColor(c):
     return min(colors.keys(), key=lambda x: math.sqrt(sum((v-c[i])**2 for i, v in enumerate(x))))
 
-@command("view", "(.+)")
+@command("view", "(.*)")
 @Callback.threadsafe
 def asciiart(server, msg, url):
-    if not url.startswith("http"):
+    if not url:
+        url = server.lasturl
+    elif not url.startswith("http"):
         params = {
             "safe": "off",
             "v": "1.0",
