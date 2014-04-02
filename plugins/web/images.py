@@ -123,7 +123,7 @@ def asciiart(server, msg, url):
             "rsz": 1,
             "q": url
         }
-        r = requests.get(
+        url = requests.get(
           "https://ajax.googleapis.com/ajax/services/search/images",
           params=params
         ).json()["responseData"]["results"][0]["url"]
