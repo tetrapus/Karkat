@@ -167,7 +167,7 @@ def asciiart2(server, msg, url):
         ).json()["responseData"]["results"][0]["url"]
     server.lasturl = url
     if msg.prefix == "!": 
-        k = 20
+        k = 16
     else: 
         k = 6
 
