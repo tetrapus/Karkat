@@ -4,7 +4,7 @@ import math
 from PIL import Image
 from io import BytesIO
 
-from bot.events import command, Callback
+from bot.events import command, Callback, msghandler
 from util.services import url
 from util.text import unescape
 
@@ -73,6 +73,7 @@ def image(server, msg, flags, query):
     results = r.get("responseData", {}).get("results", [])
 
     for i, result in enumerate(results):
+        server.lasturl = result["url"]
         yield templates[msg.prefix] % {"color" : [12, 5, 8, 3][i % 4],
                                        "url": url.shorten(result["url"]),
                                        "fullurl": result["visibleUrl"],
@@ -142,5 +143,11 @@ def asciiart(server, msg, url):
         scalefactor = 40 / img.size[0]
         img = img.resize((int(scalefactor * img.size[0]), int(scalefactor * img.size[1])))
     return "\n".join("".join(colors[nearestColor(img.getpixel((i, j)))] for i in range(img.size[0])) for j in range(img.size[1]))
+
+@msghandler
+def urlcache(server, msg):
+    urls = [i for i in msg.text.split() if i.startswith("http")]
+    if urls:
+        server.lasturl = urls[-1]
 
 __callbacks__ = {"privmsg": [image, gif, face, photo, clipart, lineart, asciiart]}
