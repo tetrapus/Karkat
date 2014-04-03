@@ -192,7 +192,7 @@ def asciiart2(server, msg, url):
 
 @command("arender", "(.*)")
 @Callback.threadsafe
-def asciiart2(server, msg, url):
+def asciiart3(server, msg, url):
     if not url:
         url = server.lasturl
     elif not url.startswith("http"):
@@ -235,4 +235,4 @@ def urlcache(server, msg):
     if urls:
         server.lasturl = urls[-1]
 
-__callbacks__ = {"privmsg": [image, gif, face, photo, clipart, lineart, asciiart, urlcache, asciiart2]}
+__callbacks__ = {"privmsg": [image, gif, face, photo, clipart, lineart, asciiart, urlcache, asciiart2, asciiart3]}
