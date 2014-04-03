@@ -221,7 +221,7 @@ class Snap(Callback):
             text += "\n -- %s" % message.address.nick
         else:
             text += "via %s" % message.address.nick
-        img = drawtext(bg, text + "\n -- %s" % message.address.nick)
+        img = drawtext(bg, text)
         f = BytesIO()
         img.save(f, "jpeg")
         f.seek(0)
