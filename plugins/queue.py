@@ -23,7 +23,7 @@ class Queue(Callback):
             yield "06│ Your queue is empty. "
             return
         for i, item in enumerate(queue):
-            yield "06│ %2d │ %s" % (i+1, item)
+            yield "06│ %d │ %s" % (i+1, item)
 
     @command("queue", r"(.+)")
     def queue(self, server, message, item):
