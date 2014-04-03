@@ -285,7 +285,7 @@ class Snap(Callback):
             return "08│👻│ This username is already being verified. Please send a snapchat to %s to reset." % snapuser
         password = random.choice(open("/usr/share/dict/words").read().split()).lower()
         self.unverified[key] = [username, password]
-        self.send.funct(server, message, username, None, "Type \x02.verify %s\x02 to complete username verification." % password, True)
+        self.send.funct(self, server, message, username, None, "Type \x02.verify %s\x02 to complete username verification." % password, True)
         return "08│👻│ A verification code has been sent to your snapchat. Type \x02.verify <code>\x02 to complete username verification."
 
     @command("verify", "(.+)")
