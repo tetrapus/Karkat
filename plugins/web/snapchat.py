@@ -6,14 +6,16 @@ import os
 import re
 import hashlib
 import subprocess
+import http.server
+
+import pysnap
 
 from util.text import pretty_date
-from util.services import pysnap
 from util import scheduler
 from bot.events import Callback, command
 
 snapfolder = "/var/www/snaps"
-public_url = "http://s.n0.ms/"
+public_url = "http://xenon.tetrap.us/"
 
 def save(data, fmt):
     fchars =  "abcdefghijklmnopqrstuvwxyz-_+=~ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"

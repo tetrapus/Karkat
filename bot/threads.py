@@ -122,12 +122,15 @@ class PrinterBuffer(object):
             self.sender.message("\n".join(self.buffer),
                                 self.recipient,
                                 self.method)
-            if len(self.__class__.adpool) and time.time() - self.__class__.lastad > 151200/len(self.__class__.adpool) and random.random() > 0.8:
-                ad = self.__class__.adpool.pop()
-                self.sender.message("│ SPONSORED │ %s" % ad, self.recipient, self.method)
-                with open("ads.json", "w") as f:
-                    json.dump(self.__class__.adpool, f)
-                self.__class__.lastad = time.time()
+            self.serve_ad()
+
+    def serve_ad(self):
+        if len(self.__class__.adpool) and time.time() - self.__class__.lastad > 151200/len(self.__class__.adpool) and random.random() > 0.8:
+            ad = self.__class__.adpool.pop()
+            self.sender.message("│ SPONSORED │ %s" % ad, self.recipient, self.method)
+            with open("ads.json", "w") as f:
+                json.dump(self.__class__.adpool, f)
+            self.__class__.lastad = time.time()
 
 class Printer(WorkerThread):
     """ This queue-like thread controls the output to a socket."""

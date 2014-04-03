@@ -20,6 +20,130 @@ datadir = "data/CardsAgainstHumanity"
 # Black: Askreddit, yahoo answers
 # White: Random username, google trends, random player, random song, twitter trending
 
+class QuestionCard(object):
+    @property
+    def arity(self):
+        if "_" not in self.question: 
+            return 1
+        else: 
+            return len(re.findall("_+", self.question))
+    
+
+    def __init__(self, question):
+        self.question = question
+
+    def __str__(self):
+        return "00,01 %s " % re.sub("[*^]_+", "_______", self.question)
+
+    @staticmethod 
+    def subs(x, sub):
+        if x.group(2):
+            if re.match(r"\w", sub[-1]):
+                sub = "%s" % sub
+            else:
+                sub = "%s%s" % (sub[:-1], sub[-1])
+        else:
+            sub = "%s" % sub.rstrip(".")
+        if x.group(1) is None:
+            return sub
+        elif x.group(1) == "^":
+            return sub.upper()
+        elif x.group(1) == "*":
+            return "" + (" ".join(i[0].upper() + i[1:] for i in sub[1:].split(" ")))
+        else:
+            return x.group(1) + sub[:2].upper() + sub[2:]
+           
+    def substitute(self, cards):
+        assert len(cards) == self.arity
+
+        if "_" not in self.question:
+            return self.question + " " + cards[0].text()
+        else:
+            answer = self.question
+            for i in cards:
+                answer = re.sub(r"([^\w,] |^|[*^])?_+(\.)?", lambda x: self.subs(x, i.raw_text()), answer, count=1)
+            return answer
+
+class AnswerCard(object):
+    def __init__(self, answer):
+        self.answer = answer
+        self.owner = None
+        self.roundstart = None # TODO
+
+    def __str__(self):
+        return "01,00 %s " % self.text()
+
+    def set_owner(self, owner):
+        self.owner = owner
+
+    def text(self):
+        return self.answer[0].upper() + self.answer[1:] 
+    
+    def raw_text(self):
+        return self.answer
+
+class CAHPlayer(object):
+    def __init__(self, nick):
+        self.nick = nick
+        self.hand = []
+        self.points = 0
+        self.responses = None
+        self.bets = None
+        
+    def rename(self, newname):
+        self.nick = newname
+
+    def addCard(self, card):
+        card.set_owner(self)
+        self.hand.append(card)
+            
+    def addPoints(self, points=1):
+        self.points += points
+        
+    def score(self):
+        return self.points
+    
+    def setResponses(self, responses):
+        self.responses = [self.hand[i-1] for i in responses]
+    
+    def setBet(self, bet):
+        self.bets = [self.hand[i-1] for i in bet] or None
+    
+    def popResponses(self):
+        value = list(self.responses or [])
+        for i in value:
+            self.hand.remove(i)
+        self.responses = None
+        return value
+    
+    def popBets(self):
+        value = list(self.bets or [])
+        for i in value:
+            self.hand.remove(i)
+        self.bets = None
+        return value
+    
+    def printHand(self, printer):
+        # TODO: Refactor out.
+        with printer.buffer(self.nick, "NOTICE") as buffer:
+            for i in self.getHand():
+                buffer += i
+
+    def getHand(self):
+        lines = []
+        for i, card in enumerate(self.hand):
+            lines.append(CAHPREFIX + "%d. %s" % (i+1, card[0].upper() + card[1:]))
+        lines.append(CAHPREFIX + "You have %d point%s." % (self.points, "" if self.points == 1 else "s"))
+        return lines
+
+class CAH(object):
+
+    def __init__(self, questions=[], answers=[]):
+        self.players = []
+        self.questions = [QuestionCard(i) for i in questions]
+        self.answers = [AnswerCard(i) for i in answers]
+        self.round = 0
+
 class CardsAgainstHumanity(object):
     black = [i.strip() for i in open(datadir + "/black.txt").read().split("\n")]
     white = [i.strip() for i in open(datadir + "/white.txt").read().split("\n")]
@@ -36,7 +160,7 @@ class CardsAgainstHumanity(object):
         titles = [i["data"]["title"] for i in reddit if i["data"]["title"].endswith("?")]
         # 5% of cards max should be reddit cards
         self.questions.extend(titles)
-
+        self.questions = [QuestionCard(i) for i in self.questions]
         random.shuffle(self.questions)
         
         self.answers = self.white[:] + white[:]
@@ -62,7 +186,7 @@ class CardsAgainstHumanity(object):
         ud = [unescape(i) for i in ud]
         ud = [i[0].upper() + i[1:] + ("." * i[-1].isalpha()) for i in ud]
         self.answers.extend(ud)
-
+        self.answers = [AnswerCard(i) for i in self.answers]
         random.shuffle(self.answers)
         
         self.usedanswers = []
@@ -571,58 +695,6 @@ class CAHBot(object):
 
 __initialise__ = CAHBot
 
-class CAHPlayer(object):
-    def __init__(self, nick):
-        self.nick = nick
-        self.hand = []
-        self.points = 0
-        self.responses = None
-        self.bets = None
-        
-    def rename(self, newname):
-        self.nick = newname
-
-    def addCard(self, card):
-        self.hand.append(card)
-            
-    def addPoints(self, points=1):
-        self.points += points
-        
-    def score(self):
-        return self.points
-    
-    def setResponses(self, responses):
-        self.responses = [self.hand[i-1] for i in responses]
-    
-    def setBet(self, bet):
-        self.bets = [self.hand[i-1] for i in bet] or None
-    
-    def popResponses(self):
-        value = list(self.responses or [])
-        for i in value:
-            self.hand.remove(i)
-        self.responses = None
-        return value
-    
-    def popBets(self):
-        value = list(self.bets or [])
-        for i in value:
-            self.hand.remove(i)
-        self.bets = None
-        return value
-    
-    def printHand(self, printer):
-        # TODO: Refactor out.
-        with printer.buffer(self.nick, "NOTICE") as buffer:
-            for i in self.getHand():
-                buffer += i
-
-    def getHand(self):
-        lines = []
-        for i, card in enumerate(self.hand):
-            lines.append(CAHPREFIX + "%d. %s" % (i+1, card[0].upper() + card[1:]))
-        lines.append(CAHPREFIX + "You have %d point%s." % (self.points, "" if self.points == 1 else "s"))
-        return lines
 
 class CAHDeck(list):
     pass
