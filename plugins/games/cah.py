@@ -652,7 +652,7 @@ class CAHBot(object):
                     elif x[3].lower() in [":!leave", ":!quit"]:
                         printer.message(CAHPREFIX + "%s is quitting the game, quitter." % player.nick, channel)
                         game.remove(player)
-                        if game.state != 'failed':
+                        if game.state not in ['failed', "signups"]:
                             if player == game.czar:
                                 game.czar = game.players.pop()
                                 game.players.insert(0, game.czar)

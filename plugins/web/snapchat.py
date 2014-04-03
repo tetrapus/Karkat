@@ -62,6 +62,7 @@ class Snap(Callback):
             self.accounts[i].login(self.settings[i]["username"], self.settings[i]["password"])
         self.cache = {}
         self.checker = scheduler.schedule_after(60, self.checksnaps, args=(server,), stop_after=None)
+        self.server = server
 
         super().__init__(server)
 
@@ -119,6 +120,7 @@ class Snap(Callback):
                 self.settings[channel]["snaps"][snap["id"]] = url
                 self.settings[channel].setdefault("history", []).append(snap)
                 account.mark_viewed(snap["id"])
+                self.server.lasturl = url
                 yield "08│👻│ 12%s · from %s · ⌚ %s" % (url, snap["sender"], pretty_date(time.time() - snap["sent"]/1000) if snap["sent"] else "Unknown")
             except:
                 traceback.print_exc()
@@ -192,6 +194,7 @@ class Snap(Callback):
         history = [i for i in history if (i["media_type"] in filtr) and ((not users) or (i["sender"].lower() in users))]
         results = history[frm:to:anchor][:1 if message.prefix == "." else 5]
         for i in results:
+            server.lasturl = self.settings[context]["snaps"][i["id"]]
             res = "08│👻│ 12%s · from %s · ⌚ %s" % (self.settings[context]["snaps"][i["id"]], i["sender"], pretty_date(time.time() - i["sent"]/1000) if i["sent"] else "Unknown")
             if res.rsplit("·", 1)[0] not in new:
                 yield res
