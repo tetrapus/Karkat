@@ -41,7 +41,7 @@ class Queue(Callback):
             if not number: number = 1
             item = queue.pop(int(number) - 1)
         except IndexError:
-            return "06│ No such index."
+            return "06│ No such item."
         else:
             self.save()
             return "06│ Popped item %s: %s" % (number, item)
