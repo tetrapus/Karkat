@@ -138,7 +138,7 @@ def asciiart(server, msg, url):
 
     data = requests.get(url).content
     data = BytesIO(data)
-    img = Image.open(data)
+    img = Image.open(data).convert("RGB")
     scalefactor = min(img.size[0]*3/k, img.size[1]/k)
     img = img.resize((int(img.size[0]*3/scalefactor), int(img.size[1]/scalefactor)))
     if img.size[0] > 50:
@@ -179,7 +179,7 @@ def asciiart2(server, msg, url):
     if img.size[0] > 110:
         scalefactor = 110 / img.size[0]
         img = img.resize((int(scalefactor * img.size[0]), int(scalefactor * img.size[1])))
-    cmap = img.resize((int(img.size[0]/2), int(img.size[1]/2)))
+    cmap = img.resize((int(img.size[0]/2), int(img.size[1]/2))).convert("RGB")
     img = img.convert('1')
     return "\n".join("".join(defaults[nearestColor(cmap.getpixel((x, y)), defaults)] + blocks[img.getpixel((2*x, 2*y)) != 255,
                                     img.getpixel((2*x+1, 2*y)) != 255,
