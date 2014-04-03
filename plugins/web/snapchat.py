@@ -210,7 +210,7 @@ class Snap(Callback):
         else:
             return "08│👻│04 Could not block %s." % username
 
-    @command("snap", r"(?:(\S+)\s+)(http://\S+\s+)?(.*)", admin=True)
+    @command("snap", r"(?:(\S+)\s*)(http://\S+\s+)?(.*)", admin=True)
     def send(self, server, message, user, background, text):
         acc = self.accounts[server.lower(message.context)]
         if background:
@@ -218,9 +218,9 @@ class Snap(Callback):
         else:
             bg = Image.new("RGBA", (640, 960), (0, 0, 0))
         if text:
-            text += "\n -- %s" % message.address.nick
+            text += "\n - %s" % message.address.nick
         else:
-            text += "via %s" % message.address.nick
+            text = "via %s" % message.address.nick
         img = drawtext(bg, text)
         f = BytesIO()
         img.save(f, "jpeg")
