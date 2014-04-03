@@ -283,10 +283,18 @@ class Snap(Callback):
         key = server.lower(message.address.nick)
         if key in self.unverified:
             return "08│👻│ This username is already being verified. Please send a snapchat to %s to reset." % snapuser
+        if username.lower() in [i.lower() for i in self.users.values()]:
+            return "08│👻│ This username is already verified. Type .unverify to reset your verification."
         password = random.choice(open("/usr/share/dict/words").read().split()).lower()
         self.unverified[key] = [username, password]
         self.send.funct(self, server, message, username, None, "Type \x02.verify %s\x02 to complete username verification." % password, True)
         return "08│👻│ A verification code has been sent to your snapchat. Type \x02.verify <code>\x02 to complete username verification."
+
+    @command("unverify")
+    def unverify(self, server, message, username):
+        key = server.lower(message.address.nick)
+        del self.users[key]
+        return "08│👻│ Unverified."
 
     @command("verify", "(.+)")
     def verify(self, server, message, code):
