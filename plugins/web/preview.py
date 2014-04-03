@@ -20,9 +20,10 @@ class Summary(Callback):
                   "SM_URL": url,
                   "SM_LENGTH": 1}
         summary = requests.get(self.API_URL, params=params).json()
-        
-        return "12│ " + summary["sm_api_content"]
-        
+        try:
+            return "12│ " + summary["sm_api_content"]
+        except:
+            return summary["sm_api_message"]
 try:
     apikeys = yaml.safe_load(open("config/apikeys.conf"))["smmry"]
     __initialise__ = functools.partial(Summary, key=apikeys["key"])
