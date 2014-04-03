@@ -244,10 +244,16 @@ class Snap(Callback):
     @command("snap", r"(\S+)(?:\s+(http://\S+))?(?:\s+(.+))?")
     def send(self, server, message, user, background, text, verified=False):
         acc = self.accounts[server.lower(message.context)]
-        if server.lower(message.address.nick) not in self.users and not verified:
-            return "04│👻│ You must verify your snapchat username to use this command."
-        else:
-            username = self.users[server.lower(message.address.nick)]
+        if not verified:
+            if server.lower(message.address.nick) not in self.users:
+                return "04│👻│ You must verify your snapchat username to use this command."
+            else:
+                username = self.users[server.lower(message.address.nick)]
+            if text:
+                text = text.replace("\\", "\n")
+                text += "\n -\x02%s" % username
+            else:
+                text = "via %s" % username
         if background:
             bg = Image.open(BytesIO(requests.get(background.strip()).content))
         else:
