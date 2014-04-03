@@ -142,10 +142,10 @@ def asciiart(server, msg, url):
     if img.size[0] > 4096 or img.size[1] > 4096:
         return "│ Image too large."
     scalefactor = min(img.size[0]*3/k, img.size[1]/k)
-    img = img.resize((int(img.size[0]*3/scalefactor), int(img.size[1]/scalefactor)), Image.ANTIALIAS)
+    img = img.resize((int(img.size[0]*3/scalefactor), int(img.size[1]/scalefactor)))
     if img.size[0] > 50:
         scalefactor = 50 / img.size[0]
-        img = img.resize((int(scalefactor * img.size[0]), int(scalefactor * img.size[1])), Image.ANTIALIAS)
+        img = img.resize((int(scalefactor * img.size[0]), int(scalefactor * img.size[1])))
     return "\n".join("".join(colors[nearestColor(img.getpixel((i, j)))] for i in range(img.size[0])) for j in range(img.size[1]))
 
 blocks = {(True, True, False, True): '▛', (True, False, True, True): '▙', (True, True, True, False): '▜', (False, False, False, False): ' ', (True, False, True, False): '▚', (False, False, False, True): '▖', (False, True, False, True): '▞', (True, False, False, True): '▌', (False, True, False, False): '▝', (True, True, True, True): '█', (False, True, True, False): '▐', (False, False, True, False): '▗', (True, True, False, False): '▀', (True, False, False, False): '▘', (False, False, True, True): '▄', (False, True, True, True): '▟'}
