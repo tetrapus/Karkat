@@ -139,6 +139,8 @@ def asciiart(server, msg, url):
     data = requests.get(url).content
     data = BytesIO(data)
     img = Image.open(data).convert("RGB")
+    if img.size[0] > 4096 or img.size[1] > 4096:
+        return "│ Image too large."
     scalefactor = min(img.size[0]*3/k, img.size[1]/k)
     img = img.resize((int(img.size[0]*3/scalefactor), int(img.size[1]/scalefactor)))
     if img.size[0] > 50:
@@ -174,6 +176,8 @@ def asciiart2(server, msg, url):
     data = requests.get(url).content
     data = BytesIO(data)
     img = Image.open(data)
+    if img.size[0] > 4096 or img.size[1] > 4096:
+        return "│ Image too large."
     scalefactor = min(img.size[0]*3/k, img.size[1]/k)
     img = img.resize((int(img.size[0]*3/scalefactor) * 2, int(img.size[1]/scalefactor)*2))
     if img.size[0] > 110:
@@ -186,6 +190,44 @@ def asciiart2(server, msg, url):
                                     img.getpixel((2*x+1, 2*y+1)) != 255,
                                     img.getpixel((2*x, 2*y+1)) != 255] for x in range(int(img.size[0]/2))) for y in range(int(img.size[1]/2)))
 
+@command("arender", "(.*)")
+@Callback.threadsafe
+def asciiart2(server, msg, url):
+    if not url:
+        url = server.lasturl
+    elif not url.startswith("http"):
+        params = {
+            "safe": "off",
+            "v": "1.0",
+            "rsz": 1,
+            "q": url
+        }
+        url = requests.get(
+          "https://ajax.googleapis.com/ajax/services/search/images",
+          params=params
+        ).json()["responseData"]["results"][0]["url"]
+    server.lasturl = url
+    if msg.prefix == "!": 
+        k = 16
+    else: 
+        k = 6
+
+    data = requests.get(url).content
+    data = BytesIO(data)
+    img = Image.open(data)
+    if img.size[0] > 4096 or img.size[1] > 4096:
+        return "│ Image too large."
+    scalefactor = min(img.size[0]*3/k, img.size[1]/k)
+    img = img.resize((int(img.size[0]*3/scalefactor) * 2, int(img.size[1]/scalefactor)*2), Image.ANTIALIAS)
+    if img.size[0] > 110:
+        scalefactor = 110 / img.size[0]
+        img = img.resize((int(scalefactor * img.size[0]), int(scalefactor * img.size[1])), Image.ANTIALIAS)
+    cmap = img.resize((int(img.size[0]/2), int(img.size[1]/2))).convert("RGB")
+    img = img.convert('1')
+    return "\n".join("".join(defaults[nearestColor(cmap.getpixel((x, y)), defaults)] + blocks[img.getpixel((2*x, 2*y)) != 255,
+                                    img.getpixel((2*x+1, 2*y)) != 255,
+                                    img.getpixel((2*x+1, 2*y+1)) != 255,
+                                    img.getpixel((2*x, 2*y+1)) != 255] for x in range(int(img.size[0]/2))) for y in range(int(img.size[1]/2)))
 
 @msghandler
 def urlcache(server, msg):
