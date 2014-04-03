@@ -33,11 +33,12 @@ class Queue(Callback):
         self.save()
         return "06│ Added item %d: %s" % (len(queue), item)
 
-    @command("pop", r"(\d+)")
+    @command("pop", r"(\d*)")
     def pop(self, server, message, number):
         nick = message.address.nick
         queue = self.queues.setdefault(server.lower(nick), [])
         try:
+            if not number: number = 1
             item = queue.pop(int(number) - 1)
         except IndexError:
             return "06│ No such index."
