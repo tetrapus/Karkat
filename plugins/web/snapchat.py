@@ -45,7 +45,6 @@ def drawtext(img, text, minsize=13, maxsize=133):
             if char == "\x03":
                 color = None
                 if line and line[0] in "0123456789":
-                    print(line[0])
                     color = int(line.pop(0))
                     if line and line[0] in "0123456789":
                         color *= 10
@@ -249,7 +248,7 @@ class Snap(Callback):
         if len(r.content) != 0:
             return "04│👻│ Failed to upload snap."
         acc.send(media_id, user, time=10)
-        return "08│👻│ Sent snap to %s."
+        return "08│👻│ Sent snap to: %s" % (",".join(user.split(",")))
         
 
     @command("snaps", r"^(?:(last|first)\s+(?:(?:(\d+)(?:-|\s+to\s+))?(\d*))\s*)?((?:gifs|videos|snaps|pics|clips)(?:(?:\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*)(?:gifs|videos|snaps|pics|clips))*)?(?:\s*(?:from|by)\s+(\S+(?:(?:\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*)\S+)*))?(?:\s*to\s+(\S+))?$", templates={Callback.USAGE: "08│👻│04 Usage: .snaps [first/last index] [type] [by user] [to channel]"})
