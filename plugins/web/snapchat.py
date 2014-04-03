@@ -239,7 +239,7 @@ class Snap(Callback):
         if bg.size[0] > 4096 or bg.size[1] > 4096:
             return "04│👻│ Image too large."
         if text:
-            text = text.replace(";", "\n")
+            text = text.replace("\\", "\n")
             text += "\n -\x02%s" % message.address.nick
         else:
             text = "via %s" % message.address.nick
