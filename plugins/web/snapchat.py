@@ -146,7 +146,7 @@ class Snap(Callback):
         self.cache = {}
         self.checker = scheduler.schedule_after(60, self.checksnaps, args=(server,), stop_after=None)
         self.server = server
-        server.snap = functools.partial(self.snap.funct, self, server, verified=True)
+        server.snap = functools.partial(self.send.funct, self, server, verified=True)
 
         super().__init__(server)
 
