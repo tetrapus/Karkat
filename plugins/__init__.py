@@ -13,4 +13,5 @@ __modules__ = ["games",
                "bigtext",
                "spellchecker",
                "tell", 
-               "ai"]
+               "ai",
+               "queue"]

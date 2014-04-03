@@ -116,27 +116,27 @@ def nearestColor(c, colors=colors):
 
 @command("view", "(.*)")
 @Callback.threadsafe
-def asciiart(server, msg, url):
-    if not url:
-        url = server.lasturl
-    elif not url.startswith("http"):
+def asciiart(server, msg, pic):
+    if not pic:
+        pic = server.lasturl
+    elif not pic.startswith("http"):
         params = {
             "safe": "off",
             "v": "1.0",
             "rsz": 1,
-            "q": url
+            "q": pic
         }
-        url = requests.get(
+        pic = requests.get(
           "https://ajax.googleapis.com/ajax/services/search/images",
           params=params
         ).json()["responseData"]["results"][0]["url"]
-    server.lasturl = url
+    server.lasturl = pic
     if msg.prefix == "!": 
         k = 16
     else: 
         k = 6
 
-    data = requests.get(url).content
+    data = requests.get(pic).content
     data = BytesIO(data)
     img = Image.open(data).convert("RGB")
     if img.size[0] > 4096 or img.size[1] > 4096:
@@ -154,27 +154,27 @@ defaults = {(128, 38, 127): '\x036', (195, 59, 59): '\x034', (25, 85, 85): '\x03
 
 @command("render", "(.*)")
 @Callback.threadsafe
-def render(server, msg, url):
-    if not url:
-        url = server.lasturl
-    elif not url.startswith("http"):
+def render(server, msg, pic):
+    if not pic:
+        pic = server.lasturl
+    elif not pic.startswith("http"):
         params = {
             "safe": "off",
             "v": "1.0",
             "rsz": 1,
-            "q": url
+            "q": pic
         }
-        url = requests.get(
+        pic = requests.get(
           "https://ajax.googleapis.com/ajax/services/search/images",
           params=params
         ).json()["responseData"]["results"][0]["url"]
-    server.lasturl = url
+    server.lasturl = pic
     if msg.prefix == "!": 
         k = 16
     else: 
         k = 6
 
-    data = requests.get(url).content
+    data = requests.get(pic).content
     data = BytesIO(data)
     img = Image.open(data)
     if img.size[0] > 4096 or img.size[1] > 4096:

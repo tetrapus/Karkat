@@ -6,7 +6,6 @@ import os
 import re
 import hashlib
 import subprocess
-import http.server
 
 import pysnap
 
