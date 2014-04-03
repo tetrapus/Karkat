@@ -61,9 +61,9 @@ def drawtext(img, text, minsize=13, maxsize=133):
                 else:
                     c = colors[color % len(colors)]
                 if bold:
-                    f = font
-                else:
                     f = boldfont
+                else:
+                    f = font
                 draw.text((5 + j * fontsize[0], i*(fontsize[1]+10)), char, c, font=f)
                 j += 1
 
