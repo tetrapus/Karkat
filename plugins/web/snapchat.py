@@ -61,8 +61,8 @@ def drawtext(img, text, minsize=13, maxsize=133):
                         samples = []
                         for ioff in [0.25, 0.5, 0.75]:
                             for joff in [0.25, 0.5, 0.75]:
-                                r, g, b = img.getpixel((int(5 + (j+joff) * fontsize[0]), int((i+ioff)*(fontsize[1]))))
-                                samples.append((r + g + b) / 3)
+                                pixel = img.getpixel((int(5 + (j+joff) * fontsize[0]), int((i+ioff)*(fontsize[1]))))
+                                samples.append(sum(pixel[:3]) / 3)
                         c = {True: (255, 255, 255), False: (15, 15, 15)}[sum(samples)/len(samples) < 127]
                     except:
                         c = (255, 255, 255)
