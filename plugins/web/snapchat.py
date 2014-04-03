@@ -18,7 +18,7 @@ from util.text import pretty_date, ircstrip
 from util import scheduler
 from bot.events import Callback, command
 
-snapfolder = "/var/www/snaps"
+snapfolder = "/var/www"
 public_url = "http://xenon.tetrap.us/"
 
 colors = [(204, 204, 204), (0, 0, 0), (53, 53, 179), (42, 140, 42), (195, 59, 59), (199, 50, 50), (128, 38, 127), (102, 54, 31), (217, 166, 65), (61, 204, 61), (25, 85, 85), (46, 140, 116), (69, 69, 230), (176, 55, 176), (76, 76, 76), (149, 149, 149)]
