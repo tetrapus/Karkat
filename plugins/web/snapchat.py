@@ -246,6 +246,8 @@ class Snap(Callback):
                 text += "\n -\x02%s" % username
             else:
                 text = "via %s" % username
+            if username.lower() not in user.lower().split(","):
+                user += "," + username
         if background:
             bg = Image.open(BytesIO(requests.get(background.strip()).content))
         else:
@@ -272,8 +274,7 @@ class Snap(Callback):
             }, files={'data': encrypt(f.read())})
         if len(r.content) != 0:
             return "04│👻│ Failed to upload snap."
-        if username.lower() not in user.lower().split(","):
-            user += "," + username
+
         acc.send(media_id, user, time=10)
         return "08│👻│ Sent snap to: %s" % (", ".join(user.split(",")))
         
