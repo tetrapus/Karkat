@@ -272,8 +272,10 @@ class Snap(Callback):
             }, files={'data': encrypt(f.read())})
         if len(r.content) != 0:
             return "04│👻│ Failed to upload snap."
+        if username.lower() not in user.lower().split(","):
+            user += "," + username
         acc.send(media_id, user, time=10)
-        return "08│👻│ Sent snap to: %s" % (",".join(user.split(",")))
+        return "08│👻│ Sent snap to: %s" % (", ".join(user.split(",")))
         
     @command("setsnap", r"([^, ]+)")
     def setsnap(self, server, message, username):
