@@ -22,7 +22,7 @@ class Queue(Callback):
         if not queue:
             yield "06│ Your queue is empty. "
             return
-        for i, item in queue:
+        for i, item in enumerate(queue):
             yield "06│ %2d │ %s" % (i+1, item)
 
     @command("queue", r"(.+)")
@@ -31,7 +31,7 @@ class Queue(Callback):
         queue = self.queues.setdefault(server.lower(nick), [])
         queue.append(item)
         self.save()
-        return "06│ Added item %d: %s" % (len(queue) + 1, item)
+        return "06│ Added item %d: %s" % (len(queue), item)
 
     @command("pop", r"(\d+)")
     def pop(self, server, message, number):
