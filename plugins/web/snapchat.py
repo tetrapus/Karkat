@@ -224,6 +224,7 @@ class Snap(Callback):
         img = drawtext(bg, text + "\n -- %s" % message.address.nick)
         f = BytesIO()
         img.save(f, "jpeg")
+        f.seek(0)
         media_id = make_media_id(acc.username)
         r = acc._request('upload', {
             'username': acc.username,
