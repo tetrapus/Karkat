@@ -24,7 +24,7 @@ class Queue(Callback):
             return
         for i, item in enumerate(queue):
             yield "06│ %d │ %s" % (i+1, item)
-            if i > 3 and message.prefix != "!":
+            if i > 2 and message.prefix != "!":
                 yield "06│ %d of %d items displayed." % (i+1, len(queue))
                 return
 
