@@ -7,14 +7,76 @@ import re
 import hashlib
 import subprocess
 
-import pysnap
+from io import BytesIO
 
-from util.text import pretty_date
+import pysnap
+from pysnap.utils import encrypt, make_media_id
+import requests
+from PIL import Image, ImageDraw, ImageFont
+
+from util.text import pretty_date, ircstrip
 from util import scheduler
 from bot.events import Callback, command
 
 snapfolder = "/var/www/snaps"
 public_url = "http://xenon.tetrap.us/"
+
+colors = [(204, 204, 204), (0, 0, 0), (53, 53, 179), (42, 140, 42), (195, 59, 59), (199, 50, 50), (128, 38, 127), (102, 54, 31), (217, 166, 65), (61, 204, 61), (25, 85, 85), (46, 140, 116), (69, 69, 230), (176, 55, 176), (76, 76, 76), (149, 149, 149)]
+
+def drawtext(img, text, minsize=13, maxsize=133):
+    lines = None
+    size = maxsize + 5
+    while size > minsize and not lines:
+        size -= 5
+        font = ImageFont.truetype("/usr/share/fonts/truetype/ttf-dejavu/DejaVuSansMono.ttf", size)
+        fontsize = font.getsize("A")
+        lines = textwrap(img.size, fontsize, text)
+        if lines:
+            break
+    draw = ImageDraw.Draw(img)
+    color = None
+    for i, line in enumerate(lines):
+        line = list(line)
+        j = 0
+        while line:
+            char = line.pop(0)
+            if char == "\x03":
+                color = None
+                if line and line[0] in "0123456789":
+                    print(line[0])
+                    color = int(line.pop(0))
+                    if line and line[0] in "0123456789":
+                        color *= 10
+                        color += int(line.pop(0))
+                continue
+            else:
+                if color == None:
+                    pixel = img.getpixel((int(5 + (j+0.5) * fontsize[0]), int((i+0.5)*(fontsize[1]))))
+                    c = {True: (255, 255, 255), False: (15, 15, 15)}[sum(pixel[:3])/3 < 127]
+                else:
+                    c = colors[color % len(colors)]
+                draw.text((5 + j * fontsize[0], i*(fontsize[1]+10)), char, c, font=font)
+                j += 1
+
+    return img
+
+def textwrap(dim, unit, text):
+    # Calculate max characters
+    width, height = (dim[0] - 10) // unit[0], dim[1] // (unit[1] + 10)
+    text = text.split("\n")
+    alines = []
+    for line in text:
+        line = line.split(" ")
+        lines = [line[0]]
+        for i in line[1:]:
+            if len(ircstrip(lines[-1])) + len(ircstrip(i)) + 1 > width:
+                lines.append(i)
+            else:
+                lines[-1] += " " + i
+        alines.extend(lines)
+    if len(alines) <= height:
+        return alines
+
 
 def save(data, fmt):
     fchars =  "abcdefghijklmnopqrstuvwxyz-_+=~ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -147,6 +209,28 @@ class Snap(Callback):
             return "08│👻│ Blocked %s." % username
         else:
             return "08│👻│04 Could not block %s." % username
+
+    @command("send", r"(?:(\S+)\s+)(http://\S+\s+)?(.+)", admin=True)
+    def send(self, server, message, user, background, text):
+        acc = self.accounts[server.lower(message.context)]
+        if background:
+            bg = Image.open(BytesIO(requests.get(background.strip()).content))
+        else:
+            bg = Image.new("RGBA", (640, 960), (0, 0, 0))
+        img = drawtext(bg, text + "\n -- %s" % message.address.nick)
+        f = BytesIO()
+        img.save(f, "jpg")
+        media_id = make_media_id(acc.username)
+        r = acc._request('upload', {
+            'username': acc.username,
+            'media_id': media_id,
+            'type': 0
+            }, files={'data': encrypt(f.read())})
+        if len(r.content) != 0:
+            return "Failed to upload."
+        acc.send(media_id, user, time=10)
+        return "Sent."
+        
 
     @command("snaps", r"^(?:(last|first)\s+(?:(?:(\d+)(?:-|\s+to\s+))?(\d*))\s*)?((?:gifs|videos|snaps|pics|clips)(?:(?:\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*)(?:gifs|videos|snaps|pics|clips))*)?(?:\s*(?:from|by)\s+(\S+(?:(?:\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*)\S+)*))?(?:\s*to\s+(\S+))?$", templates={Callback.USAGE: "08│👻│04 Usage: .snaps [first/last index] [type] [by user] [to channel]"})
     def search(self, server, message, anchor, frm, to, typefilter, users, context):
