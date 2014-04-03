@@ -254,12 +254,7 @@ class Snap(Callback):
             bg = Image.new("RGBA", (640, 960), (0, 0, 0))
         if bg.size[0] > 4096 or bg.size[1] > 4096:
             return "04│👻│ Image too large."
-        if text:
-            text = text.replace("\\", "\n")
-            if not verified:
-                text += "\n -\x02%s" % username
-        elif not verified:
-            text = "via %s" % username
+
         img = drawtext(bg, text)
         if not img:
             return "04│👻│ Could not fit text on the image."
