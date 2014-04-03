@@ -34,7 +34,9 @@ def drawtext(img, text, minsize=13, maxsize=133):
         if lines:
             break
     draw = ImageDraw.Draw(img)
+    boldfont = ImageFont.truetype("/usr/share/fonts/truetype/ttf-dejavu/DejaVuSansMono-Bold.ttf", size)
     color = None
+    bold = False
     for i, line in enumerate(lines):
         line = list(line)
         j = 0
@@ -48,14 +50,22 @@ def drawtext(img, text, minsize=13, maxsize=133):
                     if line and line[0] in "0123456789":
                         color *= 10
                         color += int(line.pop(0))
-                continue
+            elif char == "\x0f":
+                bold = False
+                color = None
+            elif char == "\x02":
+                bold = not bold
             else:
                 if color == None:
                     pixel = img.getpixel((int(5 + (j+0.5) * fontsize[0]), int((i+0.5)*(fontsize[1]))))
                     c = {True: (255, 255, 255), False: (15, 15, 15)}[sum(pixel[:3])/3 < 127]
                 else:
                     c = colors[color % len(colors)]
-                draw.text((5 + j * fontsize[0], i*(fontsize[1]+10)), char, c, font=font)
+                if bold:
+                    f = font
+                else:
+                    f = boldfont
+                draw.text((5 + j * fontsize[0], i*(fontsize[1]+10)), char, c, font=f)
                 j += 1
 
     return img
@@ -210,18 +220,23 @@ class Snap(Callback):
         else:
             return "08│👻│04 Could not block %s." % username
 
-    @command("snap", r"(\S+)(?:\s+(http://\S+))?(?:\s+(.+))?", admin=True)
+    @command("snap", r"(\S+)(?:\s+(http://\S+))?(?:\s+(.+))?")
     def send(self, server, message, user, background, text):
         acc = self.accounts[server.lower(message.context)]
         if background:
             bg = Image.open(BytesIO(requests.get(background.strip()).content))
         else:
             bg = Image.new("RGBA", (640, 960), (0, 0, 0))
+        if bg.size[0] > 4096 or bg.size[1] > 4096:
+            return "04│👻│ Image too large."
         if text:
-            text += "\n - %s" % message.address.nick
+            text = text.replace(";", "\n")
+            text += "\n -\x02%s" % message.address.nick
         else:
             text = "via %s" % message.address.nick
         img = drawtext(bg, text)
+        if not img:
+            return "04│👻│ Could not fit text on the image."
         f = BytesIO()
         img.save(f, "jpeg")
         f.seek(0)
@@ -232,9 +247,9 @@ class Snap(Callback):
             'type': 0
             }, files={'data': encrypt(f.read())})
         if len(r.content) != 0:
-            return "Failed to upload."
+            return "04│👻│ Failed to upload snap."
         acc.send(media_id, user, time=10)
-        return "Sent."
+        return "08│👻│ Sent snap to %s."
         
 
     @command("snaps", r"^(?:(last|first)\s+(?:(?:(\d+)(?:-|\s+to\s+))?(\d*))\s*)?((?:gifs|videos|snaps|pics|clips)(?:(?:\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*)(?:gifs|videos|snaps|pics|clips))*)?(?:\s*(?:from|by)\s+(\S+(?:(?:\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*)\S+)*))?(?:\s*to\s+(\S+))?$", templates={Callback.USAGE: "08│👻│04 Usage: .snaps [first/last index] [type] [by user] [to channel]"})
