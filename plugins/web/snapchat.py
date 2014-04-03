@@ -33,6 +33,7 @@ def drawtext(img, text, minsize=13, maxsize=133):
         lines = textwrap(img.size, fontsize, text)
         if lines:
             break
+    if not lines: return
     draw = ImageDraw.Draw(img)
     boldfont = ImageFont.truetype("/usr/share/fonts/truetype/ttf-dejavu/DejaVuSansMono-Bold.ttf", size)
     color = None
