@@ -6,6 +6,7 @@ import os
 import re
 import hashlib
 import subprocess
+import functools
 
 from io import BytesIO
 
@@ -145,6 +146,7 @@ class Snap(Callback):
         self.cache = {}
         self.checker = scheduler.schedule_after(60, self.checksnaps, args=(server,), stop_after=None)
         self.server = server
+        server.snap = functools.partial(self.snap.funct, self, server, verified=True)
 
         super().__init__(server)
 
@@ -287,7 +289,7 @@ class Snap(Callback):
         return "08│👻│ A verification code has been sent to your snapchat. Type \x02.verify <code>\x02 to complete username verification."
 
     @command("unverify")
-    def unverify(self, server, message, username):
+    def unverify(self, server, message):
         key = server.lower(message.address.nick)
         del self.users[key]
         return "08│👻│ Unverified."

@@ -20,20 +20,28 @@ datadir = "data/CardsAgainstHumanity"
 # Black: Askreddit, yahoo answers
 # White: Random username, google trends, random player, random song, twitter trending
 
-class QuestionCard(object):
+class Card(object):
+    def __init__(self, text):
+        self.text = text
+
+    def var(self, v, game):
+        if v == "PLAYER":
+            return random.choice(game.players).nick
+        elif v == "CZAR": return game.czar
+
+    def setvars(self, game):
+        self.text = re.sub(r"\$([A-Z]+)", lambda x: self.var(x.group(1)), self.text, game)
+
+class QuestionCard(card):
     @property
     def arity(self):
-        if "_" not in self.question: 
+        if "_" not in self.text: 
             return 1
         else: 
-            return len(re.findall("_+", self.question))
-    
-
-    def __init__(self, question):
-        self.question = question
+            return len(re.findall("_+", self.text))
 
     def __str__(self):
-        return "00,01 %s " % re.sub("[*^]_+", "_______", self.question)
+        return "00,01 %s " % re.sub("[*^]_+", "_______", self.text)
 
     @staticmethod 
     def subs(x, sub):
@@ -56,31 +64,33 @@ class QuestionCard(object):
     def substitute(self, cards):
         assert len(cards) == self.arity
 
-        if "_" not in self.question:
-            return self.question + " " + cards[0].text()
+        if "_" not in self.text:
+            return self.text + " " + cards[0].text()
         else:
-            answer = self.question
+            answer = self.text
             for i in cards:
-                answer = re.sub(r"([^\w,] |^|[*^])?_+(\.)?", lambda x: self.subs(x, i.raw_text()), answer, count=1)
+                answer = re.sub(r"([^\w,] |^|[*^])?_+(\.)?", lambda x: self.subs(x, i.raw_answer()), answer, count=1)
             return answer
 
-class AnswerCard(object):
+
+class AnswerCard(Card):
     def __init__(self, answer):
-        self.answer = answer
+        self.text = answer
         self.owner = None
         self.roundstart = None # TODO
 
     def __str__(self):
-        return "01,00 %s " % self.text()
+        return "01,00 %s " % self.answer()
 
     def set_owner(self, owner):
         self.owner = owner
 
-    def text(self):
-        return self.answer[0].upper() + self.answer[1:] 
+    def answer(self):
+        return self.text[0].upper() + self.text[1:] 
     
-    def raw_text(self):
-        return self.answer
+    def raw_answer(self):
+        return self.text
+
 
 class CAHPlayer(object):
     def __init__(self, nick):
@@ -132,17 +142,9 @@ class CAHPlayer(object):
     def getHand(self):
         lines = []
         for i, card in enumerate(self.hand):
-            lines.append(CAHPREFIX + "%d. %s" % (i+1, card[0].upper() + card[1:]))
+            lines.append(CAHPREFIX + "%d. %s" % (i+1, card.answer()))
         lines.append(CAHPREFIX + "You have %d point%s." % (self.points, "" if self.points == 1 else "s"))
         return lines
-
-class CAH(object):
-
-    def __init__(self, questions=[], answers=[]):
-        self.players = []
-        self.questions = [QuestionCard(i) for i in questions]
-        self.answers = [AnswerCard(i) for i in answers]
-        self.round = 0
 
 class CardsAgainstHumanity(object):
     black = [i.strip() for i in open(datadir + "/black.txt").read().split("\n")]
@@ -263,7 +265,7 @@ class CardsAgainstHumanity(object):
         self.players.append(self.rando)
         self.repopulate(self.rando)
         if not self.rando.responses and self.state == "collect":
-            self.rando.setResponses(random.sample(list(range(1, len(self.rando.hand)+1)), self.numcards()))
+            self.rando.setResponses(random.sample(list(range(1, len(self.rando.hand)+1)), self.question.arity))
         self.repopulate(self.rando)
             
     def removeRando(self):
@@ -281,7 +283,7 @@ class CardsAgainstHumanity(object):
         while len(player.hand) < self.maxcards:
             try:
                 card = self.answers.pop()
-                card = re.sub(r"\$([A-Z]+)", lambda x: self.var(x.group(1)), card)
+                card.setvars(self)
             except IndexError:
                 self.printer.message(CAHPREFIX + "Reshuffling deck...", self.channel)
                 self.answers = self.usedanswers[:]
@@ -307,19 +309,6 @@ class CardsAgainstHumanity(object):
             return "" + (" ".join(i[0].upper() + i[1:] for i in sub[1:].split(" ")))
         else:
             return x.group(1) + sub[:2].upper() + sub[2:]
-           
-    def substitute(self, cards):
-        if "_" not in self.question:
-            return self.question + " " + cards[0][0].upper() + cards[0][1:]
-        else:
-            answer = self.question
-            for i in cards:
-                answer = re.sub(r"([^\w,] |^|[*^])?_+(\.)?", lambda x: self.subs(x, i), answer, count=1)
-            return answer
-
-    def numcards(self):
-        if "_" not in self.question: return 1
-        else: return len(re.findall("_+", self.question))
             
     def printplayers(self):
         self.printer.message(CAHPREFIX + "Scores 15│ " + (" · ".join("%s (%s)"%(i.nick if i != self.czar else "%s"%i.nick, i.score()) for i in sorted(self.players, key=CAHPlayer.score)[::-1])), self.channel)
@@ -374,17 +363,17 @@ class CardsAgainstHumanity(object):
         time.sleep(0.5)
         self.printer.message(CAHPREFIX + "%s will be the Card Czar for Round %d%s." % (self.czar.nick, self.round, "of %d" % self.rounds if self.rounds else ""), self.channel)
         self.question = self.questions.pop()
-        self.question = re.sub(r"\$([A-Z]+)", lambda x: self.var(x.group(1)), self.question)
+        self.question.setvars(self)
 
         time.sleep(2)
-        self.printer.message("01│00,01 %s " % re.sub("[*^]_+", "_______", self.question), self.channel)
-        numanswers = self.numcards()
+        self.printer.message("01│%s" % self.question, self.channel)
+        numanswers = self.question.arity
         numanswers = "a card" if numanswers == 1 else ("%d cards" % numanswers)
 
         for player in self.players:
             self.repopulate(player)
             if player == self.rando:
-                player.setResponses(random.sample(list(range(1, len(player.hand)+1)), self.numcards()))
+                player.setResponses(random.sample(list(range(1, len(player.hand)+1)), self.question.arity))
             elif player != self.czar:
                 self.printer.message(CAHPREFIX + "Please !pick %s." % numanswers, player.nick, "NOTICE")
                 player.printHand(self.printer)
@@ -403,7 +392,7 @@ class CardsAgainstHumanity(object):
                 for i, player in enumerate(self.order):
                     response = player.responses if self.order.index(player) == i else player.bets
                     self.usedanswers.append(response)
-                    buffer += CAHPREFIX + "%d. %s" % (i+1, self.substitute(response))
+                    buffer += CAHPREFIX + "%d. %s" % (i+1, self.question.substitute(response))
             self.state = "judge"
             # TODO: Add judgement timer
 
@@ -422,13 +411,13 @@ class CardsAgainstHumanity(object):
                     if betrank in wins:
                         betrank = wins.index(betrank) + 1
                     else: betrank = 0
-                    logdata.execute("INSERT INTO white VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", (timestamp, player.nick, self.channel, self.round, self.czar.nick, self.question, ", ".join(player.responses), 1, origrank))
-                    logdata.execute("INSERT INTO white VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", (timestamp, player.nick, self.channel, self.round, self.czar.nick, self.question, ", ".join(player.bets), 1, betrank))
+                    logdata.execute("INSERT INTO white VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", (timestamp, player.nick, self.channel, self.round, self.czar.nick, self.question.text, ", ".join(player.responses), 1, origrank))
+                    logdata.execute("INSERT INTO white VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", (timestamp, player.nick, self.channel, self.round, self.czar.nick, self.question.text, ", ".join(player.bets), 1, betrank))
                 else:
                     if origrank in wins:
                         origrank = wins.index(origrank) + 1
                     else: origrank = 0
-                    logdata.execute("INSERT INTO white VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", (timestamp, player.nick, self.channel, self.round, self.czar.nick, self.question, ", ".join(player.responses), 0, origrank))
+                    logdata.execute("INSERT INTO white VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", (timestamp, player.nick, self.channel, self.round, self.czar.nick, self.question.text, ", ".join(player.responses), 0, origrank))
                 visited.add(player)
 
     def pick(self, number):
@@ -439,7 +428,7 @@ class CardsAgainstHumanity(object):
                 for i, choice in enumerate(number):
                     player = self.order[choice - 1]
                     response = player.popResponses() if self.order.index(player) == choice - 1 else player.popBets()
-                    buff += CAHPREFIX + "%s. %s: 00,01 %s " % (ordinal(i+1), player.nick, self.substitute(response))
+                    buff += CAHPREFIX + "%s. %s: 00,01 %s " % (ordinal(i+1), player.nick, self.question.substitute(response))
                     player.addPoints(points)
                     points -= 1
             else:
@@ -450,12 +439,12 @@ class CardsAgainstHumanity(object):
                 winner = self.order[number - 1]
                 winning = winner.popResponses() if self.order.index(winner) == number - 1 else winner.popBets()
                 winner.addPoints(points)
-                buff += CAHPREFIX + "%s picked %s's response: 00,01 %s " % (self.czar.nick, winner.nick, self.substitute(winning))
+                buff += CAHPREFIX + "%s picked %s's response: 00,01 %s " % (self.czar.nick, winner.nick, self.question.substitute(winning))
             reveal = []
             for i in self.order:
                 response = i.popResponses() or i.popBets()
                 if response:
-                    reveal.append("%s %s" % (i.nick, " ".join("01,00 %s " % ((i[0].upper() + i[1:]).rstrip(".")) for i in response)))
+                    reveal.append("%s %s" % (i.nick, " ".join(str(i) for i in response)))
             output = [[]]
             for i in reveal:
                 if sum(len(i) + 2 for i in output) + len(i) < 375:
@@ -569,7 +558,7 @@ class CAHBot(object):
                     if game.addPlayer(nick):
                         printer.message(CAHPREFIX + "%s is our %s player." % (nick, ordinal(len(game.players) - bool(game.rando))), channel)
                         if game.state == "collect":
-                            printer.message("01│00,01 %s " % re.sub("[*^]_+", "_______", game.question), nick, "NOTICE")
+                            printer.message("01│%s" % game.question, nick, "NOTICE")
                             player = game.getPlayer(nick)
                             game.repopulate(player)
                             player.printHand(printer)
@@ -621,12 +610,12 @@ class CAHBot(object):
                             else:
                                 bet = []
                             args = [int(i) for i in args.split()]
-                            if all((bet + args).count(i) == 1 and 1 <= i <= len(player.hand) for i in bet + args) and (len(args) == game.numcards() and len(bet) in [game.numcards(), 0]):
+                            if all((bet + args).count(i) == 1 and 1 <= i <= len(player.hand) for i in bet + args) and (len(args) == game.question.arity and len(bet) in [game.question.arity, 0]):
                                 player.setResponses(args)
                                 player.setBet(bet)
-                                printer.message(CAHPREFIX + "Response 15│00,01 %s " % game.substitute(player.responses), nick, "NOTICE")
+                                printer.message(CAHPREFIX + "Response 15│00,01 %s " % game.question.substitute(player.responses), nick, "NOTICE")
                                 if bet:
-                                    printer.message(CAHPREFIX + "Backup   15│00,01 %s " % game.substitute(player.bets), nick, "NOTICE")
+                                    printer.message(CAHPREFIX + "Backup   15│00,01 %s " % game.question.substitute(player.bets), nick, "NOTICE")
                             else:
                                 printer.message(CAHPREFIX + "Invalid arguments.", nick, "NOTICE")
                             if not [i for i in game.players if i.responses is None and i != game.czar]:
