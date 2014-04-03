@@ -56,8 +56,11 @@ def drawtext(img, text, minsize=13, maxsize=133):
                 bold = not bold
             else:
                 if color == None:
-                    pixel = img.getpixel((int(5 + (j+0.5) * fontsize[0]), int((i+0.5)*(fontsize[1]))))
-                    c = {True: (255, 255, 255), False: (15, 15, 15)}[sum(pixel[:3])/3 < 127]
+                    try:
+                        pixel = img.getpixel((int(5 + (j+0.5) * fontsize[0]), int((i+0.5)*(fontsize[1]))))
+                        c = {True: (255, 255, 255), False: (15, 15, 15)}[sum(pixel[:3])/3 < 127]
+                    except:
+                        c = (255, 255, 255)
                 else:
                     c = colors[color % len(colors)]
                 if bold:
