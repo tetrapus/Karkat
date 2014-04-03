@@ -79,7 +79,7 @@ def textwrap(dim, unit, text):
     alines = []
     for line in text:
         line = line.split(" ")
-        if any(i > width for i in line):
+        if any(len(ircstrip(i)) > width for i in line):
             return
         lines = [line[0]]
         for i in line[1:]:
