@@ -124,6 +124,7 @@ class Snap(Callback):
 
     SETTINGS_FILE = "snapchat.json"
     DELETION_FILE = "snapchat-deletion.json"
+    USERS_FILE = "snapchat-users.json"
 
     def __init__(self, server):
         self.settingsf = server.get_config_dir(self.SETTINGS_FILE)
@@ -137,6 +138,15 @@ class Snap(Callback):
             self.deletion = json.load(open(self.deletionf))
         except FileNotFoundError:
             self.deletion = {}
+
+        self.usersf = server.get_config_dir(self.USERS_FILE)
+        try:
+            self.users = json.load(open(self.usersf))
+        except FileNotFoundError:
+            self.users = {}
+
+        self.unverified = {}
+
         self.accounts = {i: pysnap.Snapchat() for i in self.settings}
         for i in self.settings:
             self.accounts[i].login(self.settings[i]["username"], self.settings[i]["password"])
@@ -193,6 +203,7 @@ class Snap(Callback):
                 if not blob:
                     self.settings[channel]["snaps"][snap["id"]] = None
                     continue
+                self.unverified = {k:v for k, v in self.unverified.items() if v[0].lower() != snap["sender"].lower()}
                 print(snap)
                 print("*** Saving", snap["id"])
                 url = self.snapsave(blob, snap["media_type"])
@@ -201,7 +212,8 @@ class Snap(Callback):
                 self.settings[channel].setdefault("history", []).append(snap)
                 account.mark_viewed(snap["id"])
                 self.server.lasturl = url
-                yield "08│👻│ 12%s · from %s · ⌚ %s" % (url, snap["sender"], pretty_date(time.time() - snap["sent"]/1000) if snap["sent"] else "Unknown")
+                username = [k for k, v in self.users.items() if v.lower() == snap["sender"].lower()]
+                yield "08│👻│ 12%s · from %s · ⌚ %s" % (url, snap["sender"] + (" (%s)" % username[0] if username else ""), pretty_date(time.time() - snap["sent"]/1000) if snap["sent"] else "Unknown")
             except:
                 traceback.print_exc()
         json.dump(self.settings, open(self.settingsf, "w"))
@@ -230,8 +242,12 @@ class Snap(Callback):
             return "08│👻│04 Could not block %s." % username
 
     @command("snap", r"(\S+)(?:\s+(http://\S+))?(?:\s+(.+))?")
-    def send(self, server, message, user, background, text):
+    def send(self, server, message, user, background, text, verified=False):
         acc = self.accounts[server.lower(message.context)]
+        if server.lower(message.address.nick) not in self.users:
+            return "04│👻│ You must verify your snapchat username to use this command."
+        else:
+            username = self.users[server.lower(message.address.nick)]
         if background:
             bg = Image.open(BytesIO(requests.get(background.strip()).content))
         else:
@@ -240,9 +256,10 @@ class Snap(Callback):
             return "04│👻│ Image too large."
         if text:
             text = text.replace("\\", "\n")
-            text += "\n -\x02%s" % message.address.nick
-        else:
-            text = "via %s" % message.address.nick
+            if not verified:
+                text += "\n -\x02%s" % username
+        elif not verified:
+            text = "via %s" % username
         img = drawtext(bg, text)
         if not img:
             return "04│👻│ Could not fit text on the image."
@@ -260,6 +277,27 @@ class Snap(Callback):
         acc.send(media_id, user, time=10)
         return "08│👻│ Sent snap to: %s" % (",".join(user.split(",")))
         
+    @command("setsnap", r"([^, ]+)")
+    def setsnap(self, server, message, username):
+        snapuser = self.settings[server.lower(message.context)]["username"]
+        key = server.lower(message.address.nick)
+        if key in self.unverified:
+            return "08│👻│ This username is already being verified. Please send a snapchat to %s to reset." % snapuser
+        password = random.choice(open("/usr/share/dict/words").read().split()).lower()
+        self.unverified[key] = [username, password]
+        self.send.funct(server, message, username, None, "Type \x02.verify %s\x02 to complete username verification." % password, True)
+        return "08│👻│ A verification code has been sent to your snapchat. Type \x02.verify <code>\x02 to complete username verification."
+
+    @command("verify", "(.+)")
+    def verify(self, server, message, code):
+        key = server.lower(message.address.nick)
+        if code.lower() == self.unverified[key][1].lower():
+            self.users[key] = self.unverified[key][0]
+            del self.unverified[key]
+            json.dump(self.users, open(self.usersf, "w"))
+            return "08│👻│ Verification successful."
+        else:
+            return "08│👻│04 Wrong verification code."
 
     @command("snaps", r"^(?:(last|first)\s+(?:(?:(\d+)(?:-|\s+to\s+))?(\d*))\s*)?((?:gifs|videos|snaps|pics|clips)(?:(?:\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*)(?:gifs|videos|snaps|pics|clips))*)?(?:\s*(?:from|by)\s+(\S+(?:(?:\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*)\S+)*))?(?:\s*to\s+(\S+))?$", templates={Callback.USAGE: "08│👻│04 Usage: .snaps [first/last index] [type] [by user] [to channel]"})
     def search(self, server, message, anchor, frm, to, typefilter, users, context):
