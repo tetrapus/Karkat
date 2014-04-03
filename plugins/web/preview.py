@@ -25,6 +25,6 @@ class Summary(Callback):
         
 try:
     apikeys = yaml.safe_load(open("config/apikeys.conf"))["smmry"]
-    __initialise__ = functools.partial(Summary, keywords={"key": apikeys["key"]})
+    __initialise__ = functools.partial(Summary, key=apikeys["key"])
 except:
     print("Preview requires a smmry API key. Skipping module.", sys.stderr)
