@@ -58,8 +58,12 @@ def drawtext(img, text, minsize=13, maxsize=133):
             else:
                 if color == None:
                     try:
-                        pixel = img.getpixel((int(5 + (j+0.5) * fontsize[0]), int((i+0.5)*(fontsize[1]))))
-                        c = {True: (255, 255, 255), False: (15, 15, 15)}[sum(pixel[:3])/3 < 127]
+                        samples = []
+                        for ioff in [0.25, 0.5, 0.75]:
+                            for joff in [0.25, 0.5, 0.75]:
+                                r, g, b = img.getpixel((int(5 + (j+joff) * fontsize[0]), int((i+ioff)*(fontsize[1]))))
+                                samples.append((r + g + b) / 3)
+                        c = {True: (255, 255, 255), False: (15, 15, 15)}[sum(samples)/len(samples) < 127]
                     except:
                         c = (255, 255, 255)
                 else:
