@@ -30,9 +30,9 @@ class Card(object):
         elif v == "CZAR": return game.czar
 
     def setvars(self, game):
-        self.text = re.sub(r"\$([A-Z]+)", lambda x: self.var(x.group(1)), self.text, game)
+        self.text = re.sub(r"\$([A-Z]+)", lambda x: self.var(x.group(1), game), self.text)
 
-class QuestionCard(card):
+class QuestionCard(Card):
     @property
     def arity(self):
         if "_" not in self.text: 
