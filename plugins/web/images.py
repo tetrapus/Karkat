@@ -142,57 +142,19 @@ def asciiart(server, msg, url):
     if img.size[0] > 4096 or img.size[1] > 4096:
         return "│ Image too large."
     scalefactor = min(img.size[0]*3/k, img.size[1]/k)
-    img = img.resize((int(img.size[0]*3/scalefactor), int(img.size[1]/scalefactor)))
+    img = img.resize((int(img.size[0]*3/scalefactor), int(img.size[1]/scalefactor)), Image.ANTIALIAS)
     if img.size[0] > 50:
         scalefactor = 50 / img.size[0]
-        img = img.resize((int(scalefactor * img.size[0]), int(scalefactor * img.size[1])))
+        img = img.resize((int(scalefactor * img.size[0]), int(scalefactor * img.size[1])), Image.ANTIALIAS)
     return "\n".join("".join(colors[nearestColor(img.getpixel((i, j)))] for i in range(img.size[0])) for j in range(img.size[1]))
 
 blocks = {(True, True, False, True): '▛', (True, False, True, True): '▙', (True, True, True, False): '▜', (False, False, False, False): ' ', (True, False, True, False): '▚', (False, False, False, True): '▖', (False, True, False, True): '▞', (True, False, False, True): '▌', (False, True, False, False): '▝', (True, True, True, True): '█', (False, True, True, False): '▐', (False, False, True, False): '▗', (True, True, False, False): '▀', (True, False, False, False): '▘', (False, False, True, True): '▄', (False, True, True, True): '▟'}
 defaults = {(128, 38, 127): '\x036', (195, 59, 59): '\x034', (25, 85, 85): '\x0310', (69, 69, 230): '\x0312', (217, 166, 65): '\x038', (199, 50, 50): '\x035', (42, 140, 42): '\x033', (76, 76, 76): '\x0314', (102, 54, 31): '\x037', (53, 53, 179): '\x032', (46, 140, 116): '\x0311', (0, 0, 0): '\x031', (176, 55, 176): '\x0313', (204, 204, 204): '\x030', (61, 204, 61): '\x039', (149, 149, 149): '\x0315'}
 
+
 @command("render", "(.*)")
 @Callback.threadsafe
-def asciiart2(server, msg, url):
-    if not url:
-        url = server.lasturl
-    elif not url.startswith("http"):
-        params = {
-            "safe": "off",
-            "v": "1.0",
-            "rsz": 1,
-            "q": url
-        }
-        url = requests.get(
-          "https://ajax.googleapis.com/ajax/services/search/images",
-          params=params
-        ).json()["responseData"]["results"][0]["url"]
-    server.lasturl = url
-    if msg.prefix == "!": 
-        k = 16
-    else: 
-        k = 6
-
-    data = requests.get(url).content
-    data = BytesIO(data)
-    img = Image.open(data)
-    if img.size[0] > 4096 or img.size[1] > 4096:
-        return "│ Image too large."
-    scalefactor = min(img.size[0]*3/k, img.size[1]/k)
-    img = img.resize((int(img.size[0]*3/scalefactor) * 2, int(img.size[1]/scalefactor)*2))
-    if img.size[0] > 110:
-        scalefactor = 110 / img.size[0]
-        img = img.resize((int(scalefactor * img.size[0]), int(scalefactor * img.size[1])))
-    cmap = img.resize((int(img.size[0]/2), int(img.size[1]/2))).convert("RGB")
-    img = img.convert('1')
-    return "\n".join("".join(defaults[nearestColor(cmap.getpixel((x, y)), defaults)] + blocks[img.getpixel((2*x, 2*y)) != 255,
-                                    img.getpixel((2*x+1, 2*y)) != 255,
-                                    img.getpixel((2*x+1, 2*y+1)) != 255,
-                                    img.getpixel((2*x, 2*y+1)) != 255] for x in range(int(img.size[0]/2))) for y in range(int(img.size[1]/2)))
-
-@command("arender", "(.*)")
-@Callback.threadsafe
-def asciiart3(server, msg, url):
+def render(server, msg, url):
     if not url:
         url = server.lasturl
     elif not url.startswith("http"):
@@ -235,4 +197,4 @@ def urlcache(server, msg):
     if urls:
         server.lasturl = urls[-1]
 
-__callbacks__ = {"privmsg": [image, gif, face, photo, clipart, lineart, asciiart, urlcache, asciiart2, asciiart3]}
+__callbacks__ = {"privmsg": [image, gif, face, photo, clipart, lineart, asciiart, urlcache, render]}
