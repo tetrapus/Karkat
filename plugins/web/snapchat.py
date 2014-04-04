@@ -85,7 +85,7 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True, outline=True):
                     c = colors[color % len(colors)]
 
                 if underline:
-                    draw.line([(j,i+size[1]), (j+cwidth, i+size[1])], fill=c)
+                    draw.line([(j,i+size[1]), (j+cwidth, i+size[1])], fill=c, width=3)
 
                 if outline:
                     # draw outline
