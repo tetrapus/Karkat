@@ -331,7 +331,7 @@ class Snap(Callback):
         else:
             username = self.users[server.lower(message.address.nick)]
 
-        font = fonts["dejavu sans"]
+        font = fonts["arial"]
         wrap = True
         outline = True
         bg = None
@@ -344,7 +344,7 @@ class Snap(Callback):
                 if i in "123456789":
                     time = int(i)
                 elif i in "maciu":
-                    font = fonts[{"m": "dejavu sans mono", "a": "arial", "c": "comic sans", "i": "impact", "u": "ubuntu"}[i]]
+                    font = fonts[{"m": "dejavu sans mono", "a": "dejavu sans", "c": "comic sans", "i": "impact", "u": "ubuntu"}[i]]
                 elif i == "l":
                     background = server.lasturl
                 elif i == "r":
