@@ -375,10 +375,15 @@ class Snap(Callback):
         if doge:
             if not text: text = "wow, such snapchat"
             dogified = ""
-            for i in text.split(",") + [random.choice("wow such very many so".split()) + " " + username]:
-                if random.random() < 0.3:
+            for i in text.split(",") + [random.choice("wow, such very many so".split()) + " " + username]:
+                if random.random() < 0.75:
                     dogified += " \n"
-                dogified += random.choice(">|<") + ("\x03%.2d" % random.randrange(2, 14)) + (random.randrange(len(i)) * " ") + i + (random.randrange(len(i)) * " ")
+                if random.random() < 0.4:
+                    dogified += (">\x03%.2d" % random.randrange(2, 14)) + i + (random.randrange(len(i)//2) * " ")
+                elif random.random() < 0.8:
+                    dogified += ("<\x03%.2d" % random.randrange(2, 14)) + (random.randrange(len(i)//2) * " ") + i
+                else:
+                    dogified += random.choice(">|<") + ("\x03%.2d" % random.randrange(2, 14)) + (random.randrange(len(i)) * " ") + i + (random.randrange(len(i)) * " ")
                 dogified += "\n"
             text = dogified[:-1]
         elif text:
