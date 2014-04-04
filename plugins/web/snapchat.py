@@ -391,9 +391,9 @@ class Snap(Callback):
             text = dogified[:-1]
         elif text:
             text = text.replace("\\", "\n")
-            text += "\n\n>\x0f -\x02%s" % username
+            text += "\n\n>\x0f -%s" % username
         else:
-            text = "\nvia %s" % username
+            text = "\n>via %s" % username
 
         users = [self.users[server.lower(i)] if server.lower(i) in self.users else i for i in user.split(",")]
 
