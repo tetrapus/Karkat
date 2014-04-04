@@ -392,7 +392,7 @@ class Snap(Callback):
         else:
             i = "snap"
         if "," in user:
-            user = "%s and %s" % (", ".join(user.split(",")[:-1]), user.split[-1])
+            user = "%s and %s" % (", ".join(user.split(",")[:-1]), user.split(",")[-1])
 
         return "08│👻│ Sent %s to %s" % (i, user)
         
