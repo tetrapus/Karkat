@@ -74,7 +74,7 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True, outline=True):
                 if len(line) > 1 and line[0] == "," and line[1] in "0123456789":
                     reset = False
                     line.pop(0)
-                    background = line.pop(0)
+                    background = int(line.pop(0))
                     if line and line[0] in "0123456789":
                         background *= 10
                         background += int(line.pop(0))
