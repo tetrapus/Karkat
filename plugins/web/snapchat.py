@@ -110,7 +110,7 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True, outline=True, fonts=
                 cwidth = f.getsize(char)[0]
 
                 if background is not None:
-                    bg = colors[color % len(colors)]
+                    bg = colors[background % len(colors)]
                     draw.rectangle([(j, i+10), (j+cwidth, i+size[1]+20)], fill=bg)
 
                 if color == None:
