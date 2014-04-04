@@ -309,7 +309,7 @@ class Snap(Callback):
                 username = self.users[server.lower(message.address.nick)]
             if text:
                 text = text.replace("\\", "\n")
-                text += "\n\n|>\x0f - \x02%s" % username
+                text += "\n\n|>\x0f -\x02%s" % username
             else:
                 text = "\nvia %s" % username
             users = [self.users[server.lower(i)] if server.lower(i) in self.users else i for i in user.split(",")]
