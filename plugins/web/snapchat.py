@@ -58,7 +58,7 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True, outline=True, fonts=
     bold = False
     underline = False
     background = None
-    i = 10
+    i = -10
     while lines:
         size, line = lines.pop(0)
         align = line[0]
