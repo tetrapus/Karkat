@@ -351,6 +351,7 @@ class Snap(Callback):
                     font = fonts["comic sans"]
                     outline = False
                     bg = Image.open("data/images/doge.jpg")
+                    wrap = False
                     doge = True
                 elif i == "s":
                     copy = True
