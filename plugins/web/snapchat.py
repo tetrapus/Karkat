@@ -99,7 +99,7 @@ def textwrap(dim, font, text):
                 lines[-1] += " " + i
         alines.extend(lines)
     alines = [[font.getsize(ircstrip(i)), i] for i in alines]
-    if sum(i[1] + 10 for i in alines) <= height:
+    if sum(i[0][1] + 10 for i in alines) <= height:
         return alines
 
 
