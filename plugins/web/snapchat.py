@@ -449,7 +449,7 @@ class Snap(Callback):
         password = random.choice(open("/usr/share/dict/words").read().split()).lower()
         self.unverified[key] = [username, password]
         img = drawtext(Image.new("RGBA", (720, 1184), (0, 0, 0)),
-                       "Type\n|\x02\x0313.verify %s\x0f\n to complete username verification." % password)
+                       "Type\n \n|\x02\x0313.verify %s\x0f\n \nto complete username verification." % password)
         f = BytesIO()
         img.save(f, "jpeg")
         f.seek(0)
