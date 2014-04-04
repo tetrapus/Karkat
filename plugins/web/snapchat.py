@@ -363,7 +363,7 @@ class Snap(Callback):
 
         if text:
             text = text.replace("\\", "\n")
-            text += "\n\n|>\x0f -\x02%s" % username
+            text += "\n\n>\x0f -\x02%s" % username
         else:
             text = "\nvia %s" % username
 
@@ -408,7 +408,7 @@ class Snap(Callback):
         password = random.choice(open("/usr/share/dict/words").read().split()).lower()
         self.unverified[key] = [username, password]
         img = drawtext(Image.new("RGBA", (720, 1184), (0, 0, 0)),
-                       "Type\n||\x02\x0313.verify %s\x02\n to complete username verification." % password)
+                       "Type\n|\x02\x0313.verify %s\x02\n to complete username verification." % password)
         f = BytesIO()
         img.save(f, "jpeg")
         f.seek(0)
