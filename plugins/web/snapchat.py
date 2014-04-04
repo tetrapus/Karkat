@@ -109,7 +109,7 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True, outline=True, fonts=
 
                 cwidth = f.getsize(char)[0]
 
-                if background:
+                if background is not None:
                     bg = colors[color % len(colors)]
                     draw.rectangle([(j, i+10), (j+cwidth, i+size[1]+20)], fill=bg)
 
@@ -320,11 +320,12 @@ class Snap(Callback):
         acc.send(media_id, user, time=time)
         
 
-    @command("snap", r"(?:(-[maciulrdsb1-9]+)\s+)?(\S+)(?:\s+(http://\S+))?(?:\s+(.+))?")
+    @command("snap", r"(?:(-[maciulrdsbf1-9]+)\s+)?(\S+)(?:\s+(http://\S+))?(?:\s+(.+))?")
     def snap(self, server, message, flags, user, background, text):
         acc = self.accounts[server.lower(message.context)]
         if server.lower(message.address.nick) not in self.users:
-            return "04│👻│ You must verify your snapchat username to use this command."
+            yield "04│👻│ You must verify your snapchat username to use this command."
+            return
         else:
             username = self.users[server.lower(message.address.nick)]
 
@@ -334,6 +335,7 @@ class Snap(Callback):
         bg = None
         copy = False
         time = 10
+        force = False
         if flags:
             for i in flags[1:]:
                 if i in "123456789":
@@ -352,6 +354,8 @@ class Snap(Callback):
                     copy = True
                 elif i == "b":
                     outline = False     
+                elif i == "f":
+                    force = True
 
         if not bg:
             if not text and not background:
@@ -362,7 +366,8 @@ class Snap(Callback):
             else:
                 bg = Image.new("RGBA", (720, 1184), (0, 0, 0))
         if bg.size[0] > 4096 or bg.size[1] > 4096:
-            return "04│👻│ Image too large."
+            yield "04│👻│ Image too large."
+            return
 
         if text:
             text = text.replace("\\", "\n")
@@ -371,6 +376,17 @@ class Snap(Callback):
             text = "\nvia %s" % username
 
         users = [self.users[server.lower(i)] if server.lower(i) in self.users else i for i in user.split(",")]
+
+        omitted = ""
+
+        if not force:
+            allusers = len(users)
+            history = self.settings[server.lower(message.context)]["history"]
+            history = {i["sender"].lower() for i in history}
+            users = [i for i in users if i.lower() in history]
+            if len(users) != allusers:
+                omitted = "Omitted %d unknown users. Use -f to force, or check your syntax is correct." % allusers
+
         if username.lower() not in [i.lower() for i in users]:
             users += [username]
         user = ",".join(users)
@@ -378,7 +394,8 @@ class Snap(Callback):
 
         img = drawtext(bg, text, fonts=font, wrap=wrap, outline=outline)
         if not img:
-            return "04│👻│ Could not fit text on the image."
+            yield "04│👻│ Could not fit text on the image."
+            return
 
         f = BytesIO()
         img.save(f, "jpeg")
@@ -387,7 +404,8 @@ class Snap(Callback):
         try:
             self.send(acc, f, user, time=time)
         except:
-            return "04│👻│ Failed to upload snap."
+            yield "04│👻│ Failed to upload snap."
+            return
 
         if copy:
             f.seek(0)
@@ -397,7 +415,7 @@ class Snap(Callback):
         if "," in user:
             user = "%s and %s" % (", ".join(user.split(",")[:-1]), user.split(",")[-1])
 
-        return "08│👻│ Sent %s to %s" % (i, user)
+        yield "08│👻│ Sent %s to %s. %s" % (i, user, omitted)
         
     @command("setsnap", r"([^, ]+)")
     def setsnap(self, server, message, username):
