@@ -320,7 +320,7 @@ class Snap(Callback):
         acc.send(media_id, user, time=time)
         
 
-    @command("snap", r"(?:(-[maciulrdsb]+)\s+)?(\S+)(?:\s+(http://\S+))?(?:\s+(.+))?")
+    @command("snap", r"(?:(-[maciulrdsb1-9]+)\s+)?(\S+)(?:\s+(http://\S+))?(?:\s+(.+))?")
     def snap(self, server, message, flags, user, background, text):
         acc = self.accounts[server.lower(message.context)]
         if server.lower(message.address.nick) not in self.users:
@@ -333,9 +333,12 @@ class Snap(Callback):
         outline = True
         bg = None
         copy = False
+        time = 10
         if flags:
             for i in flags[1:]:
-                if i in "maciu":
+                if i in "123456789":
+                    time = int(i)
+                elif i in "maciu":
                     font = fonts[{"m": "dejavu sans mono", "a": "arial", "c": "comic sans", "i": "impact", "u": "ubuntu"}[i]]
                 elif i == "l":
                     background = server.lasturl
@@ -348,7 +351,7 @@ class Snap(Callback):
                 elif i == "s":
                     copy = True
                 elif i == "b":
-                    outline = False            
+                    outline = False     
 
         if not bg:
             if not text and not background:
@@ -382,7 +385,7 @@ class Snap(Callback):
         f.seek(0)
 
         try:
-            self.send(acc, f, user)
+            self.send(acc, f, user, time=time)
         except:
             return "04│👻│ Failed to upload snap."
 
