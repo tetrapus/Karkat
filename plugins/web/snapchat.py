@@ -378,6 +378,7 @@ class Snap(Callback):
             if not text: text = "wow, such snapchat"
             dogified = ""
             for i in text.split(",") + [random.choice("wow, such very many so".split()) + " " + username]:
+                i = i.strip()
                 if random.random() < 0.75:
                     dogified += " \n"
                 if random.random() < 0.4:
