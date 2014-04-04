@@ -52,6 +52,7 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True, outline=True):
         if not line:
             i = img.size[1] - sum(i[0][1] for i in lines) - 10
             continue
+        align = "<"
         if re.match(r"^[|][>|<]", line):
             align = line[1]
             line = line[2:]
