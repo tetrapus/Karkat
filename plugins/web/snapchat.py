@@ -24,7 +24,7 @@ public_url = "http://xenon.tetrap.us/"
 
 colors = [(204, 204, 204), (0, 0, 0), (53, 53, 179), (42, 140, 42), (195, 59, 59), (199, 50, 50), (128, 38, 127), (102, 54, 31), (217, 166, 65), (61, 204, 61), (25, 85, 85), (46, 140, 116), (69, 69, 230), (176, 55, 176), (76, 76, 76), (149, 149, 149)]
 
-def drawtext(img, text, minsize=13, maxsize=133, wrap=True):
+def drawtext(img, text, minsize=13, maxsize=133, wrap=True, outline=True):
     lines = None
     size = maxsize + 5
     while size > minsize and not lines:
@@ -45,9 +45,13 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True):
     boldfont = ImageFont.truetype("/usr/share/fonts/truetype/ttf-dejavu/DejaVuSansMono-Bold.ttf", size)
     color = None
     bold = False
+    underline = False
     i = 10
-    for size, line in lines:
+    while lines:
+        size, line = lines.pop(0)
         line = list(line)
+        if not line:
+            i = img.size[1] - sum(i[0][1] for i in lines)
         j = 5
         while line:
             char = line.pop(0)
@@ -61,6 +65,9 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True):
             elif char == "\x0f":
                 bold = False
                 color = None
+                underline = False
+            elif char == "\x1f":
+                underline = not underline
             elif char == "\x02":
                 bold = not bold
             else:
@@ -68,18 +75,28 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True):
                     f = boldfont
                 else:
                     f = font
+
+                cwidth = f.getsize(char)[0]
+
                 if color == None:
                     c = (255, 255, 255)
-                    # draw outline
-                    draw.text((j-2, i-2), char, (0,0,0), font=f)
-                    draw.text((j-2, i+2), char, (0,0,0), font=f)
-                    draw.text((j+2, i+2), char, (0,0,0), font=f)
-                    draw.text((j+2, i-2), char, (0,0,0), font=f)
-
                 else:
                     c = colors[color % len(colors)]
+
+                if underline:
+                    draw.line([(j,i+size[1]), (j+cwidth, i+size[1])], fill=c)
+
+                if outline:
+                    # draw outline
+                    o = (c[0] + c[1] + c[2])/3
+                    o = 0 if o > 127 else 255
+                    draw.text((j-2, i-2), char, (o,o,o), font=f)
+                    draw.text((j-2, i+2), char, (o,o,o), font=f)
+                    draw.text((j+2, i+2), char, (o,o,o), font=f)
+                    draw.text((j+2, i-2), char, (o,o,o), font=f)
+
                 draw.text((j, i), char, c, font=f)
-                j += f.getsize(char)[0]
+                j += cwidth
         i += size[1] + 10
 
     return img
@@ -263,7 +280,7 @@ class Snap(Callback):
             else:
                 text = "via %s" % username
             users = [self.users[server.lower(i)] if server.lower(i) in self.users else i for i in user.split(",")]
-            if username.lower() not in user.lower().split(","):
+            if username.lower() not in [i.lower() for i in users]:
                 users += [username]
                 user = ",".join(users)
         if background:
