@@ -382,7 +382,7 @@ class Snap(Callback):
         if not force:
             allusers = len(users)
             history = self.settings[server.lower(message.context)]["history"]
-            history = {i["sender"].lower() for i in history}
+            history = {i["sender"].lower() for i in history} | set(self.users.keys())
             users = [i for i in users if i.lower() in history]
             if len(users) != allusers:
                 omitted = "Omitted %d unknown users. Use -f to force, or check your syntax is correct." % (allusers - len(users))
@@ -409,7 +409,7 @@ class Snap(Callback):
 
         if copy:
             f.seek(0)
-            i = public_url + save(f.read(), "jpg") + ".jpg"
+            i = "12%s%s.jpg\x0f" % (public_url, save(f.read(), "jpg"))
         else:
             i = "snap"
         if "," in user:
