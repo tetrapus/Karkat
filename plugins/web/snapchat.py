@@ -324,7 +324,7 @@ class Snap(Callback):
     def snap(self, server, message, flags, user, background, text):
         acc = self.accounts[server.lower(message.context)]
         if server.lower(message.address.nick) not in self.users:
-            yield "04│👻│ You must verify your snapchat username to use this command."
+            yield "04│👻│ You must verify your snapchat username with .setsnap <username> to use this command."
             return
         else:
             username = self.users[server.lower(message.address.nick)]
