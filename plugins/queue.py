@@ -64,7 +64,7 @@ class Queue(Callback):
         try:
             if item.isdigit():
                 item = queue[int(item) - 1]
-            elif item in queue:
+            if item in queue:
                 queue.remove(item)
             queue.insert(0, item)
         except IndexError:

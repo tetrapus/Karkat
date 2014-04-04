@@ -6,7 +6,6 @@ import os
 import re
 import hashlib
 import subprocess
-import functools
 
 from io import BytesIO
 
@@ -24,12 +23,20 @@ public_url = "http://xenon.tetrap.us/"
 
 colors = [(204, 204, 204), (0, 0, 0), (53, 53, 179), (42, 140, 42), (195, 59, 59), (199, 50, 50), (128, 38, 127), (102, 54, 31), (217, 166, 65), (61, 204, 61), (25, 85, 85), (46, 140, 116), (69, 69, 230), (176, 55, 176), (76, 76, 76), (149, 149, 149)]
 
-def drawtext(img, text, minsize=13, maxsize=133, wrap=True, outline=True):
+fonts = {"arial": {"regular": "data/fonts/Arial.ttf", "bold": "data/fonts/Arial_Bold.ttf"},
+         "comic sans": {"regular": "data/fonts/Comic_Sans_MS.ttf", "bold": "data/fonts/Comic_Sans_MS_Bold.ttf"},
+         "dejavu sans": {"regular": "data/fonts/DejaVuSans.ttf", "bold": "data/fonts/DejaVuSans-Bold.ttf"},
+         "dejavu sans mono": {"regular": "data/fonts/DejaVuSansMono.ttf", "bold": "data/fonts/DejaVuSansMono-Bold.ttf"},
+         "impact": {"regular": "data/fonts/Impact.ttf"},
+         "ubuntu": {"regular": "data/fonts/Ubuntu-R.ttf", "bold": "data/fonts/Ubuntu-B.ttf"}
+        }
+
+def drawtext(img, text, minsize=13, maxsize=133, wrap=True, outline=True, fonts=fonts["dejavu sans mono"]):
     lines = None
     size = maxsize + 5
     while size > minsize and not lines:
         size -= 5
-        font = ImageFont.truetype("/usr/share/fonts/truetype/ttf-dejavu/DejaVuSansMono.ttf", size)
+        font = ImageFont.truetype(fonts["regular"], size)
         if wrap:
             lines = textwrap(img.size, font, text)
             if lines:
@@ -43,7 +50,10 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True, outline=True):
 
     if not lines: return
     draw = ImageDraw.Draw(img)
-    boldfont = ImageFont.truetype("/usr/share/fonts/truetype/ttf-dejavu/DejaVuSansMono-Bold.ttf", size)
+    if "bold" in fonts:
+        boldfont = ImageFont.truetype(fonts["bold"], size)
+    else:
+        boldfont = font
     color = None
     bold = False
     underline = False
@@ -209,7 +219,6 @@ class Snap(Callback):
         self.cache = {}
         self.checker = scheduler.schedule_after(60, self.checksnaps, args=(server,), stop_after=None)
         self.server = server
-        server.snap = functools.partial(self.send.funct, self, server, verified=True)
 
         super().__init__(server)
 
@@ -299,51 +308,96 @@ class Snap(Callback):
             return "08│👻│04 Could not block %s." % username
 
 
-    @command("snap", r"(\S+)(?:\s+(http://\S+))?(?:\s+(.+))?")
-    def send(self, server, message, user, background, text, verified=False):
-        acc = self.accounts[server.lower(message.context)]
-        if not verified:
-            if server.lower(message.address.nick) not in self.users:
-                return "04│👻│ You must verify your snapchat username to use this command."
-            else:
-                username = self.users[server.lower(message.address.nick)]
-            if text:
-                text = text.replace("\\", "\n")
-                text += "\n\n|>\x0f -\x02%s" % username
-            else:
-                text = "\nvia %s" % username
-            users = [self.users[server.lower(i)] if server.lower(i) in self.users else i for i in user.split(",")]
-            if username.lower() not in [i.lower() for i in users]:
-                users += [username]
-            user = ",".join(users)
-        if background:
-            bg = Image.open(BytesIO(requests.get(background.strip()).content))
-        else:
-            bg = Image.new("RGBA", (720, 1184), (0, 0, 0))
-        if bg.size[0] > 4096 or bg.size[1] > 4096:
-            return "04│👻│ Image too large."
-
-        img = drawtext(bg, text)
-        if not img:
-            return "04│👻│ Could not fit text on the image."
-        f = BytesIO()
-        img.save(f, "jpeg")
-        f.seek(0)
+    def send(self, acc, img, user, time=10):
         media_id = make_media_id(acc.username)
         r = acc._request('upload', {
             'username': acc.username,
             'media_id': media_id,
             'type': 0
-            }, files={'data': encrypt(f.read())})
+            }, files={'data': encrypt(img.read())})
         if len(r.content) != 0:
+            raise Exception("Failed to upload snap.")
+        acc.send(media_id, user, time=time)
+        
+
+    @command("snap", r"(?:(-[maciulrdsb]+)\s+)?(\S+)(?:\s+(http://\S+))?(?:\s+(.+))?")
+    def snap(self, server, message, flags, user, background, text):
+        acc = self.accounts[server.lower(message.context)]
+        if server.lower(message.address.nick) not in self.users:
+            return "04│👻│ You must verify your snapchat username to use this command."
+        else:
+            username = self.users[server.lower(message.address.nick)]
+
+        font = fonts["dejavu sans"]
+        wrap = True
+        outline = True
+        bg = None
+        copy = False
+        if flags:
+            for i in flags[1:]:
+                if i in "maciu":
+                    font = fonts[{"m": "dejavu sans mono", "a": "arial", "c": "comic sans", "i": "impact", "u": "ubuntu"}[i]]
+                elif i == "l":
+                    background = server.lasturl
+                elif i == "r":
+                    wrap = False
+                elif i == "d":
+                    font = fonts["comic sans"]
+                    outline = False
+                    bg = Image.open("data/images/doge.jpg")
+                elif i == "s":
+                    copy = True
+                elif i == "b":
+                    outline = False            
+
+        if not bg:
+            if not text and not background:
+                background = server.lasturl
+
+            if background:
+                bg = Image.open(BytesIO(requests.get(background).content))
+            elif not text:
+                bg = Image.new("RGBA", (720, 1184), (0, 0, 0))
+        if bg.size[0] > 4096 or bg.size[1] > 4096:
+            return "04│👻│ Image too large."
+
+        if text:
+            text = text.replace("\\", "\n")
+            text += "\n\n|>\x0f -\x02%s" % username
+        else:
+            text = "\nvia %s" % username
+
+        users = [self.users[server.lower(i)] if server.lower(i) in self.users else i for i in user.split(",")]
+        if username.lower() not in [i.lower() for i in users]:
+            users += [username]
+        user = ",".join(users)
+
+
+        img = drawtext(bg, text, fonts=font, wrap=wrap, outline=outline)
+        if not img:
+            return "04│👻│ Could not fit text on the image."
+
+        f = BytesIO()
+        img.save(f, "jpeg")
+        f.seek(0)
+
+        try:
+            self.send(acc, f, user)
+        except:
             return "04│👻│ Failed to upload snap."
 
-        acc.send(media_id, user, time=10)
-        return "08│👻│ Sent snap to: %s" % (", ".join(user.split(",")))
+        if copy:
+            f.seek(0)
+            i = public_url + save(f.read(), "jpg")
+        else:
+            i = "snap"
+
+        return "08│👻│ Sent %s to: %s" % (i, ", ".join(user.split(",")))
         
     @command("setsnap", r"([^, ]+)")
     def setsnap(self, server, message, username):
         snapuser = self.settings[server.lower(message.context)]["username"]
+        acc = self.accounts[server.lower(message.context)]
         key = server.lower(message.address.nick)
         if key in self.unverified:
             return "08│👻│ This username is already being verified. Please send a snapchat to %s to reset." % snapuser
@@ -351,7 +405,12 @@ class Snap(Callback):
             return "08│👻│ This username is already verified. Type .unverify to reset your verification."
         password = random.choice(open("/usr/share/dict/words").read().split()).lower()
         self.unverified[key] = [username, password]
-        self.send.funct(self, server, message, username, None, "Type \x02.verify %s\x02 to complete username verification." % password, True)
+        img = drawtext(Image.new("RGBA", (720, 1184), (0, 0, 0)),
+                       "Type\n||\x02\x0313.verify %s\x02\n to complete username verification." % password)
+        f = BytesIO()
+        img.save(f, "jpeg")
+        f.seek(0)
+        self.send(acc, f, username)
         return "08│👻│ A verification code has been sent to your snapchat. Type \x02.verify <code>\x02 to complete username verification."
 
     @command("unverify")
