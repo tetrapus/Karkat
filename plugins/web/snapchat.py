@@ -47,6 +47,7 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True, outline=True):
     color = None
     bold = False
     underline = False
+    background = None
     i = 10
     while lines:
         size, line = lines.pop(0)
@@ -63,16 +64,29 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True, outline=True):
         while line:
             char = line.pop(0)
             if char == "\x03":
-                color = None
+                reset = True
                 if line and line[0] in "0123456789":
+                    reset = False
                     color = int(line.pop(0))
                     if line and line[0] in "0123456789":
                         color *= 10
                         color += int(line.pop(0))
+                if len(line) > 1 and line[0] == "," and line[1] in "0123456789":
+                    reset = False
+                    line.pop(0)
+                    background = line.pop(0)
+                    if line and line[0] in "0123456789":
+                        background *= 10
+                        background += int(line.pop(0))
+                if reset:
+                    color = None
+                    background = None
+                    
             elif char == "\x0f":
                 bold = False
                 color = None
                 underline = False
+                background = None
             elif char == "\x1f":
                 underline = not underline
             elif char == "\x02":
@@ -84,6 +98,10 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True, outline=True):
                     f = font
 
                 cwidth = f.getsize(char)[0]
+
+                if background:
+                    bg = colors[color % len(colors)]
+                    draw.rectangle([(j, i), (j+size[0], i+size[1])], fill=bg)
 
                 if color == None:
                     c = (255, 255, 255)
