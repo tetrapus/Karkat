@@ -65,10 +65,10 @@ def drawtext(img, text, minsize=13, maxsize=133):
                 if color == None:
                     c = (255, 255, 255)
                     # draw outline
-                    draw.text((textx-2, texty-2), char, c, font=f)
-                    draw.text((textx-2, texty+2), char, c, font=f)
-                    draw.text((textx+2, texty+2), char, c, font=f)
-                    draw.text((textx+2, texty-2), char, c, font=f)
+                    draw.text((textx-2, texty-2), char, (0,0,0), font=f)
+                    draw.text((textx-2, texty+2), char, (0,0,0), font=f)
+                    draw.text((textx+2, texty+2), char, (0,0,0), font=f)
+                    draw.text((textx+2, texty-2), char, (0,0,0), font=f)
 
                 else:
                     c = colors[color % len(colors)]
