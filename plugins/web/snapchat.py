@@ -101,7 +101,7 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True, outline=True):
 
                 if background:
                     bg = colors[color % len(colors)]
-                    draw.rectangle([(j, i+10), (j+size[0], i+size[1]+10)], fill=bg)
+                    draw.rectangle([(j, i+10), (j+size[0], i+size[1]+20)], fill=bg)
 
                 if color == None:
                     c = (255, 255, 255)
@@ -309,7 +309,7 @@ class Snap(Callback):
                 username = self.users[server.lower(message.address.nick)]
             if text:
                 text = text.replace("\\", "\n")
-                text += "\n\n|>\x0f\x02%s" % username
+                text += "\n\n|>\x0f - \x02%s" % username
             else:
                 text = "\nvia %s" % username
             users = [self.users[server.lower(i)] if server.lower(i) in self.users else i for i in user.split(",")]
