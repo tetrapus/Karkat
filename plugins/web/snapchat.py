@@ -57,22 +57,29 @@ def drawtext(img, text, minsize=13, maxsize=133):
             elif char == "\x02":
                 bold = not bold
             else:
-                if color == None:
-                    c = (255, 255, 255)
-                else:
-                    c = colors[color % len(colors)]
+                textx, texty = 5 + j * fontsize[0], i*(fontsize[1]+20) 
                 if bold:
                     f = boldfont
                 else:
                     f = font
-                draw.text((5 + j * fontsize[0], i*(fontsize[1]+10)), char, c, font=f)
+                if color == None:
+                    c = (255, 255, 255)
+                    # draw outline
+                    draw.text((textx-2, texty-2), char, c, font=f)
+                    draw.text((textx-2, texty+2), char, c, font=f)
+                    draw.text((textx+2, texty+2), char, c, font=f)
+                    draw.text((textx+2, texty-2), char, c, font=f)
+
+                else:
+                    c = colors[color % len(colors)]
+                draw.text((textx, texty), char, c, font=f)
                 j += 1
 
     return img
 
 def textwrap(dim, unit, text):
     # Calculate max characters
-    width, height = (dim[0] - 10) // unit[0], dim[1] // (unit[1] + 10)
+    width, height = (dim[0] - 10) // unit[0], dim[1] // (unit[1] + 20)
     text = text.split("\n")
     alines = []
     for line in text:
@@ -248,8 +255,10 @@ class Snap(Callback):
                 text += "\n -\x02%s" % username
             else:
                 text = "via %s" % username
+            users = [self.users[server.lower(i)] if server.lower(i) in self.users else i for i in user.split(",")]
             if username.lower() not in user.lower().split(","):
-                user += "," + username
+                users += [username]
+                user = ",".join(users)
         if background:
             bg = Image.open(BytesIO(requests.get(background.strip()).content))
         else:
