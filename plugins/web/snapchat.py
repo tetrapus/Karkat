@@ -64,7 +64,7 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True, outline=True, fonts=
         align = line[0]
         line = line[1:]
         if not line:
-            i = img.size[1] - sum((i[0][1]+10) for i in lines)
+            i = img.size[1] - sum((i[0][1]+10) for i in lines) - 10
             continue
         elif size[1] == 0:
             size = (size[0], font.getsize("A")[1])
