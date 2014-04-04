@@ -35,7 +35,8 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True, outline=True):
             if lines:
                 break
         else:
-            lines = [(linesize(font, i), i) for i in text.split("\n")]
+            lines = ["|<" + i if not re.match("^[|][>|<]", i) else i for i in lines]
+            lines = [(linesize(font, i[2:]), i) for i in text.split("\n")]
             if sum(i[0][1] for i in lines) > img.size[1]:
                 break
             lines = None
@@ -49,13 +50,12 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True, outline=True):
     i = 10
     while lines:
         size, line = lines.pop(0)
+        align = line[1]
+        line = line[2:]
         if not line:
             i = img.size[1] - sum(i[0][1] for i in lines) - 10
             continue
-        align = "<"
-        if re.match(r"^[|][>|<]", line):
-            align = line[1]
-            line = line[2:]
+
         j = {"|": (img.size[0] - size[0])//2,
              ">": (img.size[0] - size[0] - 5),
              "<": 5}[align]
@@ -113,22 +113,26 @@ def textwrap(dim, font, text):
     text = text.split("\n")
     alines = []
     for line in text:
+        align = "<"
+        if re.match(r"^[|][>|<]", line):
+            align = line[1]
+            line = line[2:]
         line = line.split(" ")
         if any(linesize(font, i)[0] > width for i in line):
             return
-        lines = [line[0]]
+        lines = ["|" + align + line[0]]
         for i in line[1:]:
-            if linesize(font, lines[-1] + " " + i)[0] > width:
-                lines.append(i)
+            if linesize(font, (lines[-1] + " " + i)[2:])[0] > width:
+                lines.append("|" + align + i)
             else:
                 lines[-1] += " " + i
         alines.extend(lines)
-    alines = [[linesize(font, i), i] for i in alines]
+    alines = [[linesize(font, i[2:]), i] for i in alines]
     if sum(i[0][1] + 10 for i in alines) <= height:
         return alines
 
 def linesize(font, text):
-    return font.getsize(ircstrip(re.sub(r"^[|][>|<]", "", text)))
+    return font.getsize(ircstrip(text))
 
 
 def save(data, fmt):
