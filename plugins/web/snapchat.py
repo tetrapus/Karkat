@@ -266,6 +266,7 @@ class Snap(Callback):
         else:
             return "08│👻│04 Could not block %s." % username
 
+
     @command("snap", r"(\S+)(?:\s+(http://\S+))?(?:\s+(.+))?")
     def send(self, server, message, user, background, text, verified=False):
         acc = self.accounts[server.lower(message.context)]
@@ -282,7 +283,7 @@ class Snap(Callback):
             users = [self.users[server.lower(i)] if server.lower(i) in self.users else i for i in user.split(",")]
             if username.lower() not in [i.lower() for i in users]:
                 users += [username]
-                user = ",".join(users)
+            user = ",".join(users)
         if background:
             bg = Image.open(BytesIO(requests.get(background.strip()).content))
         else:
