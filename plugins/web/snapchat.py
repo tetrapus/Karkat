@@ -79,7 +79,7 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True):
                 else:
                     c = colors[color % len(colors)]
                 draw.text((j, i), char, c, font=f)
-                j += f.getsize(c)[0]
+                j += f.getsize(char)[0]
         i += size[1] + 10
 
     return img
