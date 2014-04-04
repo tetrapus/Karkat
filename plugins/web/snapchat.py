@@ -30,8 +30,7 @@ def drawtext(img, text, minsize=13, maxsize=133):
     while size > minsize and not lines:
         size -= 5
         font = ImageFont.truetype("/usr/share/fonts/truetype/ttf-dejavu/DejaVuSansMono.ttf", size)
-        fontsize = font.getsize("A")
-        lines = textwrap(img.size, fontsize, text)
+        lines = textwrap(img.size, font, text)
         if lines:
             break
     if not lines: return
@@ -39,9 +38,10 @@ def drawtext(img, text, minsize=13, maxsize=133):
     boldfont = ImageFont.truetype("/usr/share/fonts/truetype/ttf-dejavu/DejaVuSansMono-Bold.ttf", size)
     color = None
     bold = False
-    for i, line in enumerate(lines):
+    i = 10
+    for size, line in enumerate(lines):
         line = list(line)
-        j = 0
+        j = 5
         while line:
             char = line.pop(0)
             if char == "\x03":
@@ -57,7 +57,6 @@ def drawtext(img, text, minsize=13, maxsize=133):
             elif char == "\x02":
                 bold = not bold
             else:
-                textx, texty = 5 + j * fontsize[0], i*(fontsize[1]+20) 
                 if bold:
                     f = boldfont
                 else:
@@ -65,35 +64,36 @@ def drawtext(img, text, minsize=13, maxsize=133):
                 if color == None:
                     c = (255, 255, 255)
                     # draw outline
-                    draw.text((textx-2, texty-2), char, (0,0,0), font=f)
-                    draw.text((textx-2, texty+2), char, (0,0,0), font=f)
-                    draw.text((textx+2, texty+2), char, (0,0,0), font=f)
-                    draw.text((textx+2, texty-2), char, (0,0,0), font=f)
+                    draw.text((j-2, i-2), char, (0,0,0), font=f)
+                    draw.text((j-2, i+2), char, (0,0,0), font=f)
+                    draw.text((j+2, i+2), char, (0,0,0), font=f)
+                    draw.text((j+2, i-2), char, (0,0,0), font=f)
 
                 else:
                     c = colors[color % len(colors)]
-                draw.text((textx, texty), char, c, font=f)
-                j += 1
+                draw.text((j, i), char, c, font=f)
+                j += f.getsize(c)[0]
+        i += size[1] + 10
 
     return img
 
-def textwrap(dim, unit, text):
-    # Calculate max characters
-    width, height = (dim[0] - 10) // unit[0], dim[1] // (unit[1] + 20)
+def textwrap(dim, font, text):
+    width, height = dim[0] - 10, dim[1]
     text = text.split("\n")
     alines = []
     for line in text:
         line = line.split(" ")
-        if any(len(ircstrip(i)) > width for i in line):
+        if any(font.getsize(ircstrip(i))[0] > width for i in line):
             return
         lines = [line[0]]
         for i in line[1:]:
-            if len(ircstrip(lines[-1])) + len(ircstrip(i)) + 1 > width:
+            if font.getsize(ircstrip(lines[-1] + " " + i))[0] > width:
                 lines.append(i)
             else:
                 lines[-1] += " " + i
         alines.extend(lines)
-    if len(alines) <= height:
+    alines = [[font.getsize(ircstrip(i)), i] for i in alines]
+    if sum(i[1] + 10 for i in alines) <= height:
         return alines
 
 
