@@ -52,6 +52,7 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True, outline=True):
         line = list(line)
         if not line:
             i = img.size[1] - sum(i[0][1] for i in lines)
+            continue
         j = 5
         while line:
             char = line.pop(0)
