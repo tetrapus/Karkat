@@ -280,7 +280,7 @@ class Snap(Callback):
                 self.settings[channel].setdefault("history", []).append(snap)
                 account.mark_viewed(snap["id"])
                 self.server.lasturl = url
-                username = [k for k, v in self.users.items() if v.lower() == snap["sender"].lower()]
+                username = [k for k, v in self.users.items() if v.lower() == snap["sender"].lower()] + [i for i in self.settings if self.settings[i]["username"].lower() == snap["sender"].lower()]
                 yield "08│👻│ 12%s · from %s · ⌚ %s" % (url, snap["sender"] + (" (%s)" % username[0] if username else ""), pretty_date(time.time() - snap["sent"]/1000) if snap["sent"] else "Unknown")
             except:
                 traceback.print_exc()
@@ -444,7 +444,7 @@ class Snap(Callback):
         key = server.lower(message.address.nick)
         if key in self.unverified:
             return "08│👻│ This username is already being verified. Please send a snapchat to %s to reset." % snapuser
-        if username.lower() in [i.lower() for i in self.users.values()]:
+        if username.lower() in [i.lower() for i in self.users.values()] + [self.settings[i]["username"].lower() for i in self.settings]:
             return "08│👻│ This username is already verified. Type .unverify to reset your verification."
         password = random.choice(open("/usr/share/dict/words").read().split()).lower()
         self.unverified[key] = [username, password]
