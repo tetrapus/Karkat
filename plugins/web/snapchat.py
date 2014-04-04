@@ -391,8 +391,10 @@ class Snap(Callback):
             i = public_url + save(f.read(), "jpg") + ".jpg"
         else:
             i = "snap"
+        if "," in user:
+            user = "%s and %s" % (", ".join(user.split(",")[:-1]), user.split[-1])
 
-        return "08│👻│ Sent %s to: %s" % (i, ", ".join(user.split(",")))
+        return "08│👻│ Sent %s to %s" % (i, user)
         
     @command("setsnap", r"([^, ]+)")
     def setsnap(self, server, message, username):
