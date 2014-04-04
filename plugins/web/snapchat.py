@@ -64,9 +64,11 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True, outline=True, fonts=
         align = line[0]
         line = line[1:]
         if not line:
-            i = img.size[1] - sum(i[0][1] for i in lines) - 20
+            i = img.size[1] - sum(i[0][1] for i in lines) - size[0]
             continue
-
+        elif size[1] == 0:
+            size = (size[0], font.getsize("A")[1])
+    
         j = {"|": (img.size[0] - size[0])//2,
              ">": (img.size[0] - size[0] - 5),
              "<": 5}[align]
