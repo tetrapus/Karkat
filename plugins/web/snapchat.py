@@ -35,17 +35,18 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True):
             if lines:
                 break
         else:
-            lines = [font.getsize(i)[1] + 10 for i in text.split("\n")]
-            if sum(lines) > img.size[1]:
-                lines = None
+            lines = [(font.getsize(i), i) for i in text.split("\n")]
+            if sum(i[0][1] for i in lines) > img.size[1]:
                 break
+            lines = None
+
     if not lines: return
     draw = ImageDraw.Draw(img)
     boldfont = ImageFont.truetype("/usr/share/fonts/truetype/ttf-dejavu/DejaVuSansMono-Bold.ttf", size)
     color = None
     bold = False
     i = 10
-    for size, line in enumerate(lines):
+    for size, line in lines:
         line = list(line)
         j = 5
         while line:
