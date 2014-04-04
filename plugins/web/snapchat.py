@@ -42,8 +42,8 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True, outline=True, fonts=
             if lines:
                 break
         else:
-            lines = ["|<" + i if not re.match("^[|][>|<]", i) else i for i in text.split("\n")]
-            lines = [(linesize(font, i[2:]), i) for i in lines]
+            lines = ["<" + i if not re.match("^[>|<]", i) else i for i in text.split("\n")]
+            lines = [(linesize(font, i[1:]), i) for i in lines]
             if sum(i[0][1] for i in lines) < img.size[1] and all(i[0][0] < img.size[0] for i in lines):
                 break
             lines = None
@@ -61,10 +61,10 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True, outline=True, fonts=
     i = 10
     while lines:
         size, line = lines.pop(0)
-        align = line[1]
-        line = line[2:]
+        align = line[0]
+        line = line[1:]
         if not line:
-            i = img.size[1] - sum(i[0][1] for i in lines) - 10
+            i = img.size[1] - sum(i[0][1] for i in lines) - 20
             continue
 
         j = {"|": (img.size[0] - size[0])//2,
@@ -142,20 +142,20 @@ def textwrap(dim, font, text):
     alines = []
     for line in text:
         align = "<"
-        if re.match(r"^[|][>|<]", line):
-            align = line[1]
-            line = line[2:]
+        if re.match(r"^[>|<]", line):
+            align = line[0]
+            line = line[1:]
         line = line.split(" ")
         if any(linesize(font, i)[0] > width for i in line):
             return
-        lines = ["|" + align + line[0]]
+        lines = [align + line[0]]
         for i in line[1:]:
-            if linesize(font, (lines[-1] + " " + i)[2:])[0] > width:
-                lines.append("|" + align + i)
+            if linesize(font, (lines[-1] + " " + i)[1:])[0] > width:
+                lines.append(align + i)
             else:
                 lines[-1] += " " + i
         alines.extend(lines)
-    alines = [[linesize(font, i[2:]), i] for i in alines]
+    alines = [[linesize(font, i[1:]), i] for i in alines]
     if sum(i[0][1] + 10 for i in alines) <= height:
         return alines
 
