@@ -336,6 +336,7 @@ class Snap(Callback):
         copy = False
         time = 10
         force = False
+        doge = False
         if flags:
             for i in flags[1:]:
                 if i in "123456789":
@@ -350,6 +351,7 @@ class Snap(Callback):
                     font = fonts["comic sans"]
                     outline = False
                     bg = Image.open("data/images/doge.jpg")
+                    doge = True
                 elif i == "s":
                     copy = True
                 elif i == "b":
@@ -369,7 +371,16 @@ class Snap(Callback):
             yield "04│👻│ Image too large."
             return
 
-        if text:
+        if doge:
+            if not text: text = "wow, such snapchat"
+            dogified = ""
+            for i in text.split(",") + [random.choice("wow such very many so".split()) + " " + username]:
+                if random.random() < 0.3:
+                    dogified += " \\"
+                dogified += random.choice(">|<") + (random.randrange(len(i)) * " ") + i + (random.randrange(len(i)) * " ")
+                dogified += "\\"
+            text = dogified[:-1]
+        elif text:
             text = text.replace("\\", "\n")
             text += "\n\n>\x0f -\x02%s" % username
         else:
