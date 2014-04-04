@@ -376,9 +376,9 @@ class Snap(Callback):
             dogified = ""
             for i in text.split(",") + [random.choice("wow such very many so".split()) + " " + username]:
                 if random.random() < 0.3:
-                    dogified += " \\"
-                dogified += random.choice(">|<") + (random.randrange(len(i)) * " ") + i + (random.randrange(len(i)) * " ")
-                dogified += "\\"
+                    dogified += " \n"
+                dogified += random.choice(">|<") + ("\x03%.2d" % random.randrange(2, 14)) + (random.randrange(len(i)) * " ") + i + (random.randrange(len(i)) * " ")
+                dogified += "\n"
             text = dogified[:-1]
         elif text:
             text = text.replace("\\", "\n")
