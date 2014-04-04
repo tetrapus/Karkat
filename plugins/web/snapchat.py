@@ -388,7 +388,7 @@ class Snap(Callback):
 
         if copy:
             f.seek(0)
-            i = public_url + save(f.read(), "jpg")
+            i = public_url + save(f.read(), "jpg") + ".jpg"
         else:
             i = "snap"
 
