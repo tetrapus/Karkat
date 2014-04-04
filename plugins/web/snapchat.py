@@ -356,7 +356,7 @@ class Snap(Callback):
 
             if background:
                 bg = Image.open(BytesIO(requests.get(background).content))
-            elif not text:
+            else:
                 bg = Image.new("RGBA", (720, 1184), (0, 0, 0))
         if bg.size[0] > 4096 or bg.size[1] > 4096:
             return "04│👻│ Image too large."
