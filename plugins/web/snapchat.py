@@ -322,7 +322,7 @@ class Snap(Callback):
         acc.send(media_id, user, time=time)
         
 
-    @command("snap", r"(?:(-[maciulrdsbf1-9]+)\s+)?(\S+)(?:\s+(http://\S+))?(?:\s+(.+))?")
+    @command("snap", r"(?:(-[maciulrdsbf1-9]+)\s+)?(\S+)(?:\s+(https?://\S+|:.+?:))?(?:\s+(.+))?")
     def snap(self, server, message, flags, user, background, text):
         acc = self.accounts[server.lower(message.context)]
         if server.lower(message.address.nick) not in self.users:
@@ -367,6 +367,17 @@ class Snap(Callback):
                 background = server.lasturl
 
             if background:
+                if background.startswith(":"):
+                    params = {
+                        "safe": "off",
+                        "v": "1.0",
+                        "rsz": 1,
+                        "q": background[1:-1]
+                    }
+                    background = requests.get(
+                      "https://ajax.googleapis.com/ajax/services/search/images",
+                      params=params
+                    ).json()["responseData"]["results"][0]["url"] 
                 bg = Image.open(BytesIO(requests.get(background).content))
             else:
                 bg = Image.new("RGBA", (720, 1184), (0, 0, 0))
