@@ -38,13 +38,13 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True, outline=True, fonts=
         size -= 5
         font = ImageFont.truetype(fonts["regular"], size)
         if wrap:
-            lines = textwrap(img.size, font, text)
+            lineheight, lines = textwrap(img.size, font, text)
             if lines:
                 break
         else:
             lines = ["<" + i if not re.match("^[>|<]", i) else i for i in text.split("\n")]
-            lines = [(linesize(font, i[1:]), i) for i in lines]
-            if sum(i[0][1] for i in lines) < img.size[1] and all(i[0][0] < img.size[0] for i in lines):
+            lineheight = max(linesize(font, i[1:])[1] for i in lines) + 10
+            if lineheight * len(lines) < img.size[1] and all(i[0][0] < img.size[0] for i in lines):
                 break
             lines = None
 
@@ -60,19 +60,16 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True, outline=True, fonts=
     background = None
     i = 0
     while lines:
-        size, line = lines.pop(0)
+        line = lines.pop(0)
         align = line[0]
         line = line[1:]
         if not line:
-            i = img.size[1] - sum((i[0][1]+10) for i in lines) - 10
+            i = img.size[1] - (len(lines) * lineheight)
             continue
-        elif size[1] == 0:
-            size = (size[0], font.getsize("A")[1])
     
         j = {"|": (img.size[0] - size[0])//2,
              ">": (img.size[0] - size[0] - 5),
              "<": 5}[align]
-        print(size, line, "@", i)
 
         line = list(line)
         while line:
@@ -115,7 +112,7 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True, outline=True, fonts=
 
                 if background is not None:
                     bg = colors[background % len(colors)]
-                    draw.rectangle([(j, i+10), (j+cwidth, i+size[1]+20)], fill=bg)
+                    draw.rectangle([(j, i), (j+cwidth, i+lineheight)], fill=bg)
 
                 if color == None:
                     c = (255, 255, 255)
@@ -123,7 +120,7 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True, outline=True, fonts=
                     c = colors[color % len(colors)]
 
                 if underline:
-                    draw.line([(j,i+size[1]), (j+cwidth, i+size[1])], fill=c, width=3)
+                    draw.line([(j,i+size[1]), (j+cwidth, i+lineheight)], fill=c, width=3)
 
                 if outline:
                     # draw outline
@@ -137,7 +134,7 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True, outline=True, fonts=
                 draw.line([(0, i), (img.size[0], i)], fill=c, width=3)
                 draw.text((j, i), char, c, font=f)
                 j += cwidth
-        i += size[1] + 10
+        i += lineheight
 
     return img
 
@@ -160,9 +157,9 @@ def textwrap(dim, font, text):
             else:
                 lines[-1] += " " + i
         alines.extend(lines)
-    alines = [[linesize(font, i[1:]), i] for i in alines]
-    if sum(i[0][1] + 10 for i in alines) <= height:
-        return alines
+    lineheight = max(linesize(font, i[1:])[1] for i in lines) + 10
+    if lineheight * len(alines) <= height:
+        return lineheight, alines
 
 def linesize(font, text):
     return font.getsize(ircstrip(text))
@@ -463,7 +460,7 @@ class Snap(Callback):
         password = random.choice(open("/usr/share/dict/words").read().split()).lower()
         self.unverified[key] = [username, password]
         img = drawtext(Image.new("RGBA", (720, 1184), (0, 0, 0)),
-                       "Type\n \n|\x02\x0313.verify %s\x0f\n \nto complete username verification." % password)
+                       "Type\n \n|\x0308.verify %s\x0f\n \nto complete \nusername verification." % password, wrap=False)
         f = BytesIO()
         img.save(f, "jpeg")
         f.seek(0)
