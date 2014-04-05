@@ -67,9 +67,14 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True, outline=True, fonts=
         if not line:
             i = img.size[1] - (len(lines) * lineheight)
             continue
-    
-        j = {"|": (img.size[0] - size[0])//2,
-             ">": (img.size[0] - size[0] - 5),
+        if bold or "\x02" in line:
+            f = boldfont
+        else:
+            f = font
+
+        linewidth = linesize(f, line)[0]
+        j = {"|": (img.size[0] - linewidth)//2,
+             ">": (img.size[0] - linewidth - 5),
              "<": 5}[align]
 
         line = list(line)
