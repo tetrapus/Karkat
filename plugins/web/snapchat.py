@@ -134,6 +134,7 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True, outline=True, fonts=
                     draw.text((j+2, i+2), char, (o,o,o), font=f)
                     draw.text((j+2, i-2), char, (o,o,o), font=f)
 
+                draw.line([(0, i), (img.size[0], i), fill=c, width=3)
                 draw.text((j, i), char, c, font=f)
                 j += cwidth
         i += size[1] + 10
