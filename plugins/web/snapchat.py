@@ -61,7 +61,6 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True, outline=True, fonts=
     i = -10
     while lines:
         size, line = lines.pop(0)
-        print(size, line)
         align = line[0]
         line = line[1:]
         if not line:
@@ -73,6 +72,8 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True, outline=True, fonts=
         j = {"|": (img.size[0] - size[0])//2,
              ">": (img.size[0] - size[0] - 5),
              "<": 5}[align]
+        print(size, line, "@", i)
+
         line = list(line)
         while line:
             char = line.pop(0)
