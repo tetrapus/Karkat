@@ -45,7 +45,7 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True, outline=True, fonts=
         else:
             lines = ["<" + i if not re.match("^[>|<]", i) else i for i in text.split("\n")]
             lineheight = max(linesize(font, i[1:])[1] for i in lines) + 10
-            if lineheight * len(lines) < img.size[1] and all(i[0][0] < img.size[0] for i in lines):
+            if lineheight * len(lines) < img.size[1] and all(linesize(font, i[1:])[0] < img.size[0] for i in lines):
                 break
             lines = None
 
