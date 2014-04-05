@@ -28,7 +28,7 @@ fonts = {"arial": {"regular": "data/fonts/Arial.ttf", "bold": "data/fonts/Arial_
          "dejavu sans": {"regular": "data/fonts/DejaVuSans.ttf", "bold": "data/fonts/DejaVuSans-Bold.ttf"},
          "dejavu sans mono": {"regular": "data/fonts/DejaVuSansMono.ttf", "bold": "data/fonts/DejaVuSansMono-Bold.ttf"},
          "impact": {"regular": "data/fonts/Impact.ttf"},
-         "symbola": {"regukar": "data/fonts/Symbola.ttf"},   
+         "symbola": {"regular": "data/fonts/Symbola.ttf"},   
          "ubuntu": {"regular": "data/fonts/Ubuntu-R.ttf", "bold": "data/fonts/Ubuntu-B.ttf"}
         }
 
