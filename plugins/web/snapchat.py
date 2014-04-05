@@ -59,7 +59,7 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True, outline=True, fonts=
     bold = False
     underline = False
     background = None
-    i = -10
+    i = -5
     while lines:
         line = lines.pop(0)
         align = line[0]
@@ -118,7 +118,7 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True, outline=True, fonts=
 
                 if background is not None:
                     bg = colors[background % len(colors)]
-                    draw.rectangle([(j, i), (j+cwidth, i+lineheight)], fill=bg)
+                    draw.rectangle([(j, i-10), (j+cwidth, i+lineheight-10)], fill=bg)
 
                 if color == None:
                     c = (255, 255, 255)
