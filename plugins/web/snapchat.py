@@ -28,6 +28,7 @@ fonts = {"arial": {"regular": "data/fonts/Arial.ttf", "bold": "data/fonts/Arial_
          "dejavu sans": {"regular": "data/fonts/DejaVuSans.ttf", "bold": "data/fonts/DejaVuSans-Bold.ttf"},
          "dejavu sans mono": {"regular": "data/fonts/DejaVuSansMono.ttf", "bold": "data/fonts/DejaVuSansMono-Bold.ttf"},
          "impact": {"regular": "data/fonts/Impact.ttf"},
+         "symbola": {"regukar": "data/fonts/Symbola.ttf"},   
          "ubuntu": {"regular": "data/fonts/Ubuntu-R.ttf", "bold": "data/fonts/Ubuntu-B.ttf"}
         }
 
@@ -327,7 +328,7 @@ class Snap(Callback):
         acc.send(media_id, user, time=time)
         
 
-    @command("snap", r"(?:(-[maciulrdsbf1-9]+)\s+)?(\S+)(?:\s+(https?://\S+|:.+?:))?(?:\s+(.+))?")
+    @command("snap", r"(?:(-[maciulrdsbfp1-9]+)\s+)?(\S+)(?:\s+(https?://\S+|:.+?:))?(?:\s+(.+))?")
     def snap(self, server, message, flags, user, background, text):
         acc = self.accounts[server.lower(message.context)]
         if server.lower(message.address.nick) not in self.users:
@@ -340,7 +341,7 @@ class Snap(Callback):
         wrap = True
         outline = True
         bg = None
-        copy = False
+        copy = True
         time = 10
         force = False
         doge = False
@@ -348,8 +349,8 @@ class Snap(Callback):
             for i in flags[1:]:
                 if i in "123456789":
                     time = int(i)
-                elif i in "maciu":
-                    font = fonts[{"m": "dejavu sans mono", "a": "arial", "c": "comic sans", "i": "impact", "u": "ubuntu"}[i]]
+                elif i in "macius":
+                    font = fonts[{"m": "dejavu sans mono", "a": "arial", "c": "comic sans", "i": "impact", "u": "ubuntu", "s": "symbola"}[i]]
                 elif i == "l":
                     background = server.lasturl
                 elif i == "r":
@@ -360,8 +361,8 @@ class Snap(Callback):
                     bg = Image.open("data/images/doge.jpg")
                     wrap = False
                     doge = True
-                elif i == "s":
-                    copy = True
+                elif i == "p":
+                    copy = False
                 elif i == "b":
                     outline = False     
                 elif i == "f":
