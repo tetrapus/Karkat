@@ -38,8 +38,9 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True, outline=True, fonts=
         size -= 5
         font = ImageFont.truetype(fonts["regular"], size)
         if wrap:
-            lineheight, lines = textwrap(img.size, font, text)
+            lines = textwrap(img.size, font, text)
             if lines:
+                lineheight, lines = lines
                 break
         else:
             lines = ["<" + i if not re.match("^[>|<]", i) else i for i in text.split("\n")]
