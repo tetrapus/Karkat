@@ -61,6 +61,7 @@ def drawtext(img, text, minsize=13, maxsize=133, wrap=True, outline=True, fonts=
     i = -10
     while lines:
         size, line = lines.pop(0)
+        print(size, line)
         align = line[0]
         line = line[1:]
         if not line:
