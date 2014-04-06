@@ -439,12 +439,17 @@ class Snap(Callback):
             yield "04│👻│ Could not fit text on the image."
             return
 
-        f = BytesIO()
-        img.save(f, "jpeg")
-        f.seek(0)
-
         try:
-            self.send(acc, f, user, time=time)
+            f = BytesIO()
+            img.save(f, "jpeg")
+            f.seek(0)
+            if img.size[0] > img.size[1]:
+                rotated = BytesIO()
+                img.rotate(90).save(rotated, "jpeg")
+                rotated.seek(0)
+                self.send(acc, rotated, user, time=time)
+            else:
+                self.send(acc, f, user, time=time)
         except:
             yield "04│👻│ Failed to upload snap."
             return
