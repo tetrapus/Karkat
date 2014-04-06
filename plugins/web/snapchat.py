@@ -445,7 +445,7 @@ class Snap(Callback):
             f.seek(0)
             if img.size[0] > img.size[1]:
                 rotated = BytesIO()
-                img.rotate(90).save(rotated, "jpeg")
+                img.rotate(-90).save(rotated, "jpeg")
                 rotated.seek(0)
                 self.send(acc, rotated, user, time=time)
             else:
