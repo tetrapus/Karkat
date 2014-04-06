@@ -327,6 +327,11 @@ class Snap(Callback):
             raise Exception("Failed to upload snap.")
         acc.send(media_id, user, time=time)
         
+    @command("reply", r"(-[maciulrdsbfp1-9]+)?(?:\s+(https?://\S+|:.+?:))?(?:\s+(.+))?")
+    def snapreply(self, server, message, flags, background, text):
+        user = self.settings[server.lower(message.context)]["history"][-1]["sender"]
+        yield from self.snap.funct(self, server, message, flags, user, background, text)
+
 
     @command("snap", r"(?:(-[maciulrdsbfp1-9]+)\s+)?(\S+)(?:\s+(https?://\S+|:.+?:))?(?:\s+(.+))?")
     def snap(self, server, message, flags, user, background, text):
