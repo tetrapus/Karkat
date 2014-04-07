@@ -32,7 +32,7 @@ fonts = {"arial": {"regular": "data/fonts/Arial.ttf", "bold": "data/fonts/Arial_
          "ubuntu": {"regular": "data/fonts/Ubuntu-R.ttf", "bold": "data/fonts/Ubuntu-B.ttf"}
         }
 
-def drawtext(img, text, minsize=13, maxsize=133, wrap=True, outline=True, fonts=fonts["dejavu sans mono"]):
+def drawtext(img, text, minsize=13, maxsize=100, wrap=True, outline=True, fonts=fonts["dejavu sans mono"]):
     lines = None
     size = maxsize + 5
     while size > minsize and not lines:
@@ -327,13 +327,13 @@ class Snap(Callback):
             raise Exception("Failed to upload snap.")
         acc.send(media_id, user, time=time)
         
-    @command("reply", r"(?:(-[maciulrdsbfp1-9]+)\s+)?(?:(https?://\S+|:.+?:)\s+)?(.+)?")
+    @command("reply", r"(?:(-[maciulrdsbfp1-9]+)\s+)?(https?://\S+|:.+?:)?\s*(.+)?")
     def snapreply(self, server, message, flags, background, text):
         user = self.settings[server.lower(message.context)]["history"][-1]["sender"]
         yield from self.snap.funct(self, server, message, flags, user, background, text)
 
 
-    @command("snap", r"(?:(-[maciulrdsbfp1-9]+)\s+)?(\S+)(?:\s+(https?://\S+|:.+?:))?(?:\s+(.+))?")
+    @command("snap", r"(?:(-[maciulrdsbfp1-9]+)\s+)?(\S+(?:,\s*\S+)*)(?:\s+(https?://\S+|:.+?:))?(?:\s+(.+))?")
     def snap(self, server, message, flags, user, background, text):
         acc = self.accounts[server.lower(message.context)]
         if server.lower(message.address.nick) not in self.users:
@@ -341,6 +341,8 @@ class Snap(Callback):
             return
         else:
             username = self.users[server.lower(message.address.nick)]
+
+        user = user.replace(" ", "")
 
         font = fonts["dejavu sans"]
         wrap = True
@@ -415,7 +417,7 @@ class Snap(Callback):
             text = text.replace("\\", "\n")
             text += "\n\n>\x0f -%s" % username
         else:
-            text = "\n>via %s" % username
+            text = "\n>via\xa0%s" % username
 
         users = [self.users[server.lower(i)] if server.lower(i) in self.users else i for i in user.split(",")]
 
