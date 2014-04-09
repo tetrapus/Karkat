@@ -1,5 +1,6 @@
 import json
 import shlex
+import re
 
 from bot.events import Callback, command
 
