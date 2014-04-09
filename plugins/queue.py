@@ -1,4 +1,5 @@
 import json
+import shlex
 
 from bot.events import Callback, command
 
@@ -15,18 +16,31 @@ class Queue(Callback):
             self.queues = {}
         super().__init__(server)
 
-    @command("list")
-    def list(self, server, message):
+    @command("list", r"(.*)")
+    def list(self, server, message, query):
         nick = message.address.nick
         queue = self.queues.setdefault(server.lower(nick), [])
         if not queue:
             yield "06│ Your queue is empty. "
             return
-        for i, item in enumerate(queue):
+
+        q = enumerate(queue)
+        
+        if query:
+            query = shlex.split(query.lower())
+
+            q = [i for i in queue if all(k.lower() in i[1].lower().split() for k in query)]
+
+        if not q:
+            yield "06│ No matching items."
+            return
+
+        for i, item in q:
             yield "06│ %d │ %s" % (i+1, item)
             if i > 2 and message.prefix != "!":
-                yield "06│ %d of %d items displayed." % (i+1, len(queue))
+                yield "06│ %d of %d items displayed." % (i+1, len(q))
                 return
+
 
     @command("queue", r"(.+)")
     def queue(self, server, message, item):
@@ -72,7 +86,20 @@ class Queue(Callback):
         else:
             return "06│ Promoted '%s'" % item
             
-
+    @command("tag", r"(#\S+)\s+(.+)")
+    def tag(self, server, message, tag, item):
+        nick = message.address.nick
+        queue = self.queues.setdefault(server.lower(nick), [])
+        try:
+            if item.isdigit():
+                item = queue[int(item) - 1]
+            else:
+                queue.index(item)
+        except:
+            return "06│ No such item."
+        queue[index] = queue[index] + " " + tag
+        self.save()
+        return "06│ Added tag."
 
     def save(self):
         with open(self.qfile, "w") as f:
