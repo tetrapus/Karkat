@@ -29,7 +29,7 @@ class Queue(Callback):
         if query:
             query = shlex.split(query.lower())
 
-            q = [i for i in q if all(k.lower() in i[1].lower().split() for k in query)]
+            q = [i for i in q if all(k.lower().lstrip("#") in [j.lstrip("#") for j in i[1].lower().split()] for k in query)]
 
         if not q:
             yield "06│ No matching items."
@@ -86,13 +86,13 @@ class Queue(Callback):
         else:
             return "06│ Promoted '%s'" % item
             
-    @command("tag", r"(#\S+)\s+(.+)")
+    @command("tag", r"(#\S+(?:\s+#\S+)*)\s+(.+)")
     def tag(self, server, message, tag, item):
         nick = message.address.nick
         queue = self.queues.setdefault(server.lower(nick), [])
         try:
             if all(i.isdigit() for i in item.split()):
-                items = [int(item) - 1 for i in item.split()]
+                items = [int(i) - 1 for i in item.split()]
             else:
                 items = [queue.index(item)]
         except:
@@ -100,7 +100,7 @@ class Queue(Callback):
         for i in items:
             queue[i] = queue[i] + " " + tag
         self.save()
-        return "06│ Added tag."
+        return "06│ Added tags."
 
     def save(self):
         with open(self.qfile, "w") as f:
