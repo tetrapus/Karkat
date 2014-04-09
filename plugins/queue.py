@@ -17,7 +17,6 @@ class Queue(Callback):
             self.queues = {}
         super().__init__(server)
 
-    re.sub("#\S+", r"\x0315\0", test)
 
     @command("list", r"(.*)")
     def list(self, server, message, query):
