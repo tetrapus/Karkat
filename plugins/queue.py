@@ -16,6 +16,8 @@ class Queue(Callback):
             self.queues = {}
         super().__init__(server)
 
+    re.sub("#\S+", r"\x0315\0", test)
+
     @command("list", r"(.*)")
     def list(self, server, message, query):
         nick = message.address.nick
@@ -36,7 +38,7 @@ class Queue(Callback):
             return
 
         for i, item in q:
-            yield "06│ %d │ %s" % (i+1, item)
+            yield "06│ %d │ %s" % (i+1, re.sub("(#\S+)", r"15\1", item))
             if i > 2 and message.prefix != "!":
                 yield "06│ %d of %d items displayed." % (i+1, len(q))
                 return
@@ -48,7 +50,7 @@ class Queue(Callback):
         queue = self.queues.setdefault(server.lower(nick), [])
         queue.append(item)
         self.save()
-        return "06│ Added item %d: %s" % (len(queue), item)
+        return "06│ Added item %d: %s" % (len(queue), re.sub("(#\S+)", r"15\1", item))
 
     @command("pop", r"(\d*)")
     def pop(self, server, message, number):
@@ -61,7 +63,7 @@ class Queue(Callback):
             return "06│ No such item."
         else:
             self.save()
-            return "06│ Popped item %s: %s" % (number, item)
+            return "06│ Popped item %s: %s" % (number, re.sub("(#\S+)", r"15\1", item))
 
     @command("peek")
     def peek(self, server, message):
@@ -69,7 +71,7 @@ class Queue(Callback):
         queue = self.queues.setdefault(server.lower(nick), [])
         if not queue:
             return "06│ Your queue is empty. "
-        return "06│ %s" % queue[0]
+        return "06│ %s" % re.sub("(#\S+)", r"15\1", queue[0])
         
     @command("next", r"(.+)")
     def promote(self, server, message, item):
@@ -84,7 +86,7 @@ class Queue(Callback):
         except IndexError:
             return "06│ No such item. "
         else:
-            return "06│ Promoted '%s'" % item
+            return "06│ Promoted '%s'" % (re.sub("(#\S+)", r"15\1", item))
             
     @command("tag", r"(#\S+(?:\s+#\S+)*)\s+(.+)")
     def tag(self, server, message, tag, item):
@@ -101,6 +103,10 @@ class Queue(Callback):
             queue[i] = queue[i] + " " + tag
         self.save()
         return "06│ Added tags."
+
+    @command("untag", r"(#\S+(?:\s+#\S+)*)\s+(.+)")
+    def untag(self, server, message, tags, items):
+        pass
 
     def save(self):
         with open(self.qfile, "w") as f:
