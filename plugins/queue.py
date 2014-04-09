@@ -29,9 +29,11 @@ class Queue(Callback):
         q = enumerate(queue)
         
         if query:
-            query = shlex.split(query.lower())
-
-            q = [i for i in q if all(k.lower().lstrip("#") in [j.lstrip("#") for j in i[1].lower().split()] for k in query)]
+            query = set(shlex.split(query.lower()))
+            exclude = {i for i in query if i.startswith("-")}
+            include = query - exclude
+            q = [i for i in q if all(k.lstrip("#") in [j.lstrip("#") for j in i[1].lower().split()] for k in include)]
+            q = [i for i in q if not any(k[1:].lstrip("#") in [j.lstrip("#") for j in i[1].lower().split()] for k in exclude)]
 
         if not q:
             yield "06│ No matching items."
