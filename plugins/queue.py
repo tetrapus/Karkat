@@ -91,13 +91,14 @@ class Queue(Callback):
         nick = message.address.nick
         queue = self.queues.setdefault(server.lower(nick), [])
         try:
-            if item.isdigit():
-                item = queue[int(item) - 1]
+            if all(i.isdigit() for i in item.split()):
+                items = [int(item) - 1 for i in item.split()]
             else:
-                queue.index(item)
+                items = [queue.index(item)]
         except:
             return "06│ No such item."
-        queue[index] = queue[index] + " " + tag
+        for i in items:
+            queue[i] = queue[i] + " " + tag
         self.save()
         return "06│ Added tag."
 
