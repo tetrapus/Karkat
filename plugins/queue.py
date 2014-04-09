@@ -39,11 +39,11 @@ class Queue(Callback):
 
         count = 0
         for i, item in q:
-            yield "06│ %d │ %s" % (i+1, re.sub("(#\S+)", r"15\1", item))
-            if count > 2 and message.prefix != "!":
-                yield "06│ %d of %d items displayed." % (i+1, len(q))
-                return
             count += 1
+            yield "06│ %d │ %s" % (i+1, re.sub("(#\S+)", r"15\1", item))
+            if count > 3 and message.prefix != "!":
+                yield "06│ %d of %d items displayed." % (count, len(q))
+                return
 
 
     @command("queue", r"(.+)")
