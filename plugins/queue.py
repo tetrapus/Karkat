@@ -29,7 +29,7 @@ class Queue(Callback):
         if query:
             query = shlex.split(query.lower())
 
-            q = [i for i in queue if all(k.lower() in i[1].lower().split() for k in query)]
+            q = [i for i in q if all(k.lower() in i[1].lower().split() for k in query)]
 
         if not q:
             yield "06│ No matching items."
