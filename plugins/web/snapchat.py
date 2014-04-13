@@ -19,7 +19,7 @@ from util import scheduler
 from bot.events import Callback, command
 
 snapfolder = "/var/www"
-public_url = "http://xenon.tetrap.us/"
+public_url = "http://xe.tetrap.us/"
 
 colors = [(204, 204, 204), (0, 0, 0), (53, 53, 179), (42, 140, 42), (195, 59, 59), (199, 50, 50), (128, 38, 127), (102, 54, 31), (217, 166, 65), (61, 204, 61), (25, 85, 85), (46, 140, 116), (69, 69, 230), (176, 55, 176), (76, 76, 76), (149, 149, 149)]
 
@@ -375,25 +375,24 @@ class Snap(Callback):
                 elif i == "f":
                     force = True
 
-        if not bg:
-            if not text and not background:
-                background = server.lasturl
+        if not text and not background:
+            background = server.lasturl
 
-            if background:
-                if background.startswith(":"):
-                    params = {
-                        "safe": "off",
-                        "v": "1.0",
-                        "rsz": 1,
-                        "q": background[1:-1]
-                    }
-                    background = requests.get(
-                      "https://ajax.googleapis.com/ajax/services/search/images",
-                      params=params
-                    ).json()["responseData"]["results"][0]["url"] 
-                bg = Image.open(BytesIO(requests.get(background).content))
-            else:
-                bg = Image.new("RGBA", (720, 1184), (0, 0, 0))
+        if background:
+            if background.startswith(":"):
+                params = {
+                    "safe": "off",
+                    "v": "1.0",
+                    "rsz": 1,
+                    "q": background[1:-1]
+                }
+                background = requests.get(
+                  "https://ajax.googleapis.com/ajax/services/search/images",
+                  params=params
+                ).json()["responseData"]["results"][0]["url"] 
+            bg = Image.open(BytesIO(requests.get(background).content))
+        else:
+            bg = Image.new("RGBA", (720, 1184), (0, 0, 0))
         if bg.size[0] > 4096 or bg.size[1] > 4096:
             yield "04│👻│ Image too large."
             return
