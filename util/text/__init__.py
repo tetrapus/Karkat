@@ -420,6 +420,10 @@ def strikethrough(text):
 def underline(text):
     return "\u0332" + "\u0332".join(text)
 
+def smallcaps(text):
+    caps = {'p': 'ᴘ', 'q': 'ǫ', 'r': 'ʀ', 's': 'ꜱ', 't': 'ᴛ', 'u': 'ᴜ', 'v': 'ᴠ', 'w': 'ᴡ', 'x': 'x', 'y': 'ʏ', 'z': 'ᴢ', 'a': 'ᴀ', 'b': 'ʙ', 'c': 'ᴄ', 'd': 'ᴅ', 'e': 'ᴇ', 'f': 'ꜰ', 'g': 'ɢ', 'h': 'ʜ', 'i': 'ɪ', 'j': 'ᴊ', 'k': 'ᴋ', 'l': 'ʟ', 'm': 'ᴍ', 'n': 'ɴ', 'o': 'ᴏ'}
+    return "".join(caps.get(i, i) for i in text)
+
 swears = open("data/Vulgarities/first.txt").read().split()
 nouns = open("data/Vulgarities/second.txt").read().split()
 insults = open("data/Vulgarities/full.txt").read().split()
