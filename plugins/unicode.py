@@ -109,6 +109,7 @@ def symbols(server, msg, data):
     for block in [x[0] for x in blocks if data == x[1].upper()]:
         results += ["%X" % i for i in range(block[0], block[1])]
 
+    results.sort(key=lambda i: int(i[0], 16))
     results = [repr(chr(int(i[0], 16)))[1:-1] for i in results]
     results.sort(key=lambda x:x.startswith("\\"))
 
