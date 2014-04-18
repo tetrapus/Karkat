@@ -15,15 +15,18 @@ def complete_trigger(server, message, query):
     - Description: Ask Google for similar search queries.
     """
     result = suggest(query)
+    q = query.lower().strip()
+
     if result:
         if message.prefix == ".":
-            result = [i.replace(query.lower(), "" if i.startswith(query.lower()) else "\x0315%s\x03" % query.lower()) for i in result]
+            result = [i.replace(q, "" if i.startswith(q) else "\x0315%s\x03" % q) for i in result]
+            result = [i[1:] if i.startswith(" ") else "\x0315%s\x03%s" % (q, i) for i in map(str.rstrip, result)]
             line = result.pop(0)
             while result and len(line + result[0]) + 3 < 55:
                 line += " \x0312·\x03 " + result.pop(0)
             yield "12│ %s 12│ %s" % (query, line)
         else:
-            result = [i.replace(query.lower(), "\x0315%s\x03" % query.lower()) for i in result]
+            result = [i.replace(q, "\x0315%s\x03" % q) for i in result]
             table = namedtable(result, 
                                size    = 72, 
                                rowmax  = 4 if message.text.startswith("@") else None, 
