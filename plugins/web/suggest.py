@@ -8,7 +8,7 @@ def suggest(query):
 
 @Callback.threadsafe
 @command(["complete", "suggest"], "(.+)", 
-         usage = "12Google suggest│  Usage: [!@](complete|suggest) <query>")
+         templates={Callback.USAGE: "12Google suggest│  Usage: [!@](complete|suggest) <query>"})
 def complete_trigger(server, message, query):
     """
     - Syntax: [!@](complete|suggest) 03query
