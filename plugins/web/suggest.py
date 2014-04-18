@@ -1,7 +1,7 @@
 import requests
 
 from bot.events import Callback, command
-from util.text import namedtable
+from util.text import namedtable, striplen
 
 def suggest(query):
     return requests.get("http://suggestqueries.google.com/complete/search?output=firefox&client=firefox&hl=en&q=%(searchTerms)s"%{"searchTerms":query}).json()[1]
@@ -19,10 +19,10 @@ def complete_trigger(server, message, query):
 
     if result:
         if message.prefix == ".":
-            result = [i.replace(q, "" if i.startswith(q) else "\x0315%s\x03" % q) for i in result]
+            result = [i.replace(q, "" if i.startswith(q) else "\x0315%s\x03" % q, 1) for i in result]
             result = [i[1:] if i.startswith(" ") else "\x0315%s\x03%s" % (q, i) for i in map(str.rstrip, result)]
             line = result.pop(0)
-            while result and len(line + result[0]) + 3 < 55:
+            while result and striplen(line + result[0]) + 3 < 60:
                 line += " \x0312·\x03 " + result.pop(0)
             yield "12│ %s 12│ %s" % (query, line)
         else:
