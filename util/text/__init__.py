@@ -310,20 +310,17 @@ def aligntable(rows, separator=" 08⎪ "):
     """
     Column-align a table of rows.
     """
-    # Pad the rows
-    maxwidth = len(max(rows, key=len))
-    for i in rows:
-        if len(i) != maxwidth:
-            i.extend([""] * (maxwidth-len(i)))
 
-    # Invert
-    columns = list(zip(*rows))
-    for i, col in enumerate(columns):
-        width = max(striplen(x) for x in col)
-        for j, cell in enumerate(col):
-            rows[j][i] = cell + (" "*(width - striplen(cell)))
-    rows = [separator.join(x) for x in rows]
-    return rows
+    table = []
+    widths = [max(striplen(x[i]) for x in rows if i < len(x)) for i in range(max(len(i) for i in rows))]
+
+    for row in rows:
+        table.append([])
+        for i, cell in enumerate(row):
+            table[-1].append(cell + (" "*(widths[i] - striplen(cell))))
+
+    table = [separator.join(x) for x in table]
+    return table
 
 def cmp(a, b):
     return (a > b) - (a < b)
@@ -423,6 +420,10 @@ def underline(text):
 def smallcaps(text):
     caps = {'p': 'ᴘ', 'q': 'ǫ', 'r': 'ʀ', 's': 'ꜱ', 't': 'ᴛ', 'u': 'ᴜ', 'v': 'ᴠ', 'w': 'ᴡ', 'x': 'x', 'y': 'ʏ', 'z': 'ᴢ', 'a': 'ᴀ', 'b': 'ʙ', 'c': 'ᴄ', 'd': 'ᴅ', 'e': 'ᴇ', 'f': 'ꜰ', 'g': 'ɢ', 'h': 'ʜ', 'i': 'ɪ', 'j': 'ᴊ', 'k': 'ᴋ', 'l': 'ʟ', 'm': 'ᴍ', 'n': 'ɴ', 'o': 'ᴏ'}
     return "".join(caps.get(i, i) for i in text)
+
+def fullwidth(text):
+    full = {'|': '｜', '~': '～', 'x': 'ｘ', 'z': 'ｚ', 't': 'ｔ', 'v': 'ｖ', 'p': 'ｐ', 'r': 'ｒ', 'l': 'ｌ', 'n': 'ｎ', 'h': 'ｈ', 'j': 'ｊ', 'd': 'ｄ', 'f': 'ｆ', '`': '｀', 'b': 'ｂ', '\\': '＼', '^': '＾', 'X': 'Ｘ', 'Z': 'Ｚ', 'T': 'Ｔ', 'V': 'Ｖ', 'P': 'Ｐ', 'R': 'Ｒ', 'L': 'Ｌ', 'N': 'Ｎ', 'H': 'Ｈ', 'J': 'Ｊ', 'D': 'Ｄ', 'F': 'Ｆ', '@': '＠', 'B': 'Ｂ', '<': '＜', '>': '＞', '8': '８', ':': '：', '4': '４', '6': '６', '0': '０', '2': '２', ',': '，', '.': '．', '(': '（', '*': '＊', '$': '＄', '&': '＆', '"': '＂', '}': '｝', 'y': 'ｙ', '{': '｛', 'u': 'ｕ', 'w': 'ｗ', 'q': 'ｑ', 's': 'ｓ', 'm': 'ｍ', 'o': 'ｏ', 'i': 'ｉ', 'k': 'ｋ', 'e': 'ｅ', 'g': 'ｇ', 'a': 'ａ', 'c': 'ｃ', ']': '］', '_': '＿', 'Y': 'Ｙ', '[': '［', 'U': 'Ｕ', 'W': 'Ｗ', 'Q': 'Ｑ', 'S': 'Ｓ', 'M': 'Ｍ', 'O': 'Ｏ', 'I': 'Ｉ', 'K': 'Ｋ', 'E': 'Ｅ', 'G': 'Ｇ', 'A': 'Ａ', 'C': 'Ｃ', '=': '＝', '?': '？', '9': '９', ';': '；', '5': '５', '7': '７', '1': '１', '3': '３', '-': '－', '/': '／', ')': '）', '+': '＋', '%': '％', "'": '＇', '!': '！', '#': '＃'}
+    return "".join(full.get(i, i) for i in text)
 
 swears = open("data/Vulgarities/first.txt").read().split()
 nouns = open("data/Vulgarities/second.txt").read().split()
