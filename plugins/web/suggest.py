@@ -19,11 +19,20 @@ def complete_trigger(server, message, query):
 
     if result:
         if message.prefix == ".":
-            result = [i.replace(q, "" if i.startswith(q) else "\x0315%s\x03" % q, 1) for i in result]
-            result = [i[1:] if i.startswith(" ") else "\x0315%s\x03%s" % (q, i) for i in map(str.rstrip, result)]
-            line = result.pop(0)
-            while result and striplen(line + result[0]) + 3 < 60:
-                line += " \x0312·\x03 " + result.pop(0)
+            parsed = []
+            for i in result:
+                if i.startswith(q):
+                    i = i.replace(q, "" if i.startswith(q) else "\x0315%s\x03" % q, 1).rstrip()
+                    if not i.startswith(" "):
+                        i = "\x0315%s\x03%s" % (q, i)
+                    else:
+                        i = i.strip()
+                else:
+                    i = i.replace(q, "\x0315%s\x03" % q) 
+                parsed.append(i)
+            line = parsed.pop(0)
+            while parsed and striplen(line + parsed[0]) + 3 < 60:
+                line += " \x0312·\x03 " + parsed.pop(0)
             yield "12│ %s 12│ %s" % (query, line)
         else:
             result = [i.replace(q, "\x0315%s\x03" % q) for i in result]
