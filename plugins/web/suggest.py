@@ -1,6 +1,6 @@
 import requests
 
-from util.irc import Callback, command
+from bot.events import Callback, command
 from util.text import namedtable
 
 def suggest(query):
@@ -16,13 +16,21 @@ def complete_trigger(server, message, query):
     """
     result = suggest(query)
     if result:
-        table = namedtable(result, 
-                           size    = 72, 
-                           rowmax  = 4 if message.text.startswith("@") else None, 
-                           header  = "12G04o08o12g03l04e12 suggest  ", 
-                           rheader = "'%s'" % query)
-        for line in table:
-            yield line
+        if message.prefix == ".":
+            result = [i.replace(query.lower(), "" if i.startswith(query.lower()) else "\x0315%s\x03" % query.lower()) for i in result]
+            line = result.pop(0)
+            while result and len(line + result[0]) + 3 < 55:
+                result += " \x0312·\x03 " + result.pop(0)
+            yield "12│ %s 12│ %s" % (query, line)
+        else:
+            result = [i.replace(query.lower(), "\x0315%s\x03" % query.lower()) for i in result]
+            table = namedtable(result, 
+                               size    = 72, 
+                               rowmax  = 4 if message.text.startswith("@") else None, 
+                               header  = "12G04o08o12g03l04e12 suggest  ", 
+                               rheader = "'%s'" % query)
+            for line in table:
+                yield line
     else:
         yield "05Google suggest│  No results."
 
