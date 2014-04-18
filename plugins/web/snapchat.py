@@ -226,7 +226,7 @@ class Snap(Callback):
         for i in self.settings:
             self.accounts[i].login(self.settings[i]["username"], self.settings[i]["password"])
         self.cache = {}
-        self.checker = scheduler.schedule_after(60, self.checksnaps, args=(server,), stop_after=None)
+        self.checker = scheduler.schedule_after(45, self.checksnaps, args=(server,), stop_after=None)
         self.server = server
 
         super().__init__(server)
@@ -376,7 +376,7 @@ class Snap(Callback):
                 elif i == "f":
                     force = True
 
-        if not text and not background:
+        if not text and not background and not bg:
             background = server.lasturl
 
         if background:
@@ -392,7 +392,7 @@ class Snap(Callback):
                   params=params
                 ).json()["responseData"]["results"][0]["url"] 
             bg = Image.open(BytesIO(requests.get(background).content))
-        else:
+        elif not bg:
             bg = Image.new("RGBA", (720, 1184), (0, 0, 0))
         if bg.size[0] > 4096 or bg.size[1] > 4096:
             yield prefix + "\x0304Image too large."
