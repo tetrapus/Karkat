@@ -15,7 +15,7 @@ def complete_trigger(server, message, query):
     - Description: Ask Google for similar search queries.
     """
     result = suggest(query)
-    q = query.lower().strip()
+    q = query.lower().strip().strip("\"'")
 
     if result:
         if message.prefix == ".":
