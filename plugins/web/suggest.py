@@ -20,7 +20,7 @@ def complete_trigger(server, message, query):
             result = [i.replace(query.lower(), "" if i.startswith(query.lower()) else "\x0315%s\x03" % query.lower()) for i in result]
             line = result.pop(0)
             while result and len(line + result[0]) + 3 < 55:
-                result += " \x0312·\x03 " + result.pop(0)
+                line += " \x0312·\x03 " + result.pop(0)
             yield "12│ %s 12│ %s" % (query, line)
         else:
             result = [i.replace(query.lower(), "\x0315%s\x03" % query.lower()) for i in result]
