@@ -26,7 +26,7 @@ class Queue(Callback):
             yield "06│ Your queue is empty. "
             return
 
-        q = enumerate(queue)
+        q = list(enumerate(queue))
         
         if query:
             query = set(shlex.split(query.lower()))
@@ -44,7 +44,7 @@ class Queue(Callback):
             count += 1
             yield "06│ %d │ %s" % (i+1, re.sub("(#\S+)", r"15\1", item))
             if count > 3 and message.prefix != "!":
-                yield "06│ %d of %d items displayed." % (count, len(queue))
+                yield "06│ %d of %d items displayed." % (count, len(q))
                 return
 
 
