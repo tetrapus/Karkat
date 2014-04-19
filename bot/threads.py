@@ -671,6 +671,7 @@ class StatefulBot(SelectiveBot):
     interacts with this class, it must either be inlined, or be
     okay with the fact the state can change under your feet. """
 
+    # TODO: Move into base module.
     # TODO: Store own state
     # TODO: Interact with connection threads
     # TODO: Extend interface to search for users and return lists and things.
@@ -679,19 +680,33 @@ class StatefulBot(SelectiveBot):
 
     def __init__(self, conf, **kwargs):
         super().__init__(conf, **kwargs)
+        self.features = []
         self.channels = {}
         self.server_settings = {}
         self.away = None
+        self.valid_modes = None
+        self.user_modes = {}
+        self.channel_modes = {}
+        self.listbuffer = {}
+        self.topic = {}
+        self.rawmap = {346:"I", 348:"e", 367:"b", 386:"q", 388:"a"} # TODO: parse these.
         self.register_all({"quit" : [self.user_quit],
                            "part" : [self.user_left],
                            "join" : [self.user_join],
                            "nick" : [self.user_nickchange],
                            "kick" : [self.user_kicked],
+                           "mode" : [self.channel_mode], 
+                           "topic": [self.topic_changed],
+                           "332"  : [self.channel_topic],  
                            "352"  : [self.joined_channel],
                            "005"  : [self.onServerSettings],
                            "306"  : [self.went_away],
                            "305"  : [self.came_back],
-                           "301"  : [self.user_awaymsg]})
+                           "301"  : [self.user_awaymsg],
+                           "324"  : [self.joined_channel_modes]})
+        for i in self.rawmap:
+            self.register(str(i), self.list_builder)
+            self.register(str(i+1), self.list_end)
 
     def nickcmp(self, nick1, nick2):
         """ Implements RFC-compliant nickcmp """
@@ -714,6 +729,150 @@ class StatefulBot(SelectiveBot):
 
     def is_admin(self, address):
         return any(fnmatch.fnmatch(address, i) for i in self.admins) or any(address.endswith("@" + i) for i in self.admins)
+
+
+    def parse_A_mode(self, channel, action, mode, args):
+        settings = self.channel_modes.setdefault(self.lower(channel), {})
+        settings = settings.setdefault(mode, [])
+        arg = args.pop(0)
+
+        if action == "+":
+            settings.append(arg)
+        else:
+            settings.remove(arg)
+
+    def parse_B_mode(self, channel, action, mode, args):
+        settings = self.channel_modes.setdefault(self.lower(channel), {})
+        arg = args.pop(0)
+
+        if action == "+":
+            settings[mode] = arg
+        else:
+            settings[mode] = None
+        
+    def parse_C_mode(self, channel, action, mode, args):
+        settings = self.channel_modes.setdefault(self.lower(channel), {})
+
+        if action == "+":
+            arg = args.pop(0)
+            settings[mode] = arg
+        else:
+            settings[mode] = None
+
+    def parse_D_mode(self, channel, action, mode, args):
+        settings = self.channel_modes.setdefault(self.lower(channel), {})
+
+        if action == "+":
+            settings[mode] = True
+        else:
+            settings[mode] = False
+
+    def parse_user_mode(self, channel, action, mode, args):
+        settings = self.user_modes.setdefault(self.lower(channel), {})
+        settings = settings.setdefault(mode, {})
+        user = args.pop(0)
+        if action == "+":
+            settings.setdefault(self.lower(user), []).append(mode)
+        else:
+            settings.setdefault(self.lower(user), []).remove(mode)
+
+    def set_modes(self, channel, modes, args):
+        """
+        Parses a string of channel modes.
+        
+        CHANMODES=A,B,C,D
+            This is a list of channel modes according to 4 types.
+            A = Mode that adds or removes a nick or address to a list. Always has a parameter.  Arity 1/1, List type
+            B = Mode that changes a setting and always has a parameter.                         Arity 1/1, String or None
+            C = Mode that changes a setting and only has a parameter when set                   Arity 1/0, String
+            D = Mode that changes a setting and never has a parameter                           Arity 0/0, Boolean
+
+            Note: Modes of type A return the list when there is no parameter present.
+            Note: Some clients assumes that any mode not listed is of type D.
+            Note: Modes in PREFIX are not listed but could be considered type B. 
+        
+        Private modes supported: Iebaq
+        """
+        types = zip(self.server_settings["CHANMODES"].split(",") + [self.valid_modes[0]], 
+                    (self.parse_A_mode, self.parse_B_mode, self.parse_C_mode, self.parse_D_mode, self.parse_user_mode))
+        action = "+"
+        for i in modes:
+            if i in "+-":
+                action = i
+            else:
+                for flags, f in types:
+                    if i in flags:
+                        f(channel, action, i, args)
+                        break
+                else:
+                    self.parse_D_mode(channel, action, i, args)
+
+    def get_user_modes(self, channel, username):
+        return self.user_modes.get(self.lower(channel), {}).get(self.lower(username), [])
+
+    def rank_to_int(self, rank):
+        if rank in self.valid_modes[0]:
+            return len(self.valid_modes[0]) - self.valid_modes[0].index(rank)
+        elif rank in self.valid_modes[1]:
+            return len(self.valid_modes[0]) - self.valid_modes[1].index(rank)
+        else:
+            return 0
+
+    def numeric_rank(self, channel, username):
+        modes = self.get_user_modes(channel, username)
+        modes = [self.rank_to_int(i) for i in modes]
+        return max(modes or [0])
+
+    def rank(self, channel, username):
+        rank = self.numeric_rank(channel, username)
+        return self.valid_modes[1][-rank] if rank else None
+
+    def get_channel_modes(self, channel):
+        return self.channel_modes.get(self.lower(channel), {})
+
+    def get_topic(self, channel):
+        return self.topic.get(self.lower(channel), None)
+
+    def get_users(self, channel):
+        return self.channels.get(self.lower(channel), [])
+
+    def get_list(self, channel, mode):
+        return self.get_channel_modes(channel).get(mode, [])
+    
+    @Callback.inline
+    def topic_changed(self, server, line):
+        words = line.split(" ", 3)
+        self.topic[self.lower(words[2])] = words[-1][1:]
+
+    @Callback.inline
+    def channel_topic(self, server, line):
+        words = line.split(" ", 4)
+        self.topic[self.lower(words[3])] = words[-1][1:]
+
+    @Callback.inline
+    def list_builder(self, server, line):
+        words = line.split(" ")
+        self.listbuffer.setdefault((int(words[1]), self.lower(words[3])), []).append(words[4])
+
+    @Callback.inline
+    def list_end(self, server, line):
+        words = line.split(" ")
+        self.channel_modes[self.lower(words[3])][self.rawmap[int(words[1])-1]] = self.listbuffer.get((int(words[1])-1, self.lower(words[3])), [])
+        self.listbuffer[(int(words[1])-1, self.lower(words[3]))] = {}
+
+    @Callback.inline
+    def channel_mode(self, server, line):
+        words = line.split(" ")
+        channel, modes, args = words[2], words[3], words[4:]
+        self.set_modes(channel, modes, args)
+
+
+    @Callback.inline
+    def joined_channel_modes(self, server, line):
+        words = line.split(" ")
+        channel, modes, args = words[3], words[4], words[5:]
+        self.set_modes(channel, modes, args)
+
 
     @Callback.inline
     def went_away(self, server, line):
@@ -743,6 +902,10 @@ class StatefulBot(SelectiveBot):
             else:
                 key, value = i.split("=", 1)
                 self.server_settings[key] = value
+    
+        if "PREFIX" in self.server_settings:
+            self.valid_modes = re.match(r"\((.+)\)(.+)", self.server_settings["PREFIX"]).groups()
+
 
     @Callback.inline
     def user_left(self, server, line):
@@ -773,6 +936,9 @@ class StatefulBot(SelectiveBot):
         if self.eq(nick, self.nick):
             self.channels[channel] = set()
             self.sendline("WHO %s" % words[2]) # TODO: replace with connection object shit.
+            self.sendline("MODE %s" % words[2])
+            for i in self.server_settings["CHANMODES"].split(",")[0]: # Lists
+                self.sendline("MODE %s %s" % (words[2][1:], i))
         else:
             self.channels[channel].add(nick)
 
@@ -781,6 +947,7 @@ class StatefulBot(SelectiveBot):
         """ Handles 352s (WHOs) """
         words = line.split()
         self.channels.setdefault(self.lower(words[3]), set()).add(words[7])
+        self.user_modes.setdefault(self.lower(words[3]), {}).update({self.lower(words[7]): [self.valid_modes[0][self.valid_modes[1].index(i)] for i in words[8] if i in self.valid_modes[1]]})
 
     @Callback.inline
     def user_nickchange(self, server, line):
