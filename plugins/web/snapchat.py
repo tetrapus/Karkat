@@ -180,7 +180,7 @@ def linesize(font, text):
 def save(data, fmt):
     sig = hashlib.md5(data).hexdigest()
     if sig in cache:
-        return snapfolder + "/" + cache[sig]
+        return cache[sig].rsplit(".", 1)[0]
     fchars =  "abcdefghijklmnopqrstuvwxyz-_+=~ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
     template = snapfolder + "/%s." + fmt
     fname = random.choice(fchars)
