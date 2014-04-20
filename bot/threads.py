@@ -770,7 +770,7 @@ class StatefulBot(SelectiveBot):
     def parse_user_mode(self, channel, action, mode, args):
         settings = self.user_modes.setdefault(self.lower(channel), {})
         user = args.pop(0)
-        settings = settings.setdefault(server.lower(user), [])
+        settings = settings.setdefault(self.lower(user), [])
         if action == "+":
             settings.append(mode)
         else:
