@@ -748,7 +748,7 @@ class StatefulBot(SelectiveBot):
         if action == "+":
             settings[mode] = arg
         else:
-            settings[mode] = None
+            del settings[mode]
         
     def parse_C_mode(self, channel, action, mode, args):
         settings = self.channel_modes.setdefault(self.lower(channel), {})
@@ -757,7 +757,7 @@ class StatefulBot(SelectiveBot):
             arg = args.pop(0)
             settings[mode] = arg
         else:
-            settings[mode] = None
+            del settings[mode]
 
     def parse_D_mode(self, channel, action, mode, args):
         settings = self.channel_modes.setdefault(self.lower(channel), {})
@@ -765,16 +765,16 @@ class StatefulBot(SelectiveBot):
         if action == "+":
             settings[mode] = True
         else:
-            settings[mode] = False
+            del settings[mode]
 
     def parse_user_mode(self, channel, action, mode, args):
         settings = self.user_modes.setdefault(self.lower(channel), {})
-        settings = settings.setdefault(mode, {})
         user = args.pop(0)
+        settings = settings.setdefault(server.lower(user), [])
         if action == "+":
-            settings.setdefault(self.lower(user), []).append(mode)
+            settings.append(mode)
         else:
-            settings.setdefault(self.lower(user), []).remove(mode)
+            settings.remove(mode)
 
     def set_modes(self, channel, modes, args):
         """
