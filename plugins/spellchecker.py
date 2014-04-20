@@ -109,7 +109,7 @@ else:
             words = set(sentence.split())
 
             sentence = [self.stripContractions(i) for i in words if self.isWord(i)]
-            errors = [i for i in sentence if not (self.dictionary.check(i) or self.alternate.check(i))]
+            errors = [i for i in sentence if i and not (self.dictionary.check(i) or self.alternate.check(i))]
             suggestions = [set(self.alternate.suggest(i)) | set(self.dictionary.suggest(i)) for i in errors]
             # reduce the suggestions
             suggestions = [{"".join(z for z in i if z.isalpha() or z in "'").lower() for i in x} for x in suggestions]
