@@ -857,7 +857,7 @@ class StatefulBot(SelectiveBot):
     @Callback.inline
     def list_end(self, server, line):
         words = line.split(" ")
-        self.channel_modes[self.lower(words[3])][self.rawmap[int(words[1])-1]] = self.listbuffer.get((int(words[1])-1, self.lower(words[3])), [])
+        self.channel_modes.setdefault(self.lower(words[3]), {}).update({self.rawmap[int(words[1])-1]: self.listbuffer.get((int(words[1])-1, self.lower(words[3])), [])})
         self.listbuffer[(int(words[1])-1, self.lower(words[3]))] = {}
 
     @Callback.inline
