@@ -239,6 +239,7 @@ class AI(Callback):
         self.lasttime = 0
         self.lastmsg = ""
         self.context = []
+        self.trigger_rate = 0.3
 
         self.lastlines = []
 
@@ -350,14 +351,20 @@ class AI(Callback):
     def capsmsg(self, server, msg):
         if not (msg.text[0].isalpha() or msg.text[0] == "\x01"):
             return
-        if msg.text.lower().startswith("%s:" % server.nick.lower()) or (msg.text.isupper() or "karkat" in msg.text.lower() or "pipey" in msg.text.lower()):
+        triggers = [msg.text.isupper(), msg.text.lower().startswith("%s:" % server.nick.lower()) or "karkat" in msg.text.lower() or "pipey" in msg.text.lower()]
+        if any(triggers):
+            self.trigger_rate = min(1, self.trigger_rate + 0.1 + 0.15 * (triggers[1]))
+            if random.random() > self.trigger_rate:
+                return
             response, weights, inputs = self.getline(msg.address.nick, msg.text.upper())
             yield response
             self.lasttime = time.time()
             self.lastmsg = response
             self.lastlines.append((time.time(), msg.context, weights, inputs, {}))
-        if msg.text.isupper() and msg.text not in self.lines:
-            self.addline(server.channels[server.lower(msg.context)], msg.text.upper())
+        else:
+            self.trigger_rate = max(0.25, self.trigger_rate - 0.025)
+        if triggers[0] and msg.text not in self.lines:
+            self.addline(server.channels.get(server.lower(msg.context), [msg.context]), msg.text.upper())
 
     @command("purge", "(.*)", admin=True)
     def purge(self, server, message, query):

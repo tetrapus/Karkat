@@ -167,11 +167,6 @@ class CardsAgainstHumanity(object):
         
         self.answers = self.white[:] + white[:]
 
-        # Get trends from google
-        trends = requests.get("http://www.google.com/trends/hottrends/atom/hourly").text
-        trends = re.findall(">([^<]+)</a></span></li>", trends)
-        self.answers.extend([i + "." for i in trends])
-
         # Get trends from twitter
         twit = requests.get("https://api.twitter.com/1.1/trends/place.json?id=2458410", headers={"Authorization": "Bearer AAAAAAAAAAAAAAAAAAAAAG8uWwAAAAAA%2BKplZ2OgC1RPLd64ac9OIdP%2FHc4%3DEFiiimJ2pmK8UICRFzeO6zgmDIFwcMd7xiA0iH7pr0gZzqbmld"}).json()
         twit = [i["name"] for i in twit[0]["trends"]]
@@ -238,7 +233,7 @@ class CardsAgainstHumanity(object):
             p = CAHPlayer(player)
             self.allplayers.append(p)
             self.repopulate(p)
-            self.answers.append(player)
+            self.answers.append(player + ".")
             random.shuffle(self.answers)
 
         self.players.append(p)
