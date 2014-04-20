@@ -442,7 +442,7 @@ class Snap(Callback):
             if len(users) != allusers:
                 omitted = "Omitted %d unknown users. Use -f to force, or check your syntax is correct." % (allusers - len(users))
 
-        if username.lower() not in [i.lower() for i in users]:
+        if not users:
             users += [username]
         user = ",".join(users)
 
