@@ -53,7 +53,7 @@ class Queue(Callback):
 
     def displayAll(self, lines, max=25):
         for count, i in enumerate(lines):
-            if max <= count and max != len(lines):
+            if max < count and max != len(lines):
                 yield "06│ %d of %d items displayed." % (count, len(lines))
                 return
             yield self.display(i)
