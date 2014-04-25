@@ -19,9 +19,7 @@ class Queue(Callback):
         super().__init__(server)
         
 
-    def get_queue(self, nick, query=None):
-        queue = self.queues.setdefault(nick, [])
-
+    def find(self, queue, query=None):
         q = [(i[0] + 1, i[1]) for i in enumerate(queue)]
 
         if query is None:
@@ -45,6 +43,7 @@ class Queue(Callback):
 
                 return q
 
+
     def display(self, line):
         return "06│ %d │ %s" % (line[0], re.sub(r"(#\S+)", r"15\1", line[1]))
 
@@ -63,7 +62,7 @@ class Queue(Callback):
             yield "06│ Your queue is empty. "
             return
 
-        q = self.get_queue(nick, query)
+        q = self.find(queue, query)
 
         if not q:
             yield "06│ No matching items."
@@ -72,14 +71,14 @@ class Queue(Callback):
         yield from self.displayAll(q, 25 if msg.prefix == '!' else 5)
 
 
-    @command("choose", r"([^\d,]*)")
+    @command("choose", r"^([^\d,]*)$")
     def choose(self, server, msg, query):
         nick = server.lower(msg.address.nick)
         queue = self.queues.setdefault(nick, [])
         if not queue:
             return "06│ Your queue is empty. "
 
-        q = self.get_queue(nick, query)
+        q = self.find(queue, query)
 
         if not q:
             return "06│ No matching items."
@@ -102,7 +101,7 @@ class Queue(Callback):
             yield "06│ Your queue is empty. "
             return
 
-        q = self.get_queue(nick, query)
+        q = self.find(queue, query)
 
         if not q:
             yield "06│ No matching items."
@@ -122,7 +121,7 @@ class Queue(Callback):
         if not queue:
             return "06│ Your queue is empty. "
 
-        q = self.get_queue(nick, query)
+        q = self.find(queue, query)
 
         if not q:
             return "06│ No matching items."
@@ -136,7 +135,7 @@ class Queue(Callback):
         if not queue:
             yield "06│ Your queue is empty. "
             return
-        q = self.get_queue(nick, query)
+        q = self.find(queue, query)
 
         if not q:
             yield "06│ No matching items."
@@ -156,7 +155,7 @@ class Queue(Callback):
         if not queue:
             yield "06│ Your queue is empty. "
             return
-        q = self.get_queue(nick, query)
+        q = self.find(queue, query)
 
         if not q:
             yield "06│ No matching items."
@@ -178,7 +177,7 @@ class Queue(Callback):
         if not queue:
             yield "06│ Your queue is empty. "
             return
-        q = self.get_queue(nick, query)
+        q = self.find(queue, query)
 
         if not q:
             yield "06│ No matching items."
