@@ -1,6 +1,7 @@
 import json
 import shlex
 import re
+import random
 
 from bot.events import Callback, command
 
@@ -16,24 +17,31 @@ class Queue(Callback):
         except:
             self.queues = {}
         super().__init__(server)
+        
 
-
-    @command("list", r"(.*)")
-    def list(self, server, message, query):
-        nick = message.address.nick
-        queue = self.queues.setdefault(server.lower(nick), [])
-        if not queue:
-            yield "06│ Your queue is empty. "
-            return
+    def get_queue(self, nick, query=None):
+        queue = self.queues.setdefault(nick, [])
+        query = set(shlex.split(query.lower()))
 
         q = list(enumerate(queue))
-        
-        if query:
-            query = set(shlex.split(query.lower()))
+
+        if query is not None:
             exclude = {i for i in query if i.startswith("-")}
             include = query - exclude
             q = [i for i in q if all(k.lstrip("#") in [j.lstrip("#") for j in i[1].lower().split()] for k in include)]
             q = [i for i in q if not any(k[1:].lstrip("#") in [j.lstrip("#") for j in i[1].lower().split()] for k in exclude)]
+
+        return q
+
+    @command("list", r"(.*)")
+    def list(self, server, message, query):
+        nick = server.lower(message.address.nick)
+        queue = self.queues.setdefault(nick, [])
+        if not queue:
+            yield "06│ Your queue is empty. "
+            return
+
+        q = self.get_queue(nick, query)
 
         if not q:
             yield "06│ No matching items."
@@ -46,6 +54,22 @@ class Queue(Callback):
                 return
             yield "06│ %d │ %s" % (i+1, re.sub("(#\S+)", r"15\1", item))
             count += 1
+
+    @command("choose", r"([^\d,]*)")
+    def choose(self, server, msg, query):
+        nick = server.lower(msg.address.nick)
+        queue = self.queues.setdefault(nick, [])
+        if not queue:
+            yield "06│ Your queue is empty. "
+            return
+
+        q = self.get_queue(nick, query)
+
+        if not q:
+            yield "06│ No matching items."
+            return
+        yield "06│ " + random.choice(q)[1]
+
 
 
     @command("queue", r"(.+)")
@@ -108,9 +132,24 @@ class Queue(Callback):
         self.save()
         return "06│ Added tags."
 
-    @command("untag", r"(#\S+(?:\s+#\S+)*)\s+(.+)")
-    def untag(self, server, message, tags, items):
-        pass
+    @command("untag", r"(#\S+(?:\s+#\S+)*)(?:\s+(.+))?")
+    def untag(self, server, message, tags, item):
+        nick = message.address.nick
+        queue = self.queues.setdefault(server.lower(nick), [])
+        tags = tags.split()
+        try:
+            if not item:
+                items = range(len(queue))
+            elif all(i.isdigit() for i in item.split()):
+                items = [int(i) - 1 for i in item.split()]
+            else:
+                items = [queue.index(item)]
+        except:
+            return "06│ No such item."
+        for i in items:
+            queue[i] = re.sub("( ?#(%s))" % ("|".join(re.escape(x) for x in tags)), "", queue[i], re.IGNORECASE)
+        self.save()
+        return "06│ Added tags."
 
     def save(self):
         with open(self.qfile, "w") as f:
