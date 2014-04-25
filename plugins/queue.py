@@ -26,14 +26,11 @@ class Queue(Callback):
 
         if query is None:
             return q
-        elif re.match(r"\d+(-\d*)?", query):
-            index = query.split('-')
-            if len(index) == 1:
-                return q[int(index[0])]
-            elif not index[1]:
-                return q[int(index[0]):]
-            else:
-                return q[int(index[0]):int(index[1])]
+        elif re.match(r"^\d+((,|\s)+\d+)*$", query):
+            return [q[int(i)-1] for i in query.replace(",", " ").split()]
+        elif re.match(r"^\d*-\d*$", query):
+            start, stop = [int(i) - 1 if i else None for i in query.split('-')]
+            return q[start:stop]
         else:
             exact = [i for i in q if i[1].lower() == query.lower]
             if exact:
@@ -97,7 +94,7 @@ class Queue(Callback):
         self.save()
         return self.display((len(queue), item))
 
-    @command("pop", r"(.+)")
+    @command("pop", r"(.*)")
     def pop(self, server, msg, query):
         nick = server.lower(msg.address.nick)
         queue = self.queues.setdefault(nick, [])
@@ -130,7 +127,7 @@ class Queue(Callback):
         if not q:
             return "06│ No matching items."
 
-        return "06│ %s" % self.display(q[0][1])
+        return self.display(q[0])
         
     @command("next promote", r"(.+)")
     def promote(self, server, msg, query):
@@ -169,7 +166,7 @@ class Queue(Callback):
             tags = [i for i in tag.split() if i.lower() not in item.lower()]
             queue[i-1] = item + ' ' + ' '.join(tags)
 
-        yield from self.displayAll([(i, queue[i-1]) for i in q], 25 if msg.prefix == '!' else 5)
+        yield from self.displayAll([(i, queue[i[0]-1]) for i in q], 25 if msg.prefix == '!' else 5)
 
         self.save()
 
@@ -187,10 +184,15 @@ class Queue(Callback):
             yield "06│ No matching items."
             return
 
-        for i, item in q:
-            queue[i-1] = re.sub("( ?#(%s))" % ("|".join(re.escape(x) for x in tags)), "", queue[i], re.IGNORECASE)
+        tagged = []
 
-        yield from self.displayAll([(i, queue[i-1]) for i in q], 25 if msg.prefix == '!' else 5)
+        for i, item in q:
+            fixed = re.sub("( ?#(%s))" % ("|".join(re.escape(x) for x in tags)), "", queue[i], re.IGNORECASE)
+            if queue[i-1] != fixed:
+                queue[i-1] = fixed
+                tagged.append((i, fixed))
+
+        yield from self.displayAll(tagged, 25 if msg.prefix == '!' else 5)
 
         self.save()
 
