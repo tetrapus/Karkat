@@ -166,7 +166,7 @@ class Queue(Callback):
             tags = [i for i in tag.split() if i.lower() not in item.lower()]
             queue[i-1] = item + ' ' + ' '.join(tags)
 
-        yield from self.displayAll([(i, queue[i[0]-1]) for i in q], 25 if msg.prefix == '!' else 5)
+        yield from self.displayAll([(i[0], queue[i[0]-1]) for i in q], 25 if msg.prefix == '!' else 5)
 
         self.save()
 
