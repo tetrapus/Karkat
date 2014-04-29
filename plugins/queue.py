@@ -4,6 +4,7 @@ import re
 import random
 
 from bot.events import Callback, command
+from util.text import strikethrough
 
 
 class Queue(Callback):
@@ -85,7 +86,7 @@ class Queue(Callback):
 
         return self.display(random.choice(q))
 
-    @command("queue todo", r"(.+)")
+    @command("queue todo append", r"(.+)")
     def queue(self, server, message, item):
         nick = message.address.nick
         queue = self.queues.setdefault(server.lower(nick), [])
@@ -110,7 +111,7 @@ class Queue(Callback):
         for i in q:
             queue.pop(i[0]-1)
 
-        yield from self.displayAll(q, 25 if msg.prefix == '!' else 5)
+        yield from self.displayAll([('✓', strikethrough(i)) for i in q], 25 if msg.prefix == '!' else 5)
 
         self.save()
 
@@ -128,8 +129,8 @@ class Queue(Callback):
 
         return self.display(q[0])
         
-    @command("next promote", r"(.+)")
-    def promote(self, server, msg, query):
+    @command("next promote push", r"(.+)")
+    def push(self, server, msg, query):
         nick = server.lower(msg.address.nick)
         queue = self.queues.setdefault(nick, [])
         if not queue:
@@ -138,8 +139,9 @@ class Queue(Callback):
         q = self.find(queue, query)
 
         if not q:
-            yield "06│ No matching items."
-            return
+            queue.append(query)
+            q = [(len(q)-1, query)]
+
         for i, item in q[::-1]:
             queue.pop(i-1)
             queue.insert(0, item)
