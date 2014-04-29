@@ -98,9 +98,13 @@ class Queue(Callback):
     def pop(self, server, msg, query):
         nick = server.lower(msg.address.nick)
         queue = self.queues.setdefault(nick, [])
+
         if not queue:
             yield "06│ Your queue is empty. "
             return
+
+        if not query: 
+            query = "1"
 
         q = self.find(queue, query)
 
