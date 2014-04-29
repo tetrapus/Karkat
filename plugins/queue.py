@@ -111,7 +111,7 @@ class Queue(Callback):
         for i in q:
             queue.pop(i[0]-1)
 
-        yield from self.displayAll([('✓', strikethrough(i)) for i in q], 25 if msg.prefix == '!' else 5)
+        yield from self.displayAll([('✓' if len(q) == 1 else i[0], strikethrough(i[1])) for i in q], 25 if msg.prefix == '!' else 5)
 
         self.save()
 
