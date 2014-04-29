@@ -46,7 +46,7 @@ class Queue(Callback):
 
 
     def display(self, line):
-        return "06│ %d │ %s" % (line[0], re.sub(r"(#\S+)", r"15\1", line[1]))
+        return "06│ %s │ %s" % (line[0], re.sub(r"(#\S+)", r"15\1", line[1]))
 
     def displayAll(self, lines, max=25):
         for count, i in enumerate(lines):
