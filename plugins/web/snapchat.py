@@ -314,6 +314,8 @@ class Snap(Callback):
     def checksnaps(self, server):
         for channel in self.settings:
             for i in self.newsnaps(channel):
+                for chan in self.settings[channel].get("linked", []):
+                    server.message(i, chan)
                 server.message(i, channel)
 
     @command("block", "(.*)", admin=True)
@@ -512,6 +514,16 @@ class Snap(Callback):
             return prefix + "Verification successful."
         else:
             return prefix + "\x0304Wrong verification code."
+
+    @command("snaplink", "(.+)", admin=True)
+    def link(self, server, msg, chan):
+        self.settings[server.lower(chan)].setdefault("linked", []).append(msg.context)
+        json.dump(self.settings, open(self.settingsf, "w"))
+
+    @command("snapunlink", "(.+)", admin=True)
+    def link(self, server, msg, chan):
+        self.settings[server.lower(chan)].setdefault("linked", []).remove(msg.context)
+        json.dump(self.settings, open(self.settingsf, "w"))
 
     @command("snaps", r"^(?:(last|first)\s+(?:(?:(\d+)(?:-|\s+to\s+))?(\d*))\s*)?((?:gifs|videos|snaps|pics|clips)(?:(?:\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*)(?:gifs|videos|snaps|pics|clips))*)?(?:\s*(?:from|by)\s+(\S+(?:(?:\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*)\S+)*))?(?:\s*to\s+(\S+))?$", templates={Callback.USAGE: prefix + "\x0304Usage: .snaps [first/last index] [type] [by user] [to channel]"})
     def search(self, server, message, anchor, frm, to, typefilter, users, context):

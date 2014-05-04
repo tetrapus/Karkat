@@ -120,7 +120,8 @@ def command(name=None,
             args=None, 
             prefixes=("!", "@."), 
             templates=None, 
-            admin=None):
+            admin=None,
+            rank=""):
     if callable(name):
         # Used with no arguments.
         return command(name.__name__)(name) 
@@ -157,6 +158,10 @@ def command(name=None,
 
                 # Check admin permissions
                 if not (admin is None or bot.is_admin(user.hostmask) == admin):
+                    return
+
+                # Check channel permissions
+                if bot.rank_to_int(rank) > bot.numeric_rank(msg.context, user.nick):
                     return
 
                 if msg.prefix in prefixes and msg.command.lower() in triggers:
