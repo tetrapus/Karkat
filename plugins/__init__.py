@@ -14,4 +14,5 @@ __modules__ = ["games",
                "spellchecker",
                "tell", 
                "ai",
-               "queue"]
+               "queue",
+               "topic"]
