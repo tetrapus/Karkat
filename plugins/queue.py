@@ -28,7 +28,8 @@ class Queue(Callback):
         elif re.match(r"^\d+((,|\s)+\d+)*$", query):
             return [q[int(i)-1] for i in query.replace(",", " ").split()]
         elif re.match(r"^\d*-\d*$", query):
-            start, stop = [int(i) - 1 if i else None for i in query.split('-')]
+            start, stop = [int(i) if i else None for i in query.split('-')]
+            if start: start -= 1
             return q[start:stop]
         else:
             exact = [i for i in q if i[1].lower() == query.lower]
