@@ -4,7 +4,7 @@ import re
 import random
 
 from bot.events import Callback, command
-from util.text import strikethrough
+from util.text import strikethrough, smallcaps
 
 
 class Queue(Callback):
@@ -47,7 +47,7 @@ class Queue(Callback):
 
 
     def display(self, line):
-        return "06│ %s │ %s" % (line[0], re.sub(r"(#\S+)", r"15\1", line[1]))
+        return "06│ %s │ %s" % (line[0], re.sub(r"#(\S+)", lambda x: r"15%s" % smallcaps(x.group(1)), line[1]))
 
     def displayAll(self, lines, max=25):
         for count, i in enumerate(lines):
@@ -145,7 +145,7 @@ class Queue(Callback):
 
         if not q:
             queue.append(query)
-            q = [(len(q)-1, query)]
+            q = [(len(queue), query)]
 
         for i, item in q[::-1]:
             queue.pop(i-1)
