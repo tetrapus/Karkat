@@ -113,7 +113,7 @@ class Queue(Callback):
             yield "06│ No matching items."
             return
 
-        for i in q:
+        for i in q[::-1]:
             queue.pop(i[0]-1)
 
         yield from self.displayAll([('✓' if len(q) == 1 else i[0], strikethrough(i[1])) for i in q], 25 if msg.prefix == '!' else 5)
