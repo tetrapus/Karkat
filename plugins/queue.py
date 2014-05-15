@@ -36,8 +36,11 @@ class Queue(Callback):
             if exact:
                 return exact
             else:
-                query = set(shlex.split(query.lower()))
-                hidden = {"hidden"} - query
+                try:
+                    query = set(shlex.split(query.lower()))
+                except:
+                    query = set(query.lower().split())
+                hidden = {"hidden", "done"} - query
                 exclude = {i for i in query if i.startswith("-")} | {'-' + i for i in hidden}
                 include = query - exclude
                 q = [i for i in q if all(k.lstrip("#") in [j.lstrip("#") for j in i[1].lower().split()] for k in include)]
@@ -113,7 +116,7 @@ class Queue(Callback):
             yield "06│ No matching items."
             return
 
-        for i in q[::-1]:
+        for i in sorted(q, key=lambda x:-x[0]):
             queue.pop(i[0]-1)
 
         yield from self.displayAll([('✓' if len(q) == 1 else i[0], strikethrough(i[1])) for i in q], 25 if msg.prefix == '!' else 5)
@@ -138,18 +141,21 @@ class Queue(Callback):
     def push(self, server, msg, query):
         nick = server.lower(msg.address.nick)
         queue = self.queues.setdefault(nick, [])
-        if not queue:
-            yield "06│ Your queue is empty. "
-            return
+
         q = self.find(queue, query)
 
         if not q:
             queue.append(query)
             q = [(len(queue), query)]
 
-        for i, item in q[::-1]:
+        q.reverse()
+
+        for i, item in q:
             queue.pop(i-1)
+        for i, item in q:
             queue.insert(0, item)
+
+        q.reverse()
 
         yield from self.displayAll([(i+1, item[1]) for i, item in enumerate(q)], 25 if msg.prefix == '!' else 5)
 
@@ -193,7 +199,7 @@ class Queue(Callback):
         tagged = []
 
         for i, item in q:
-            fixed = re.sub("( ?#(%s))" % ("|".join(re.escape(x) for x in tags)), "", queue[i], re.IGNORECASE)
+            fixed = re.sub("( ?#(%s))" % ("|".join(re.escape(x) for x in tags)), "", queue[i-1], re.IGNORECASE)
             if queue[i-1] != fixed:
                 queue[i-1] = fixed
                 tagged.append((i, fixed))
