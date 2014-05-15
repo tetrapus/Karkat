@@ -199,7 +199,7 @@ class Queue(Callback):
         tagged = []
 
         for i, item in q:
-            fixed = re.sub("( ?#(%s))" % ("|".join(re.escape(x) for x in tags)), "", queue[i-1], re.IGNORECASE)
+            fixed = re.sub("( ?(%s))" % ("|".join(re.escape(x) for x in tags)), "", queue[i-1], re.IGNORECASE)
             if queue[i-1] != fixed:
                 queue[i-1] = fixed
                 tagged.append((i, fixed))
