@@ -2,6 +2,7 @@ import json
 import shlex
 import re
 import random
+import math
 
 from bot.events import Callback, command
 from util.text import strikethrough, smallcaps
@@ -49,15 +50,27 @@ class Queue(Callback):
                 return q
 
 
-    def display(self, line):
-        return "06│ %s │ %s" % (line[0], re.sub(r"#(\S+)", lambda x: r"15%s" % smallcaps(x.group(1)), line[1]))
+    def display(self, num, line):
+        points = re.split(r"\s*(\[(?:\d+/)?\d+\])\s*", line, maxsplit=1)
+        vis = ""
+        if len(points) == 3:
+            line = "%s %s" % (points[0], points[-1])
+            points = [float(x) for x in points[1][1:-1].split("/")]
+            align = math.ceil(points[-1]/5) * 5
+            total = points[-1]
+            if len(points) > 1:
+                done = points[0]
+            else:
+                done = 0
+            vis = '12' + "•" * math.ceil(total - done) + '15' + "·" * math.ceil(done) + " " * (align - math.ceil(total)) + "06│"
+        return "06│ %s │%s %s" % (num, vis, re.sub(r"#(\S+)", lambda x: r"15%s" % smallcaps(x.group(1)), line))
 
     def displayAll(self, lines, max=25):
         for count, i in enumerate(lines):
             if max - 1 <= count and max != len(lines):
                 yield "06│ %d of %d items displayed." % (count, len(lines))
                 return
-            yield self.display(i)
+            yield self.display(*i)
 
     @command("list", r"(.*)")
     def list(self, server, msg, query):
@@ -88,7 +101,7 @@ class Queue(Callback):
         if not q:
             return "06│ No matching items."
 
-        return self.display(random.choice(q))
+        return self.display(*random.choice(q))
 
     @command("queue todo append", r"(.+)")
     def queue(self, server, message, item):
@@ -96,7 +109,7 @@ class Queue(Callback):
         queue = self.queues.setdefault(server.lower(nick), [])
         queue.append(item)
         self.save()
-        return self.display((len(queue), item))
+        return self.display(len(queue), item)
 
     @command("push prepend", r"(.+)")
     def push(self, server, message, item):
@@ -104,7 +117,7 @@ class Queue(Callback):
         queue = self.queues.setdefault(server.lower(nick), [])
         queue.insert(0, item)
         self.save()
-        return self.display((len(queue), item))
+        return self.display(len(queue), item)
 
     @command("pop", r"(.*)")
     def pop(self, server, msg, query):
@@ -143,7 +156,7 @@ class Queue(Callback):
         if not q:
             return "06│ No matching items."
 
-        return self.display(q[0])
+        return self.display(*q[0])
         
     @command("next promote", r"(.+)")
     def promote(self, server, msg, query):
