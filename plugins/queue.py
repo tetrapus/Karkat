@@ -52,7 +52,7 @@ class Queue(Callback):
 
     def display(self, num, line):
         points = re.split(r"\s*(\[(?:\d+/)?\d+\])\s*", line, maxsplit=1)
-        vis = ""
+        vis = "│"
         if len(points) == 3:
             line = "%s %s" % (points[0], points[-1])
             points = [float(x) for x in points[1][1:-1].split("/")]
@@ -62,8 +62,8 @@ class Queue(Callback):
                 done = points[0]
             else:
                 done = 0
-            vis = '12' + "•" * math.ceil(total - done) + '15' + "·" * math.ceil(done) + " " * (align - math.ceil(total)) + "06│"
-        return "06│ %s │%s %s" % (num, vis, re.sub(r"#(\S+)", lambda x: r"15%s" % smallcaps(x.group(1)), line))
+            vis = '┝' + "━" * math.ceil(total - done) + '15' + "─" * math.ceil(done) + " " * (align - math.ceil(total))
+        return "06│ %s %s %s" % (num, vis, re.sub(r"#(\S+)", lambda x: r"15%s" % smallcaps(x.group(1)), line))
 
     def displayAll(self, lines, max=25):
         for count, i in enumerate(lines):
