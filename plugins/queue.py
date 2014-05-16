@@ -26,7 +26,7 @@ class Queue(Callback):
         if query is None:
             return q
         elif re.match(r"^\d+((,|\s)+\d+)*$", query):
-            return [q[int(i)-1] for i in query.replace(",", " ").split()]
+            return sorted([q[int(i)-1] for i in set(query.replace(",", " ").split())])
         elif re.match(r"^\d*-\d*$", query):
             start, stop = [int(i) if i else None for i in query.split('-')]
             if start: start -= 1
@@ -98,6 +98,14 @@ class Queue(Callback):
         self.save()
         return self.display((len(queue), item))
 
+    @command("push prepend", r"(.+)")
+    def push(self, server, message, item):
+        nick = message.address.nick
+        queue = self.queues.setdefault(server.lower(nick), [])
+        queue.insert(0, item)
+        self.save()
+        return self.display((len(queue), item))
+
     @command("pop", r"(.*)")
     def pop(self, server, msg, query):
         nick = server.lower(msg.address.nick)
@@ -137,8 +145,8 @@ class Queue(Callback):
 
         return self.display(q[0])
         
-    @command("next promote push", r"(.+)")
-    def push(self, server, msg, query):
+    @command("next promote", r"(.+)")
+    def promote(self, server, msg, query):
         nick = server.lower(msg.address.nick)
         queue = self.queues.setdefault(nick, [])
 
@@ -161,6 +169,29 @@ class Queue(Callback):
 
         self.save()
             
+    @command("last demote", r"(.+)")
+    def demote(self, server, msg, query):
+        nick = server.lower(msg.address.nick)
+        queue = self.queues.setdefault(nick, [])
+
+        q = self.find(queue, query)
+
+        if not q:
+            queue.append(query)
+            q = [(len(queue), query)]
+
+        q.reverse()
+
+        for i, item in q:
+            queue.pop(i-1)
+        q.reverse()
+        for i, item in q:
+            queue.append(item)
+
+        yield from self.displayAll([(i+1, item[1]) for i, item in enumerate(q)], 25 if msg.prefix == '!' else 5)
+
+        self.save()
+
     @command("tag", r"(#\S+(?:\s+#\S+)*)\s+(.+)")
     def tag(self, server, msg, tag, query):
         nick = server.lower(msg.address.nick)
