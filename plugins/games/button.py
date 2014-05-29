@@ -33,10 +33,9 @@ class Wyp(Callback):
         self.active = random.choice(list(self.wyps.keys()))
         return self.display()
 
-    @command("press", r"(.*)")
-    def press(self, server, msg, item=None):
-        if item is None:
-            item = self.active
+    @command("press")
+    def press(self, server, msg):
+        item = self.active
         nick = msg.address.nick
         wyp = self.wyps.setdefault(item, {})
         wyp[server.lower(nick)] = 1
