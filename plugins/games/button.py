@@ -59,7 +59,7 @@ class Wyp(Callback):
         wyp = self.wyps.get(item)
         num = len(wyp.keys())
         numPress = sum(wyp.values())
-        return numPress + " out of " + num + " people pressed the button. (" + str(numPress / num * 100) + "%)."
+        return "%s out of %s people pressed the button (%s%%)" (numPress, num, numPress / num * 100)
 
     def display(self, item=None):
         return "\x0306│\x03 Will you press the button? " + self.active
