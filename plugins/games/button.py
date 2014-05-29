@@ -77,7 +77,7 @@ class Wyp(Callback):
                 stats += ". The button has been destroyed. RIP, button."
             bar = list("  ʜᴇᴀʟᴛʜ  ")
             bar.insert(min(0, math.ceil(health * 10)), ",14")
-            stats += " " + bar
+            stats += " " + "".join(bar)
         return stats
             
 
