@@ -39,7 +39,7 @@ class Wyp(Callback):
         wyp = self.wyps.setdefault(item, {})
         wyp[server.lower(nick)] = 1
         self.save()
-        return "\x0306│\x03 You pressed the button. " + displayPresses(item)
+        return "\x0306│\x03 You pressed the button. " + self.displayPresses(item)
 
     @command("nopress", r"(.*)")
     def noPress(self, server, msg, item=None):
@@ -47,7 +47,7 @@ class Wyp(Callback):
         wyp = self.wyps.setdefault(item, {})
         wyp[server.lower(nick)] = 0
         self.save()
-        return "\x0306│\x03 You chose not to press the button. " + displayPresses(item)
+        return "\x0306│\x03 You chose not to press the button. " + self.displayPresses(item)
 
     def displayPresses(self, item=None):
         wyp = self.wyps.get(item)
