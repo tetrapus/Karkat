@@ -42,6 +42,7 @@ class Wyp(Callback):
 
     @command("button wyptb wyp willyoupressthebutton willyoupress")
     def preview(self, server, msg):
+        nick = msg.address.nick
         # Check if we need any new buttons
         if all(i for i in self.wyps.values()):
             page = requests.get("http://m.willyoupressthebutton.com/").text
