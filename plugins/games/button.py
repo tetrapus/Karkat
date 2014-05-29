@@ -70,14 +70,14 @@ class Wyp(Callback):
         stats = "%s out of %s people pressed the button (%.2f%%)" % (numPress, num, numPress / num * 100)
         health = 1
         if None in wyp.values():
-            health -= list(wyp.values()).count(None) / self.average()
+            health -= 2 * list(wyp.values()).count(None) / self.average()
             if health < 0:
                 del self.wyps[item]
                 self.save()
                 stats += ". The button has been destroyed. RIP, button."
             bar = list("  ʜᴇᴀʟᴛʜ  ")
-            bar.insert(min(0, math.ceil(health * 10)), ",14")
-            stats += " " + "".join(bar)
+            bar.insert(max(0, math.ceil(health * 10)), ",14")
+            stats += " 15,06%s" % "".join(bar)
         return stats
             
 
