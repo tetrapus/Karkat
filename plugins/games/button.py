@@ -35,6 +35,8 @@ class Wyp(Callback):
 
     @command("press", r"(.*)")
     def press(self, server, msg, item=None):
+        if item is None:
+            item = self.active
         nick = msg.address.nick
         wyp = self.wyps.setdefault(item, {})
         wyp[server.lower(nick)] = 1
@@ -43,6 +45,8 @@ class Wyp(Callback):
 
     @command("nopress", r"(.*)")
     def noPress(self, server, msg, item=None):
+        if item is None:
+            item = self.active
         nick = msg.address.nick
         wyp = self.wyps.setdefault(item, {})
         wyp[server.lower(nick)] = 0
@@ -50,9 +54,11 @@ class Wyp(Callback):
         return "\x0306│\x03 You chose not to press the button. " + self.displayPresses(item)
 
     def displayPresses(self, item=None):
+        if item is None:
+            item = self.active
         wyp = self.wyps.get(item)
         num = len(wyp.keys())
-        numPress = sum(wyp.keys())
+        numPress = sum(wyp.values())
         return numPress + " out of " + num + " people pressed the button. (" + (numPress / num * 100) + "%)."
 
     def display(self, item=None):
