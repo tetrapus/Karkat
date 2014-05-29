@@ -6,6 +6,8 @@ import sys
 import json
 import random
 import math
+import requests
+from util.text import unescape
 
 from bot.events import Callback, command
 
@@ -40,7 +42,17 @@ class Wyp(Callback):
 
     @command("button wyptb wyp willyoupressthebutton willyoupress")
     def preview(self, server, msg):
-        self.active = random.choice(list(self.wyps.keys()))
+        # Check if we need any new buttons
+        if all(i for i in self.wyps.values()):
+            page = requests.get("http://m.willyoupressthebutton.com/").text
+            cond = unescape(re.findall('<div class="rect" id="cond">(.+)</div>', page)[0])
+            res = unescape(re.findall('<div class="rect" id="res">(.+)</div>', page)[0])
+            res = res[0].lower() + res[1:]
+            wyp = self.wyps.setdefault("%s but %s" % (cond, res), {})
+            self.save()
+        # Reduce probability of already-answered buttons
+        buttons = [i for i in self.wyps if server.lower(nick) not in self.wyps[i] or random.random() < 0.1]
+        self.active = random.choice(buttons)
         return self.display()
 
     @command("press yes")
