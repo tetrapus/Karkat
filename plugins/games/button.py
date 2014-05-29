@@ -42,10 +42,9 @@ class Wyp(Callback):
         self.save()
         return "\x0306│\x03 You pressed the button. " + self.displayPresses(item)
 
-    @command("nopress", r"(.*)")
-    def noPress(self, server, msg, item=None):
-        if item is None:
-            item = self.active
+    @command("nopress")
+    def noPress(self, server, msg):
+        item = self.active
         nick = msg.address.nick
         wyp = self.wyps.setdefault(item, {})
         wyp[server.lower(nick)] = 0
