@@ -22,19 +22,19 @@ class Wyp(Callback):
                 self.wyps = json.load(f)
         except:
             self.wyps = {}
-        self.active = "04●"
+        self.active = {}
         super().__init__(server)
 
     @command("addbutton makebutton addwyp makewyp", r"(.+)")
     def queue(self, server, msg, item):
         wyp = self.wyps.setdefault(item, {})
-        self.active = item
+        self.active[server.lower(msg.context)] = item
         self.save()
         return "\x0306│\x03 Button added"
 
     @command("fuckbutton destroy ripbutton")
     def destroy(self, server, msg):
-        item = self.active
+        item = self.active.setdefault(server.lower(msg.context), "")
         nick = msg.address.nick
         wyp = self.wyps.setdefault(item, {})
         wyp[server.lower(nick)] = None
@@ -43,7 +43,7 @@ class Wyp(Callback):
 
     @command("whatton")
     def whatton(self, server, msg):
-        return self.fancydisplay()
+        return self.fancydisplay(server.lower(msg.context))
 
     @command("button wyptb wyp willyoupressthebutton willyoupress")
     def preview(self, server, msg):
@@ -59,12 +59,12 @@ class Wyp(Callback):
             self.save()
         # Reduce probability of already-answered buttons
         buttons = [i for i in self.wyps if server.lower(nick) not in self.wyps[i] or random.random() < 0.1]
-        self.active = random.choice(buttons)
-        return self.display()
+        self.active[server.lower(msg.context)] = random.choice(buttons)
+        return self.display(server.lower(msg.context))
 
     @command("press yes bonk boop touch")
     def press(self, server, msg):
-        item = self.active
+        item = self.active.setdefault(server.lower(msg.context), "")
         nick = msg.address.nick
         wyp = self.wyps.setdefault(item, {})
         wyp[server.lower(nick)] = 1
@@ -73,16 +73,14 @@ class Wyp(Callback):
 
     @command("nopress no")
     def noPress(self, server, msg):
-        item = self.active
+        item = self.active.setdefault(server.lower(msg.context), "")
         nick = msg.address.nick
         wyp = self.wyps.setdefault(item, {})
         wyp[server.lower(nick)] = 0
         self.save()
         return "\x0306│\x03 You chose not to press the button. " + self.displayPresses(item)
 
-    def displayPresses(self, item=None):
-        if item is None:
-            item = self.active
+    def displayPresses(self, item):
         wyp = self.wyps.get(item)
         num = len(wyp.keys())
         numPress = list(wyp.values()).count(1)
@@ -100,16 +98,16 @@ class Wyp(Callback):
         return stats
             
 
-    def display(self, item=None):
-        return "\x0306│\x03 Will you press the button? " + self.active
+    def display(self, chan):
+        return "\x0306│\x03 Will you press the button? " + self.active.setdefault(chan, "")
 
-    def fancydisplay(self):
+    def fancydisplay(self, chan):
         button = """╔═══╕ %s
 ║ 04● │ %s
 ╙───┘ Will you press the button?"""
         k = 48
         while True:
-            text = lineify(self.active, k)
+            text = lineify(self.active.setdefault(chan, ""), k)
             k += 8
             if len(text) < 3: break
         if len(text) == 1: text.append("")
