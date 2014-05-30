@@ -42,7 +42,7 @@ class Wyp(Callback):
         return "\x0306│\x03 You attack the button. " + self.displayPresses(item)    
 
     @command("destroyforcibly", admin=True)
-    def destroy(self, server, msg):
+    def destroyForcibly(self, server, msg):
         item = self.active.setdefault(server.lower(msg.context), "")
         del self.wyps[item]
         self.save()
