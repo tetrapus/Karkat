@@ -39,7 +39,14 @@ class Wyp(Callback):
         wyp = self.wyps.setdefault(item, {})
         wyp[server.lower(nick)] = None
         self.save()
-        return "\x0306│\x03 You attack the button. " + self.displayPresses(item)        
+        return "\x0306│\x03 You attack the button. " + self.displayPresses(item)    
+
+    @command("destroyforcibly", admin=True)
+    def destroy(self, server, msg):
+        item = self.active.setdefault(server.lower(msg.context), "")
+        del self.wyps[item]
+        self.save()
+        return "\x0306│\x03 Critical hit! You managed to destroyForcibly the button."      
 
     @command("whatton")
     def whatton(self, server, msg):
@@ -53,7 +60,7 @@ class Wyp(Callback):
             page = requests.get("http://m.willyoupressthebutton.com/").text
             cond = unescape(re.findall('<div class="rect" id="cond">(.+)</div>', page)[0])
             res = unescape(re.findall('<div class="rect" id="res">(.+)</div>', page)[0])
-            cond = cond[0].upper() + cond[1:]
+            cond = cond[0].upper() + cond[1:].rstrip(".")
             res = res[0].lower() + res[1:]
             wyp = self.wyps.setdefault("%s but %s" % (cond, res), {})
             self.save()
