@@ -8,7 +8,7 @@ import random
 import math
 import requests
 import re
-from util.text import unescape
+from util.text import unescape, lineify
 
 from bot.events import Callback, command
 
@@ -40,6 +40,10 @@ class Wyp(Callback):
         wyp[server.lower(nick)] = None
         self.save()
         return "\x0306│\x03 You attack the button. " + self.displayPresses(item)        
+
+    @command("whatton")
+    def active(self, server, msg):
+        return self.fancydisplay()
 
     @command("button wyptb wyp willyoupressthebutton willyoupress")
     def preview(self, server, msg):
@@ -98,6 +102,18 @@ class Wyp(Callback):
     def display(self, item=None):
         return "\x0306│\x03 Will you press the button? " + self.active
 
+    def fancydisplay(self):
+        button = """╔═══╕ %s
+║ 04● │ %s
+╙───┘ Will you press the button?"""
+        k = 64
+        while True:
+            text = lineify(self.active, k)
+            k += 8
+            if len(text) < 3: break
+        if len(text) == 1: text.append("")
+        return button % tuple(text)
+
     def average(self):
         return sum(len(i.values()) for i in self.wyps.values()) / len(self.wyps)
 
@@ -114,3 +130,9 @@ __initialise__ = Wyp
 ║  04●  │
 ║ , .╷│
 """
+
+╔═══╕
+║ 04● │
+╙───┘
+
+
