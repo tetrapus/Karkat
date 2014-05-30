@@ -53,6 +53,7 @@ class Wyp(Callback):
             page = requests.get("http://m.willyoupressthebutton.com/").text
             cond = unescape(re.findall('<div class="rect" id="cond">(.+)</div>', page)[0])
             res = unescape(re.findall('<div class="rect" id="res">(.+)</div>', page)[0])
+            cond = cond[0].upper() + cond[1:]
             res = res[0].lower() + res[1:]
             wyp = self.wyps.setdefault("%s but %s" % (cond, res), {})
             self.save()
@@ -106,7 +107,7 @@ class Wyp(Callback):
         button = """╔═══╕ %s
 ║ 04● │ %s
 ╙───┘ Will you press the button?"""
-        k = 64
+        k = 48
         while True:
             text = lineify(self.active, k)
             k += 8
