@@ -7,6 +7,7 @@ import json
 import random
 import math
 import requests
+import re
 from util.text import unescape
 
 from bot.events import Callback, command
@@ -56,7 +57,7 @@ class Wyp(Callback):
         self.active = random.choice(buttons)
         return self.display()
 
-    @command("press yes")
+    @command("press yes bonk boop touch")
     def press(self, server, msg):
         item = self.active
         nick = msg.address.nick
@@ -106,3 +107,10 @@ class Wyp(Callback):
 
 
 __initialise__ = Wyp
+
+"""
+╔═════╕
+║ RIP │
+║  04●  │
+║ , .╷│
+"""
