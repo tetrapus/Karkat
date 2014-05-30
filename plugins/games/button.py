@@ -42,7 +42,7 @@ class Wyp(Callback):
         return "\x0306│\x03 You attack the button. " + self.displayPresses(item)        
 
     @command("whatton")
-    def active(self, server, msg):
+    def whatton(self, server, msg):
         return self.fancydisplay()
 
     @command("button wyptb wyp willyoupressthebutton willyoupress")
