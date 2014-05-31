@@ -8,6 +8,7 @@ import random
 import math
 import requests
 import re
+import random
 from util.text import unescape, lineify
 
 from bot.events import Callback, command
@@ -48,6 +49,26 @@ class Wyp(Callback):
         self.save()
         return "\x0306│\x03 Critical hit! You managed to destroyForcibly the button."      
 
+    @command("lick")
+    def lick(self, server, msg):
+        item = self.active.setdefault(server.lower(msg.context), "")
+        observations = """tastes slightly salty
+is already quite moist
+has a metalic tang
+was okay
+sends a tingle through your tongue
+quivers in delight
+needs salt
+blushes a little
+has a rather exquisite texture
+has certain fruity notes
+licks you back
+gives off some smoke
+shocks your face
+drips
+is quite bitter""".split("\n")
+        return "\x0306│\x03 You lick the button. It %s. %s" % (random.choice(observations), self.displayPresses(item))
+   
     @command("whatton")
     def whatton(self, server, msg):
         return self.fancydisplay(server.lower(msg.context))
