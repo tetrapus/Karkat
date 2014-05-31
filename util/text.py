@@ -10,8 +10,6 @@ import html.entities
 import random
 from collections import deque
 
-from . import graphs
-
 class ControlCode:
     ITALICS = "\x1d"
     BOLD = "\x02"
@@ -117,102 +115,6 @@ def striplen(data):
     """ Calculate the display length of a string """
     return len(ircstrip(data))
 
-def control_reduce(data):
-    """ Reduce a set of control codes to simplest form. """
-    data = data.group(0)
-
-    # Step 1: Delete all control codes before a reset.
-    reset = ""
-    if "\x0f" in data:
-        data = data.rsplit("\x0f", 1)[-1]
-        reset = "\x0f"
-
-    # Step 2. Pull out the control codes. \x03s go first, then the rest.
-    colors = re.findall(r"\x03\d?\d?(?:,\d\d?)?", data)
-    data = re.sub(r"(\x03\d?\d?(?:,\d\d?)?)", "", data)
-    data = "".join(sorted(data))
-
-    # Step 3a. Delete cancelling control codes.
-    data = re.sub(r"([\x1d\x02\x1f\x16])\1", "", data)
-
-    # Step 3b. Merge colour codes.
-    if colors:
-        colors = [i[1:] for i in colors]
-        fg, bg = None, None
-        for i in colors:
-            if i == "":
-                fg, bg = None, None
-            elif "," not in i:
-                fg = i
-            elif i.startswith(","):
-                bg = i[1:]
-            else:
-                fg, bg = i.split(",")
-        if fg == bg == None:
-            color = "\x03"
-        elif fg == None:
-            color = "\x03," + bg
-        elif bg == None:
-            color = "\x03" + fg
-        else:
-            color = "\x03%s,%s" % (fg, bg)
-
-        data = color + data
-
-    return reset + data
-
-def minify(data):
-    """ Rearrange and rewrite control codes to shorten the message. """
-    if "\n" in data:
-        return "\n".join(map(minify, data.split("\n")))
-
-    # Step 1. Reduce all contiguous blocks of control codes.
-    data = re.sub(r"([\x1d\x02\x1f\x0f\x16]|\x03\d?\d?(,\d\d?)?)+", control_reduce, data)
-
-    # Step 2. Get rid of redundant colour codes.
-    colors = None, None
-    toggles = dict(zip("\x1d\x02\x1f\x16", (False, False, False, False)))
-    reduced = []
-    for i in re.split(r"([\x1d\x02\x1f\x0f\x16]|\x03\d?\d?(?:,\d\d?)?)", data):
-        if not re.match(r"([\x1d\x02\x1f\x0f\x16]|\x03\d?\d?(?:,\d\d?)?)", i):
-            reduced.append(i)
-        elif i in toggles:
-            # Redundant toggles are already cancelled.
-            # TODO BUG: Reverses literally swap fg and bg, even in setting.
-            # Do not reorder these.
-            toggles[i] = not toggles[i]
-            reduced.append(i)
-        elif i == "\x0f" and not any(toggles.values()) and not any(colors):
-            reduced.append(i)
-        elif i.startswith("\x03"):
-            codes = i[1:].split(",")
-            if codes == ("",) and any(colors):
-                reduced.append(i)
-            elif len(codes) == 1 and colors[0] != codes[0]:
-                reduced.append(i)
-            elif len(codes) == 2:
-                codes = [i if i else None for i in codes]
-                codes = ["" if x == y else x for x, y in zip(codes, colors)]
-                reduced.append("\x03" + ",".join(codes).rstrip(","))
-    data = "".join(reduced)
-
-    # Step 2b. If a space preceeds a non-background-affecting colour code,
-    # they may be swapped without consequence, and may have a shorter length.
-    # TODO
-
-    # Step 3. Shorten colour codes.
-    # If it has a background and is 2 digits starting with 0
-    # the 0 is omitted.
-    data = re.sub(r"\x030(\d),", r"\x03\1,", data)
-    # If the character following is not a digit, and the adjacent code starts with 0
-    # the 0 is omitted.
-    data = re.sub(r"(\x03(?:\d?\d?,)?)0(\d[^\d])", r"\1\2", data)
-
-    # Step 4. Get rid of trailing codes.
-    data = re.sub(r"([\x1d\x02\x1f\x0f\x16]|\x03\d?\d?(,\d\d?)?)+$", "", data) 
-
-    return data
-
 
 def spacepad(left, right, length):
     """ Glues together left and right with the correct amount of padding. """
@@ -223,7 +125,7 @@ def spacepad(left, right, length):
 def namedtable(results, size=100, rowmax=None, header="", rheader="", color=12):
     """ Create a bordered table. """
     border_left  =  "\x03%.2d⎢\x03"  % color
-    divider      = " \x03%.2d⎪\x03 " % color
+    divider      = " \x03%.2d⎢\x03" % color
     border_right =  "\x03%.2d⎥\x03"  % color
 
     results = list(results)
@@ -247,7 +149,7 @@ def namedtable(results, size=100, rowmax=None, header="", rheader="", color=12):
         rownum = "(first %d rows) " % rows
     # Create the header
     data = [spacepad("%s\x03%.2d%s" % (header, color, rownum),
-                     rheader,
+                     rheader or "\x0f",
                      (columns * (biggest+3)) -1)]
     # If the header is too big, expand the table.
     if columns*(biggest+3) - 1 < striplen(data[0]):
@@ -310,17 +212,20 @@ def aligntable(rows, separator=" 08⎪ "):
     """
     Column-align a table of rows.
     """
+    # Pad the rows
+    maxwidth = len(max(rows, key=len))
+    for i in rows:
+        if len(i) != maxwidth:
+            i.extend([""] * (maxwidth-len(i)))
 
-    table = []
-    widths = [max(striplen(x[i]) for x in rows if i < len(x)) for i in range(max(len(i) for i in rows))]
-
-    for row in rows:
-        table.append([])
-        for i, cell in enumerate(row):
-            table[-1].append(cell + (" "*(widths[i] - striplen(cell))))
-
-    table = [separator.join(x) for x in table]
-    return table
+    # Invert
+    columns = list(zip(*rows))
+    for i, col in enumerate(columns):
+        width = max(striplen(x) for x in col)
+        for j, cell in enumerate(col):
+            rows[j][i] = cell + (" "*(width - striplen(cell)))
+    rows = [separator.join(x) for x in rows]
+    return rows
 
 def cmp(a, b):
     return (a > b) - (a < b)
@@ -409,21 +314,13 @@ class TimerBuffer(Buffer):
             return nextval
 
 def overline(text):
-    return "\u0305" + "\u0305".join(text)
+    return "\u0305".join(text) + "\u0305"
 
 def strikethrough(text):
-    return "\u0336" + "\u0336".join(text)
+    return "\u0336".join(text) + "\u0336"
 
 def underline(text):
-    return "\u0332" + "\u0332".join(text)
-
-def smallcaps(text):
-    caps = {'p': 'ᴘ', 'q': 'ǫ', 'r': 'ʀ', 's': 'ꜱ', 't': 'ᴛ', 'u': 'ᴜ', 'v': 'ᴠ', 'w': 'ᴡ', 'x': 'x', 'y': 'ʏ', 'z': 'ᴢ', 'a': 'ᴀ', 'b': 'ʙ', 'c': 'ᴄ', 'd': 'ᴅ', 'e': 'ᴇ', 'f': 'ꜰ', 'g': 'ɢ', 'h': 'ʜ', 'i': 'ɪ', 'j': 'ᴊ', 'k': 'ᴋ', 'l': 'ʟ', 'm': 'ᴍ', 'n': 'ɴ', 'o': 'ᴏ'}
-    return "".join(caps.get(i, i) for i in text)
-
-def fullwidth(text):
-    full = {'|': '｜', '~': '～', 'x': 'ｘ', 'z': 'ｚ', 't': 'ｔ', 'v': 'ｖ', 'p': 'ｐ', 'r': 'ｒ', 'l': 'ｌ', 'n': 'ｎ', 'h': 'ｈ', 'j': 'ｊ', 'd': 'ｄ', 'f': 'ｆ', '`': '｀', 'b': 'ｂ', '\\': '＼', '^': '＾', 'X': 'Ｘ', 'Z': 'Ｚ', 'T': 'Ｔ', 'V': 'Ｖ', 'P': 'Ｐ', 'R': 'Ｒ', 'L': 'Ｌ', 'N': 'Ｎ', 'H': 'Ｈ', 'J': 'Ｊ', 'D': 'Ｄ', 'F': 'Ｆ', '@': '＠', 'B': 'Ｂ', '<': '＜', '>': '＞', '8': '８', ':': '：', '4': '４', '6': '６', '0': '０', '2': '２', ',': '，', '.': '．', '(': '（', '*': '＊', '$': '＄', '&': '＆', '"': '＂', '}': '｝', 'y': 'ｙ', '{': '｛', 'u': 'ｕ', 'w': 'ｗ', 'q': 'ｑ', 's': 'ｓ', 'm': 'ｍ', 'o': 'ｏ', 'i': 'ｉ', 'k': 'ｋ', 'e': 'ｅ', 'g': 'ｇ', 'a': 'ａ', 'c': 'ｃ', ']': '］', '_': '＿', 'Y': 'Ｙ', '[': '［', 'U': 'Ｕ', 'W': 'Ｗ', 'Q': 'Ｑ', 'S': 'Ｓ', 'M': 'Ｍ', 'O': 'Ｏ', 'I': 'Ｉ', 'K': 'Ｋ', 'E': 'Ｅ', 'G': 'Ｇ', 'A': 'Ａ', 'C': 'Ｃ', '=': '＝', '?': '？', '9': '９', ';': '；', '5': '５', '7': '７', '1': '１', '3': '３', '-': '－', '/': '／', ')': '）', '+': '＋', '%': '％', "'": '＇', '!': '！', '#': '＃'}
-    return "".join(full.get(i, i) for i in text)
+    return "\u0332".join(text) + "\u0332"
 
 swears = open("data/Vulgarities/first.txt").read().split()
 nouns = open("data/Vulgarities/second.txt").read().split()
@@ -436,3 +333,173 @@ def generate_vulgarity():
         vulgarity = random.choice(swears) + random.choice(nouns)
 
     return vulgarity
+
+
+def minify(string):
+    """
+    Gets rid of redundant irc codes.
+    """
+    foreground, background = None, None
+    bold, italics, reverse, underline = False, False, False, False
+    minified = ""
+    string = deque(string)
+    while string:
+        char = string.popleft()
+        minified += char
+        # TODO
+
+    return minified
+
+# ## !! DEPRECATED
+
+# def graph_vertical_DOS(values, minheight=3):
+#     values = [round(i) for i in values]
+#     CSTART, CMID, CEND = "╘", "╧", "╧"
+#     CSZERO, CMZERO, CEZERO = "═", "═", "═"
+#     CFULL, CHALF, CEMPTY = "│", "┬", "─"
+
+#     # Draw the axes
+#     start = []
+#     if not values:
+#         return []
+
+#     start.append(CSTART if values[0] else CSZERO)
+#     for i in values[1:-1]:
+#         start.append(CMID if i else CMZERO)
+#     start.append(CEND if values[-1] else CEZERO)
+#     start.append("╝")
+
+#     values = [i-1 for i in values]
+
+#     # Create the graph
+#     height = max(math.ceil(max(values) / 2), minheight)
+#     data = [[[CHALF, CEMPTY, CFULL][cmp(y, (x-1) / 2)]
+#              for x in values] + ["╢"]
+#             for y in range(height)][::-1]
+
+#     return ["".join(x).replace("", "") for x in data + [start]]
+
+
+# def graph_vertical(values, filled=False, minheight=3):
+#     """
+#     >>> print(graph_vertical([8, 1, 2, 3, 0, 8.2]))
+#     ╻    ┃
+#     ┃    ┃
+#     ┃    ┃
+#     ┃ ╻┃ ┃
+#     ┖┸┸┸─┚
+#     >>> print(graph_vertical([8, 1, 2, 3, 0, 8.2], True))
+#     ╽││││┃
+#     ┃││││┃
+#     ┃││││┃
+#     ┃│╽┃│┃
+#     ┖┸┸┸┴┚
+# """
+#     values = [round(i) for i in values]
+#     CSTART, CMID, CEND = tuple("┖┸┚")
+#     if filled:
+#         CSZERO, CMZERO, CEZERO = tuple("└┴┘")
+#         CFULL, CHALF, CEMPTY = tuple("┃╽│")
+#         CONE, COZERO = tuple("╹╵")
+#     else:
+#         CSZERO, CMZERO, CEZERO = tuple("╶─╴")
+#         CFULL, CHALF, CEMPTY = tuple("┃╻ ")
+#         CONE, COZERO = tuple("╹·")
+
+#     # Draw the axes
+#     start = []
+#     if not values:
+#         return []
+
+#     if len(values) == 1:
+#         start.append(CONE if values[0] else COZERO)
+#     else:
+#         start.append(CSTART if values[0] else CSZERO)
+#         for i in values[1:-1]:
+#             start.append(CMID if i else CMZERO)
+#         start.append(CEND if values[-1] else CEZERO)
+
+#     values = [i-1 for i in values]
+
+#     # Create the graph
+#     height = max(math.ceil(max(values) / 2), minheight)
+#     data = [[[CHALF, CEMPTY, CFULL][cmp(y, (x-1) / 2)] 
+#              for x in values] 
+#             for y in range(height)][::-1]
+
+#     return ["".join(x) for x in data + [start]]
+
+
+# def graph_horizontal(values, filled=False, minheight=3, height=None):
+#     """
+#     >>> print(graph_horizontal([8, 1, 12, 3, 0, 22]))
+#     ┍━━━╸       
+#     ┝           
+#     ┝━━━━━╸     
+#     ┝━          
+#     │           
+#     ┕━━━━━━━━━━╸
+#     >>> print(graph_horizontal([8, 1, 12, 3, 0, 22], True))
+#     ┍━━━╾───────
+#     ┝───────────
+#     ┝━━━━━╾─────
+#     ┝━──────────
+#     ├───────────
+#     ┕━━━━━━━━━━╾
+#     """
+#     values = [round(i) for i in values]
+#     CSTART, CMID, CEND = tuple("┍┝┕")
+#     if filled:
+#         CSZERO, CMZERO, CEZERO = tuple("┌├└")
+#         CFULL, CHALF, CEMPTY = tuple("━╾─")
+#         CONE, COZERO = tuple("╺╶")
+#     else:
+#         CSZERO, CMZERO, CEZERO = tuple("╷│╵")
+#         CFULL, CHALF, CEMPTY = tuple("━╸ ")
+#         CONE, COZERO = tuple("╺·")
+
+#     # Draw the axes
+#     start = []
+#     if not values:
+#         return []
+
+#     if len(values) == 1:
+#         start.append(CONE if values[0] else COZERO)
+#     else:
+#         start.append(CSTART if values[0] else CSZERO)
+#         for i in values[1:-1]:
+#             start.append(CMID if i else CMZERO)
+#         start.append(CEND if values[-1] else CEZERO)
+
+#     values = [i-1 for i in values]
+
+#     # Create the graph
+#     if not height:
+#         height = max(math.ceil(max(values) / 2), minheight)
+#     data = [[start[i]] 
+#             + [[CHALF, CEMPTY, CFULL][cmp(y, (x-1) / 2)] 
+#                for y in range(height)] 
+#             for i, x in enumerate(values)]
+
+#     return ["".join(x) for x in data]
+
+# graph = graph_vertical_DOS
+
+# def graph_thick(values, symbols = [' ', '▁', '▂', '▃', '▄', '▅', '▆', '▇', '█', '\x16 \x16']):
+#     symblen = len(symbols) - 1
+#     values = [round(i) for i in values]
+#     output = []
+
+#     while any(values):
+#         output.append("".join(symbols[min(i, symblen)] for i in values))
+#         values = [i - min(i, symblen) for i in values]
+
+#     output = [i.replace("\x16\x16", "") for i in output[::-1]]
+#     return output
+
+# def colordots(values, normalise=True, char="⋅", nums=[0, 15, 14, 1]):
+#     if normalise:
+#         maxval = max(values)
+#         values = [min(i*3/maxval, len(nums)-1) for i in values]
+#     val = "".join("\x03%2d⋅\x0f"%nums[round(i)] for i in values).replace("\x0f\x03", "\x03")
+#     return re.sub(r"(\x03\d\d)(.)\1", r"\1\2", val)
