@@ -94,7 +94,7 @@ class Wyp(Callback):
         stats = "%s out of %s people pressed the button (%.2f%%)" % (numPress, num, numPress / num * 100)
         health = 1
         if None in wyp.values():
-            health -= 2 * list(wyp.values()).count(None) / self.average()
+            health -= num * list(wyp.values()).count(None) / (self.average() * numPress)
             if health < 0:
                 del self.wyps[item]
                 self.save()
