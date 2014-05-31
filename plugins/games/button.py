@@ -100,8 +100,8 @@ class Wyp(Callback):
                 self.save()
                 stats += ". The button has been destroyed. RIP, button."
             bar = list("  ʜᴇᴀʟᴛʜ  ")
-            bar.insert(max(0, math.ceil(health * 10)), "15,14")
-            stats += " 15,06%s" % "".join(bar)
+            bar.insert(max(0, math.ceil(health * 10)), "15,14")
+            stats += " 15,06%s" % "".join(bar)
         return stats
             
 
