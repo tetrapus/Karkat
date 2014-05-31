@@ -94,7 +94,7 @@ class Wyp(Callback):
         stats = "%s out of %s people pressed the button (%.2f%%)" % (numPress, num, numPress / num * 100)
         health = 1
         if None in wyp.values():
-            health -= (list(wyp.values()).count(None) / self.average()) * (2 - numPress / num)
+            health -= (sum(self.force(i) for i in wyp if wyp[i] is None) / self.average()) * (2 - numPress / num)
             if health < 0:
                 del self.wyps[item]
                 self.save()
@@ -122,6 +122,9 @@ class Wyp(Callback):
 
     def average(self):
         return sum(len(i.values()) for i in self.wyps.values()) / len(self.wyps)
+
+    def force(self, user):
+        return 1 / len([i for i in self.wyps if self.wyps[i].get(user, 1) is None])
 
     def save(self):
         with open(self.qfile, "w") as f:
