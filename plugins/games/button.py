@@ -66,6 +66,18 @@ licks you back
 gives off some smoke
 shocks your face
 drips
+glistens
+jiggles
+pulses brightly
+relents momentarily under the pressure
+has a bit of an earthy aftertaste
+tastes delightful
+smells wonderful
+has a rather elegant mouthfeel
+twitches like a robotic nipple
+smells industrial
+tastes unsettlingly creamy
+smells buttony
 is quite bitter""".split("\n")
         return "\x0306│\x03 You lick the button. It %s. %s" % (random.choice(observations), self.displayPresses(item))
    
