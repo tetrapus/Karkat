@@ -33,7 +33,7 @@ class Wyp(Callback):
         self.save()
         return "\x0306│\x03 Button added"
 
-    @command("fuckbutton destroy ripbutton")
+    @command("fuckbutton destroy ripbutton attack")
     def destroy(self, server, msg):
         item = self.active.setdefault(server.lower(msg.context), "")
         nick = msg.address.nick
@@ -86,7 +86,7 @@ is quite bitter""".split("\n")
         return self.fancydisplay(server.lower(msg.context))
 
     @command("button wyptb wyp willyoupressthebutton willyoupress")
-    def preview(self, server, msg):
+    def button(self, server, msg):
         nick = msg.address.nick
         # Check if we need any new buttons
         if all(i for i in self.wyps.values()):
@@ -98,7 +98,7 @@ is quite bitter""".split("\n")
             wyp = self.wyps.setdefault("%s but %s" % (cond, res), {})
             self.save()
         # Reduce probability of already-answered buttons
-        buttons = [i for i in self.wyps if server.lower(nick) not in self.wyps[i] or random.random() < 0.1]
+        buttons = [i for i in self.wyps if (server.lower(nick) not in self.wyps[i] and i != self.active) or random.random() < 0.1]
         self.active[server.lower(msg.context)] = random.choice(buttons)
         return self.display(server.lower(msg.context))
 
@@ -157,7 +157,7 @@ is quite bitter""".split("\n")
         return sum(len(i.values()) for i in self.wyps.values()) / len(self.wyps)
 
     def force(self, user):
-        return 1 / len([i for i in self.wyps if self.wyps[i].get(user, 1) is None])
+        return 0.2 + 0.8 * len([i for i in self.wyps if self.wyps[i].get(user, None) is not None]) / len([i for i in self.wyps if user in self.wyps[i])
 
     def save(self):
         with open(self.qfile, "w") as f:
