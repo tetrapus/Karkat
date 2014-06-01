@@ -157,7 +157,7 @@ is quite bitter""".split("\n")
         return sum(len(i.values()) for i in self.wyps.values()) / len(self.wyps)
 
     def force(self, user):
-        return 0.1 + 0.5 * len([i for i in self.wyps if self.wyps[i].get(user, None) is not None]) / len([i for i in self.wyps if user in self.wyps[i]]) + 0.4 / len([i for i in self.wyps if self.wyps[i].get(user, 1) is None])
+        return 0.15 + 0.6 * len([i for i in self.wyps if self.wyps[i].get(user, None) is not None]) / len([i for i in self.wyps if user in self.wyps[i]]) + 0.25 / len([i for i in self.wyps if self.wyps[i].get(user, 1) is None])
 
     def save(self):
         with open(self.qfile, "w") as f:
