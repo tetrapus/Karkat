@@ -15,4 +15,5 @@ __modules__ = ["games",
                "tell", 
                "ai",
                "queue",
-               "topic"]
+               "topic",
+               "inspire"]
