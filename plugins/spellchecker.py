@@ -5,8 +5,8 @@ import re
 import sqlite3
 import time
 from util.text import ircstrip, strikethrough
-from util.irc import Address, Message, command
-from bot.events import Callback
+from util.irc import Address, Message
+from bot.events import Callback, command
 try:
     import enchant
 except ImportError:
@@ -202,7 +202,7 @@ else:
                         self.last = None
                 
         @Callback.threadsafe
-        @command("spell spellcheck".split(), "(.+)")
+        @command("spell spellcheck", "(.+)")
         def activeCorrector(self, server, msg, query):
             if (self.dictionary.check(query) or self.alternate.check(query)):
                 return "%s, %s is spelt correctly." % (msg.address.nick, query)
@@ -254,7 +254,7 @@ else:
                 f.write("\n".join(self.locked))
 
 
-        @command("spellchecker", "(on|off|\d+)", public=":", private=".")
+        @command("spellchecker", "(on|off|\d+)", prefixes=(".", ":"))
         def correctChannel(self, server, msg, threshhold):
             context = {".": msg.address.nick, ":": msg.context}[msg.prefix]
             if threshhold == "off":
