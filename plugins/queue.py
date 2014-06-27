@@ -33,7 +33,7 @@ class Queue(Callback):
             if start: start -= 1
             return q[start:stop]
         else:
-            exact = [i for i in q if i[1].lower() == query.lower]
+            exact = [i for i in q if i[1].lower() == query.lower()]
             if exact:
                 return exact
             else:
@@ -193,6 +193,8 @@ class Queue(Callback):
             queue.append(query)
             q = [(len(queue), query)]
 
+        updated = []
+
         q.reverse()
 
         for i, item in q:
@@ -200,8 +202,9 @@ class Queue(Callback):
         q.reverse()
         for i, item in q:
             queue.append(item)
+            updated.append((len(queue), item))
 
-        yield from self.displayAll([(i+1, item[1]) for i, item in enumerate(q)], 25 if msg.prefix == '!' else 5)
+        yield from self.displayAll(queue, 25 if msg.prefix == '!' else 5)
 
         self.save()
 
@@ -249,6 +252,31 @@ class Queue(Callback):
                 tagged.append((i, fixed))
 
         yield from self.displayAll(tagged, 25 if msg.prefix == '!' else 5)
+
+        self.save()
+
+    @command("score", r"((?:\d+/)?\d+|[+-]\d+)\s+(.+)")
+    def score(self, server, msg, score, query):
+        nick = server.lower(msg.address.nick)
+        queue = self.queues.setdefault(nick, [])
+        if not queue:
+            yield "06│ Your queue is empty. "
+            return
+        q = self.find(queue, query)
+
+        if not q:
+            yield "06│ No matching items."
+            return
+
+        for i, item in q:
+            split = re.split(r"(\[(?:\d+/)?\d+\])", item, maxsplit=1)
+            if len(split) == 3:
+                queue[i-1] = split[0] + '[' + score + ']' + split[2]
+            else:
+                queue[i-1] = item + ' ' + '[' + score + ']'
+            # TODO: relative scoring and velocity
+
+        yield from self.displayAll([(i[0], queue[i[0]-1]) for i in q], 25 if msg.prefix == '!' else 5)
 
         self.save()
 
