@@ -92,8 +92,6 @@ class Reminder(Callback):
 
         if after:
             self.waiting.setdefault(server.lower(user), {})[jobid] = {"job": scheduler.schedule_after(after, setreminder, args=(job,)), "args": job}
-        else:
-            setreminder(job)
 
         with open(self.server.get_config_dir(self.REMINDERF), "w") as f:
             json.dump(self.reminders, f)
