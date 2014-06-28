@@ -57,7 +57,7 @@ class Shell(object):
                 self.shellThread = Process(shell, target, self)
                 self.shellThread.start()
             else:
-                self.shellThread.stdin.write(args + "\n")
+                self.shellThread.stdin.write((args + "\n").encode("utf-8"))
 
     def terminate(self):
         if self.activeShell:
