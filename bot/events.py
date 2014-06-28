@@ -210,6 +210,8 @@ def command(name=None,
                                 with output as out:
                                     out += errors[error](e)
                                 break
+                    except Callback.InvalidUsage:
+                        pass
         _.__annotations__["return"] = "privmsg"
         _.private = private
         _.public = public
