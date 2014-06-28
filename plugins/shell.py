@@ -25,7 +25,7 @@ class Process(threading.Thread):
         self.parent.activeShell = False
         if time.time() - started > 2:
             exitcode = self.shell.poll()
-            self.parent.printer.message("%.2dbash│ Program exited with code %s"%(5 if exitcode else 12, exitcode), self.target)
+            self.parent.stream.message("%.2dbash│ Program exited with code %s"%(5 if exitcode else 12, exitcode), self.target)
 
 class Shell(object):
 
