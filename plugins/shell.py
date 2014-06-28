@@ -60,6 +60,7 @@ class Shell(object):
                 self.shellThread.start()
             else:
                 self.shellThread.stdin.write((args + "\n").encode("utf-8"))
+                self.shellThread.stdin.flush()
 
     @command("terminate", admin=True)
     def terminate(self, server, msg):
