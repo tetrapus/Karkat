@@ -362,7 +362,7 @@ class LastFM(Callback):
             return "04│ ♫ │ 12http://last.fm/user/" + self.users[lowername]
         return "04│ ♫ │ %s has not associated their Last.FM" % user
 
-    @command("collage", "(-[cap]+\s+)?((?:(?:3x3|4x4|5x5|2x8|7d|1m|3m|6m|12m|overall)\s+)+)?(\S+)?")
+    @command("collage", "(-[cap]+\s+)?((?:(?:3x3|4x4|5x5|2x8|7d|1m|3m|6m|12m|overall)\s*)+)?(\S+)?")
     def collage(self, server, message, flags, data, user):
         tapmusic = "http://tapmusic.net/lastfm/collage.php?"
         if not user:
