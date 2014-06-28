@@ -204,7 +204,7 @@ class Queue(Callback):
             queue.append(item)
             updated.append((len(queue), item))
 
-        yield from self.displayAll(queue, 25 if msg.prefix == '!' else 5)
+        yield from self.displayAll(updated, 25 if msg.prefix == '!' else 5)
 
         self.save()
 
