@@ -111,6 +111,18 @@ class Queue(Callback):
         self.save()
         return self.display(len(queue), item)
 
+    @command("edit replace", r"(\d+)\s+(.+)")
+    def edit(self, server, message, index, item):
+        nick = message.address.nick
+        queue = self.queues.setdefault(server.lower(nick), [])
+        index = int(index)
+        if index > len(queue):
+            queue.append("")
+            index = len(queue)
+        queue[index - 1] = item
+        self.save()
+        return self.display(index, item)
+
     @command("push prepend", r"(.+)")
     def push(self, server, message, item):
         nick = message.address.nick
@@ -203,6 +215,37 @@ class Queue(Callback):
         for i, item in q:
             queue.append(item)
             updated.append((len(queue), item))
+
+        yield from self.displayAll(updated, 25 if msg.prefix == '!' else 5)
+
+        self.save()
+
+    @command("insert", "(\d+)\s+(.+)")
+    def insert(self, server, msg, index, query):
+        nick = server.lower(msg.address.nick)
+        queue = self.queues.setdefault(nick, [])
+
+        q = self.find(queue, query)
+
+        if not q:
+            queue.append(query)
+            q = [(len(queue), query)]
+
+        updated = []
+
+        index = int(index)
+        if len(queue) - len(q) + 1 < index:
+            index = len(queue) - len(q)
+        index -= 1
+
+        q.reverse()
+
+        for i, item in q:
+            queue.pop(i-1)
+            queue.insert(index, item)
+        q.reverse()
+        for i, item in enumerate(q):
+            updated.append(index + i, item[1]))
 
         yield from self.displayAll(updated, 25 if msg.prefix == '!' else 5)
 
