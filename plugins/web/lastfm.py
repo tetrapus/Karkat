@@ -362,6 +362,29 @@ class LastFM(Callback):
             return "04│ ♫ │ 12http://last.fm/user/" + self.users[lowername]
         return "04│ ♫ │ %s has not associated their Last.FM" % user
 
+    @command("collage", "(-[cap]+\s+)?((?:(?:3x3|4x4|5x5|2x8|7d|1m|3m|6m|12m|overall)\s+)+)?(\S+)?")
+    def collage(self, server, message, flags, data, user):
+        tapmusic = "http://tapmusic.net/lastfm/collage.php?"
+        if not user:
+            user = message.address.nick
+        lowername = server.lower(user)
+        if lowername in self.users:
+            user = self.users[lowername]
+
+        defaults = {"user": user, "type": "overall", "size": "3x3"}
+        for i in (flags or []):
+            if i in "cap":
+                defaults[{"c":"caption","a":"artistonly","p":"playcount"}[i]] = "true"
+        
+        if data:
+            for i in data.split():
+                if "x" in data:
+                    defaults["size"] = i
+                else:
+                    defaults["type"] = {"7d": "7day", "1m": "1month", "3m": "3month", "6m": "6month", "12m": "12month", "overall":"overall"}[i]
+
+        return url.shorten(tapmusic + urlencode(defaults))
+
 
     def savefile(self):
         json.dump(self.users, open(self.userfile, "w"))
