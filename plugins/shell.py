@@ -6,6 +6,7 @@ import time
 
 from util.irc import Callback
 from util.irc import Message
+from bot.events import command
 
 class Process(threading.Thread):
     def __init__(self, shell, target, invocator):
@@ -34,6 +35,7 @@ class Shell(object):
         self.shellThread = None
 
         server.register("privmsg", self.trigger)
+        server.register("privmsg", self.terminate)
 
     @Callback.inline
     def trigger(self, server, line):
@@ -57,9 +59,10 @@ class Shell(object):
                 self.shellThread = Process(shell, target, self)
                 self.shellThread.start()
             else:
-                self.shellThread.stdin.write(args + "\n")
+                self.shellThread.stdin.write((args + "\n").encode("utf-8"))
 
-    def terminate(self):
+    @command("terminate", admin=True)
+    def terminate(self, server, msg):
         if self.activeShell:
             os.killpg(self.shellThread.shell.pid, signal.SIGTERM)
 
