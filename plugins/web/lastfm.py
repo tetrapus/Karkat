@@ -378,12 +378,12 @@ class LastFM(Callback):
         
         if data:
             for i in data.split():
-                if "x" in data:
+                if "x" in i:
                     defaults["size"] = i
                 else:
                     defaults["type"] = {"7d": "7day", "1m": "1month", "3m": "3month", "6m": "6month", "12m": "12month", "overall":"overall"}[i]
 
-        return url.shorten(tapmusic + urlencode(defaults))
+        return "04│ "+url.format(url.shorten(tapmusic + urlencode(defaults)))
 
 
     def savefile(self):
