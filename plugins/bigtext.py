@@ -99,9 +99,7 @@ def bigtext(server, message, flags, lines, text):
         text = text.upper()
     if "l" in flags:
         text = text.lower()
-    if lines == 1:
-        text = "│ " + text
-    else:
+    if lines > 1:
         ds = parse("data/bigtext/%d.txt" % lines)
         text = big(text, ds)
     if "t" in flags:
@@ -114,6 +112,8 @@ def bigtext(server, message, flags, lines, text):
         text = "\n".join("".join("\x03%.2d%s" % (colors[(n+int(m/2))%k], i[2*m:2*(m+1)]) if i[2*m:2*(m+1)].strip() else i[2*m:2*(m+1)] for m in range(int((len(i)+1)/2))) for n, i in enumerate(map(ircstrip, text.split("\n"))))
     if "b" in flags:
         text = "\n".join("\x02" + x for x in text.split("\n"))
+    if lines == 1:
+        text = "│ " + text
     return minify(text)
 
 @Callback.threadsafe
