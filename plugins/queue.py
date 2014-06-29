@@ -245,7 +245,7 @@ class Queue(Callback):
             queue.insert(index, item)
         q.reverse()
         for i, item in enumerate(q):
-            updated.append((index + i, item[1]))
+            updated.append((index + i+1, item[1]))
 
         yield from self.displayAll(updated, 25 if msg.prefix == '!' else 5)
 
