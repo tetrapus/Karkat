@@ -80,10 +80,10 @@ def thicken(text):
     return "".join(thicker.get(i, i) for i in text)
 
 def flip(text):
-    text = "\n".join("".join(reverse.get(i, i) for i in line[::-1]) for line in text.split("\n"))
+    return "\n".join("".join(reverse.get(i, i) for i in line[::-1]) for line in text.split("\n"))
 
 def upside_down(text):
-    text = "\n".join("".join(upturned.get(i, i) for i in line) for line in text.split("\n")[::-1])
+    return "\n".join("".join(upturned.get(i, i) for i in line) for line in text.split("\n")[::-1])
 
 
 @Callback.threadsafe
