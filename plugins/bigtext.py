@@ -89,7 +89,12 @@ def upside_down(text):
 @Callback.threadsafe
 @command("big bigger", "(?:-([rbclt!fu]*)([1-5])?\s+)?(.+)?")
 def bigtext(server, message, flags, lines, text):
-    lines = int(lines or 3)
+    if lines:
+        lines = int(lines)
+    elif message.command == "bigger":
+        lines = 5
+    else:
+        lines = 3
     if not flags: flags = ""
     if "!" not in flags:
         text = re.sub(r"\$[a-z]+", subs, text, flags=re.IGNORECASE)
