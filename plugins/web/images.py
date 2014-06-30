@@ -147,6 +147,9 @@ def asciiart(server, msg, pic):
     if img.size[0] > 50:
         scalefactor = 50 / img.size[0]
         img = img.resize((int(scalefactor * img.size[0]), int(scalefactor * img.size[1])))
+    img.load()  # needed for split()
+    background = Image.new('RGB', img.size, (255,255,255))
+    background.paste(img, mask=img.split()[3])  # 3 is the alpha channel
     return "\n".join("".join(colors[nearestColor(img.getpixel((i, j)))] for i in range(img.size[0])) for j in range(img.size[1]))
 
 blocks = {(True, True, False, True): '▛', (True, False, True, True): '▙', (True, True, True, False): '▜', (False, False, False, False): ' ', (True, False, True, False): '▚', (False, False, False, True): '▖', (False, True, False, True): '▞', (True, False, False, True): '▌', (False, True, False, False): '▝', (True, True, True, True): '█', (False, True, True, False): '▐', (False, False, True, False): '▗', (True, True, False, False): '▀', (True, False, False, False): '▘', (False, False, True, True): '▄', (False, True, True, True): '▟'}
@@ -185,8 +188,11 @@ def render(server, msg, pic):
     if img.size[0] > 110:
         scalefactor = 110 / img.size[0]
         img = img.resize((int(scalefactor * img.size[0]), int(scalefactor * img.size[1])), Image.ANTIALIAS)
-    cmap = img.resize((int(img.size[0]/2), int(img.size[1]/2))).convert("RGB")
+    cmap = img.resize((int(img.size[0]/2), int(img.size[1]/2))).convert("RGBA")
     img = img.convert('1')
+    cmap.load()  # needed for split()
+    background = Image.new('RGB', cmap.size, (255,255,255))
+    background.paste(cmap, mask=cmap.split()[3])  # 3 is the alpha channel
     return "\n".join("".join(defaults[nearestColor(cmap.getpixel((x, y)), defaults)] + blocks[img.getpixel((2*x, 2*y)) != 255,
                                     img.getpixel((2*x+1, 2*y)) != 255,
                                     img.getpixel((2*x+1, 2*y+1)) != 255,
@@ -224,8 +230,11 @@ def show(server, msg, pic):
     if img.size[0] > 110:
         scalefactor = 110 / img.size[0]
         img = img.resize((int(scalefactor * img.size[0]), int(scalefactor * img.size[1])), Image.ANTIALIAS)
-    img = img.convert("RGB")
-    return irc_render(img)
+    img = img.convert("RGBA")
+    img.load()  # needed for split()
+    background = Image.new('RGB', img.size, (255,255,255))
+    background.paste(img, mask=img.split()[3])  # 3 is the alpha channel
+    return irc_render(background)
 
 @msghandler
 def urlcache(server, msg):
