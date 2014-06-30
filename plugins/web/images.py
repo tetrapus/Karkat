@@ -147,6 +147,7 @@ def asciiart(server, msg, pic):
     if img.size[0] > 50:
         scalefactor = 50 / img.size[0]
         img = img.resize((int(scalefactor * img.size[0]), int(scalefactor * img.size[1])))
+    img = img.convert("RGBA")
     img.load()  # needed for split()
     background = Image.new('RGB', img.size, (255,255,255))
     background.paste(img, mask=img.split()[3])  # 3 is the alpha channel
@@ -193,7 +194,7 @@ def render(server, msg, pic):
     cmap.load()  # needed for split()
     background = Image.new('RGB', cmap.size, (255,255,255))
     background.paste(cmap, mask=cmap.split()[3])  # 3 is the alpha channel
-    return "\n".join("".join(defaults[nearestColor(cmap.getpixel((x, y)), defaults)] + blocks[img.getpixel((2*x, 2*y)) != 255,
+    return "\n".join("".join(defaults[nearestColor(background.getpixel((x, y)), defaults)] + blocks[img.getpixel((2*x, 2*y)) != 255,
                                     img.getpixel((2*x+1, 2*y)) != 255,
                                     img.getpixel((2*x+1, 2*y+1)) != 255,
                                     img.getpixel((2*x, 2*y+1)) != 255] for x in range(int(img.size[0]/2))) for y in range(int(img.size[1]/2)))
