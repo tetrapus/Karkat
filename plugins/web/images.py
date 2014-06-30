@@ -192,9 +192,9 @@ def render(server, msg, pic):
                                     img.getpixel((2*x+1, 2*y+1)) != 255,
                                     img.getpixel((2*x, 2*y+1)) != 255] for x in range(int(img.size[0]/2))) for y in range(int(img.size[1]/2)))
 
-@command("drender", "(.*)")
+@command("show", "(.*)")
 @Callback.threadsafe
-def render(server, msg, pic):
+def show(server, msg, pic):
     if not pic:
         pic = server.lasturl
     elif not pic.startswith("http"):
