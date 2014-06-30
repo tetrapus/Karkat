@@ -103,7 +103,7 @@ class Queue(Callback):
 
         return self.display(*random.choice(q))
 
-    @command("queue todo append", r"(.+)")
+    @command("queue todo", r"(.+)")
     def queue(self, server, message, item):
         nick = message.address.nick
         queue = self.queues.setdefault(server.lower(nick), [])
