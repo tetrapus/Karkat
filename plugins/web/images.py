@@ -233,4 +233,4 @@ def urlcache(server, msg):
     if urls:
         server.lasturl = urls[-1]
 
-__callbacks__ = {"privmsg": [image, gif, face, photo, clipart, lineart, asciiart, urlcache, render]}
+__callbacks__ = {"privmsg": [image, gif, face, photo, clipart, lineart, asciiart, urlcache, render, show]}
