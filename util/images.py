@@ -22,14 +22,13 @@ class Palette(object):
 blocks = {(True, True, False, True): '▛', (True, False, True, True): '▙', (True, True, True, False): '▜', (False, False, False, False): ' ', (True, False, True, False): '▚', (False, False, False, True): '▖', (False, True, False, True): '▞', (True, False, False, True): '▌', (False, True, False, False): '▝', (True, True, True, True): '█', (False, True, True, False): '▐', (False, False, True, False): '▗', (True, True, False, False): '▀', (True, False, False, False): '▘', (False, False, True, True): '▄', (False, True, True, True): '▟'}
 
 def average(points):
-    print(list(points))
     return [sum(i)/len(i) for i in zip(*points)]
 
 def distance(a, b):
     return math.sqrt(sum((x - y)**2 for x, y in zip(a, b)))
 
 def nearestColor(c, colorspace):
-    return min(colorspace.items(), key=lambda x:distance(c, x[0]))[0]
+    return min(colorspace.items(), key=lambda x:distance(c, x[0]))[1]
 
 def aggregate_distance(points, partition):
     mask = tuple(bool(partition >> i & 1) for i in range(3,-1,-1))

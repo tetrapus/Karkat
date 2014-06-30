@@ -224,6 +224,7 @@ def render(server, msg, pic):
     if img.size[0] > 110:
         scalefactor = 110 / img.size[0]
         img = img.resize((int(scalefactor * img.size[0]), int(scalefactor * img.size[1])), Image.ANTIALIAS)
+    img = img.convert("RGB")
     return irc_render(img)
 
 @msghandler
