@@ -146,6 +146,11 @@ class Printer(WorkerThread):
         self.bot = connection
         self.verbosity = self.TYPE_ONLY | self.QUEUE_STATE
         self.servername = connection.server[0]
+        self.history = {}
+        if hasattr(connection, "lower"):
+            self.lower = connection.lower
+        else:
+            self.lower = str.lower
 
     def send(self, message):
         """
@@ -164,6 +169,7 @@ class Printer(WorkerThread):
         Send a message.
         """
         msg = lineify(str(mesg))
+        self.history[self.lower(recipient)] = msg
         for message in [i for i in msg if i]:
             self.work.put("%s %s :%s" % (method, recipient, message))
         return mesg # Debugging
@@ -395,11 +401,11 @@ class Connection(threading.Thread, object):
         # Find a working nickname
         while self.buff.append(self.sock.recv(1)):
             for line in self.buff:
-                if line.startswith("PING"):
+                words = line.split()
+                if line.startswith("PING") or words[1] == "001":
                     # We're done here.
                     self.sendline("PONG %s" % line.split()[-1])
                     break
-                words = line.split()
                 errdict = {"433": "Invalid nickname, retrying.", 
                            "436": "Nickname in use, retrying."}
                 if words[1] == "432":
