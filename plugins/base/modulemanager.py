@@ -3,20 +3,16 @@ import json
 import os
 import sys
 
-from util.irc import Callback, command
 from util.text import namedtable
+from bot.events import Callback, command
 from bot.threads import SelectiveBot
 
 
-class ModManager(object):
+class ModManager(Callback):
 
     BLACKLIST = "blacklist.json"
 
     def __init__(self, server):
-        server.register("privmsg", self.list_modules)
-        server.register("privmsg", self.unregister_modules)
-        server.register("privmsg", self.reload_modules)
-        server.register("privmsg", self.load_modules)
         if isinstance(server, SelectiveBot):
             self.bfile = server.get_config_dir(self.BLACKLIST)
             try:
@@ -25,14 +21,13 @@ class ModManager(object):
                 # File doesn't exist
                 os.makedirs(server.get_config_dir(), exist_ok=True)
             self.sync(server)
-
-            server.register("privmsg", self.enable_module)
-            server.register("privmsg", self.disable_module)
-            server.register("privmsg", self.list_disabled)
         else:
             print("[Module Manager] Warning: This bot architecture does not "
                   "support blacklists. Add the SelectiveBot mixin to enable "
                   "blacklist support.", file=sys.stderr)
+            self.enable_module, self.disable_module, self.list_disabled = None, None, None
+
+        super().__init__(server)
 
     # Disable/Enable plugins
 
@@ -41,8 +36,8 @@ class ModManager(object):
             bf.write(json.dumps(server.blacklist))
 
     @Callback.inline
-    @command("disable", "([^ ]+)", private="", public=":", admin=True,
-                usage="12Module Manager│ Usage: :disable <modname>")
+    @command("disable", "([^ ]+)", prefixes=("", ":"), admin=True,
+                templates={Callback.USAGE: "12Module Manager│ Usage: :disable <modname>"})
     def disable_module(self, server, message, mod):
         blacklisted = server.blacklist.setdefault(server.lower(message.context), 
                                                   list(server.blacklist[None]))
@@ -54,8 +49,8 @@ class ModManager(object):
         self.sync(server)
 
     @Callback.inline
-    @command("enable", "([^ ]+)", private="", public=":", admin=True,
-                usage="12Module Manager│ Usage: :enable <modname>")
+    @command("enable", "([^ ]+)", prefixes=("",":"), admin=True,
+                templates={Callback.USAGE: "12Module Manager│ Usage: :enable <modname>"})
     def enable_module(self, server, message, mod):
         blacklisted = server.blacklist.setdefault(server.lower(message.context), 
                                                   list(server.blacklist[None]))
@@ -93,7 +88,7 @@ class ModManager(object):
         return removed
 
 
-    @command(["modules", "plugins"], "(.*)", 
+    @command("modules plugins", "(.*)", 
                 admin=True) # NTS: Figure out how this function signature works
     def list_modules(self, server, message, mask):
         modules = set()
@@ -107,9 +102,9 @@ class ModManager(object):
             yield i
 
     @Callback.inline
-    @command("unload", "(.+)", private="", public=":",
+    @command("unload", "(.+)", prefixes=("",":"),
                 admin=True, 
-                usage="12Module Manager│ Usage: [!@]unload <module>")
+                templates={Callback.USAGE: "12Module Manager│ Usage: [!@]unload <module>"})
     def unregister_modules(self, server, message, module):
         removed = {x.module.__name__ for x in self.remove_modules(server, module)}
         if not removed:
@@ -124,10 +119,10 @@ class ModManager(object):
                 yield i
 
     @Callback.inline
-    @command("reload", "(.+)", private="", public=":",
+    @command("reload", "(.+)", prefixes=("",":"),
                 admin=True, 
-                usage="12Module Manager│ Usage: [!@]reload <module>",
-                error="12Module Manager│ Module failed to load.")
+                templates={ Callback.USAGE: "12Module Manager│ Usage: [!@]reload <module>",
+                            Callback.ERROR: "12Module Manager│ Module failed to load."})
     def reload_modules(self, server, message, module):
         # Find and remove all callbacks
         removed = self.remove_modules(server, module)
@@ -155,10 +150,10 @@ class ModManager(object):
             yield "05Module Manager│ Module not found."
 
     @Callback.inline
-    @command("load", "(.+)", private="", public=":",
+    @command("load", "(.+)", prefixes=("",":"),
                 admin=True, 
-                usage="12Module Manager│ Usage: [!@]load <module>",
-                error="05Module Manager│ Module failed to load.")
+                templates={ Callback.USAGE: "12Module Manager│ Usage: [!@]load <module>",
+                            Callback.ERROR: "05Module Manager│ Module failed to load."})
     def load_modules(self, server, message, module):
         path = module.split(".")
         try:
