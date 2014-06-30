@@ -7,6 +7,7 @@ from io import BytesIO
 from bot.events import command, Callback, msghandler
 from util.services import url
 from util.text import unescape
+from util.images import irc_render
 
 exceptions = {Callback.USAGE: "12Google Images│ "\
                               "Usage: .image [-NUM_RESULTS] <query>",
@@ -190,6 +191,40 @@ def render(server, msg, pic):
                                     img.getpixel((2*x+1, 2*y)) != 255,
                                     img.getpixel((2*x+1, 2*y+1)) != 255,
                                     img.getpixel((2*x, 2*y+1)) != 255] for x in range(int(img.size[0]/2))) for y in range(int(img.size[1]/2)))
+
+@command("drender", "(.*)")
+@Callback.threadsafe
+def render(server, msg, pic):
+    if not pic:
+        pic = server.lasturl
+    elif not pic.startswith("http"):
+        params = {
+            "safe": "off",
+            "v": "1.0",
+            "rsz": 1,
+            "q": pic
+        }
+        pic = requests.get(
+          "https://ajax.googleapis.com/ajax/services/search/images",
+          params=params
+        ).json()["responseData"]["results"][0]["url"]
+    server.lasturl = pic
+    if msg.prefix == "!": 
+        k = 16
+    else: 
+        k = 6
+
+    data = requests.get(pic).content
+    data = BytesIO(data)
+    img = Image.open(data)
+    if img.size[0] > 4096 or img.size[1] > 4096:
+        return "│ Image too large."
+    scalefactor = min(img.size[0]*3/k, img.size[1]/k)
+    img = img.resize((int(img.size[0]*3/scalefactor) * 2, int(img.size[1]/scalefactor)*2), Image.ANTIALIAS)
+    if img.size[0] > 110:
+        scalefactor = 110 / img.size[0]
+        img = img.resize((int(scalefactor * img.size[0]), int(scalefactor * img.size[1])), Image.ANTIALIAS)
+    return irc_render(img)
 
 @msghandler
 def urlcache(server, msg):
