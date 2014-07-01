@@ -30,4 +30,4 @@ class Tox(Callback):
         with open(self.ufile, "w") as f:
             json.dump(self.users, f)
 
-__initialise___ = Tox
+__initialise__ = Tox
