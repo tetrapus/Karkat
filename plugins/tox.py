@@ -24,7 +24,7 @@ class Tox(Callback):
     def settox(self, server, message, token):
         self.users[server.lower(message.address.nick)] = token
         self.save()
-        return "11│ 🔒 │ %s associated with %s." % (message.address.nick, token[:4] + "..." + token[-4:])
+        return "11│ 🔒 │ %s associated with %s." % (message.address.nick, token[:4] + "\x0315..\x0f" + token[-4:])
 
     def save(self):
         with open(self.ufile, "w") as f:
