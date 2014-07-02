@@ -55,7 +55,7 @@ def draw_braille(img):
     img = img.convert('1')
     def getpix(y, x):
         try:
-            return img.getpixel((x, y)) > 127
+            return img.getpixel((x, y)) < 127
         except IndexError:
             return 0
     lines = []
