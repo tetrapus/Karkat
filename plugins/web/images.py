@@ -7,7 +7,7 @@ from io import BytesIO
 from bot.events import command, Callback, msghandler
 from util.services import url
 from util.text import unescape
-from util.images import irc_render
+from util.images import irc_render, draw_braille
 
 exceptions = {Callback.USAGE: "12Google Images│ "\
                               "Usage: .image [-NUM_RESULTS] <query>",
@@ -237,10 +237,48 @@ def show(server, msg, pic):
     background.paste(img, mask=img.split()[3])  # 3 is the alpha channel
     return irc_render(background)
 
+@command("trace", "(.*)")
+@Callback.threadsafe
+def trace(server, msg, pic):
+    if not pic:
+        pic = server.lasturl
+    elif not pic.startswith("http"):
+        params = {
+            "safe": "off",
+            "v": "1.0",
+            "rsz": 1,
+            "q": pic
+        }
+        pic = requests.get(
+          "https://ajax.googleapis.com/ajax/services/search/images",
+          params=params
+        ).json()["responseData"]["results"][0]["url"]
+    server.lasturl = pic
+    if msg.prefix == "!": 
+        k = 16
+    else: 
+        k = 6
+
+    data = requests.get(pic).content
+    data = BytesIO(data)
+    img = Image.open(data)
+    if img.size[0] > 4096 or img.size[1] > 4096:
+        return "│ Image too large."
+    scalefactor = min(img.size[0]*3/k, img.size[1]/k)
+    img = img.resize((int(img.size[0]*3/scalefactor) * 2, int(img.size[1]/scalefactor)*2), Image.ANTIALIAS)
+    if img.size[0] > 110:
+        scalefactor = 110 / img.size[0]
+        img = img.resize((int(scalefactor * img.size[0]), int(scalefactor * img.size[1])), Image.ANTIALIAS)
+    #img = img.convert("RGBA")
+    #img.load()  # needed for split()
+    #background = Image.new('RGB', img.size, (255,255,255))
+    #background.paste(img, mask=img.split()[3])  # 3 is the alpha channel
+    return draw_braille(img)
+
 @msghandler
 def urlcache(server, msg):
     urls = [i for i in msg.text.split() if i.startswith("http")]
     if urls:
         server.lasturl = urls[-1]
 
-__callbacks__ = {"privmsg": [image, gif, face, photo, clipart, lineart, asciiart, urlcache, render, show]}
+__callbacks__ = {"privmsg": [image, gif, face, photo, clipart, lineart, asciiart, urlcache, render, show, trace]}

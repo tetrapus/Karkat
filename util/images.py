@@ -44,6 +44,35 @@ def irc_render(img, palette=Palette.XCHAT):
         line = ""
         for x in range(img.size[0]//2):
             _, means, mask = bifurcate([img.getpixel((2*x, 2*y)), img.getpixel((2*x+1, 2*y)), img.getpixel((2*x+1, 2*y+1)), img.getpixel((2*x, 2*y+1))])
+            colors = nearestColor(means[1], palette), nearestColor(means[0], palette)
             line += "\x03%d,%d%s" % (nearestColor(means[1], palette), nearestColor(means[0], palette), blocks[mask])
         lines.append(line)
+    return "\n".join(lines)
+
+braille = "⠀⠁⠈⠉⠂⠃⠊⠋⠐⠑⠘⠙⠒⠓⠚⠛⠄⠅⠌⠍⠆⠇⠎⠏⠔⠕⠜⠝⠖⠗⠞⠟⠠⠡⠨⠩⠢⠣⠪⠫⠰⠱⠸⠹⠲⠳⠺⠻⠤⠥⠬⠭⠦⠧⠮⠯⠴⠵⠼⠽⠶⠷⠾⠿⡀⡁⡈⡉⡂⡃⡊⡋⡐⡑⡘⡙⡒⡓⡚⡛⡄⡅⡌⡍⡆⡇⡎⡏⡔⡕⡜⡝⡖⡗⡞⡟⡠⡡⡨⡩⡢⡣⡪⡫⡰⡱⡸⡹⡲⡳⡺⡻⡤⡥⡬⡭⡦⡧⡮⡯⡴⡵⡼⡽⡶⡷⡾⡿⢀⢁⢈⢉⢂⢃⢊⢋⢐⢑⢘⢙⢒⢓⢚⢛⢄⢅⢌⢍⢆⢇⢎⢏⢔⢕⢜⢝⢖⢗⢞⢟⢠⢡⢨⢩⢢⢣⢪⢫⢰⢱⢸⢹⢲⢳⢺⢻⢤⢥⢬⢭⢦⢧⢮⢯⢴⢵⢼⢽⢶⢷⢾⢿⣀⣁⣈⣉⣂⣃⣊⣋⣐⣑⣘⣙⣒⣓⣚⣛⣄⣅⣌⣍⣆⣇⣎⣏⣔⣕⣜⣝⣖⣗⣞⣟⣠⣡⣨⣩⣢⣣⣪⣫⣰⣱⣸⣹⣲⣳⣺⣻⣤⣥⣬⣭⣦⣧⣮⣯⣴⣵⣼⣽⣶⣷⣾⣿"
+
+def draw_braille(img):
+    img = img.convert('1')
+    def getpix(y, x):
+        try:
+            return img.getpixel((x, y)) > 127
+        except IndexError:
+            return 0
+    lines = []
+    for y in range(img.size[1]//4 + bool(img.size[1] % 4)):
+        line = []
+        row = y * 4
+        for x in range(img.size[0]//2 + bool(img.size[0] % 2)):
+            col = x * 2
+            index = 0
+            index += getpix(row, col)
+            index += 2*getpix(row, col+1)
+            index += 4*getpix(row+1, col)
+            index += 8*getpix(row+1, col+1)
+            index += 16*getpix(row+2, col)
+            index += 32*getpix(row+2, col+1)
+            index += 64*getpix(row+3, col)
+            index += 128*getpix(row+3, col+1)
+            line.append(braille[index])
+        lines.append("".join(line))
     return "\n".join(lines)
