@@ -264,8 +264,8 @@ def trace(server, msg, pic):
     img = Image.open(data)
     if img.size[0] > 4096 or img.size[1] > 4096:
         return "│ Image too large."
-    scalefactor = min(img.size[0]*3/k, img.size[1]/k)
-    img = img.resize((int(img.size[0]*3/scalefactor) * 2, int(img.size[1]/scalefactor)*2), Image.ANTIALIAS)
+    scalefactor = min(img.size[0]/k, img.size[1]*2/k)
+    img = img.resize((int(img.size[0]/scalefactor) * 2, int(img.size[1]/scalefactor)*4), Image.ANTIALIAS)
     if img.size[0] > 110:
         scalefactor = 110 / img.size[0]
         img = img.resize((int(scalefactor * img.size[0]), int(scalefactor * img.size[1])), Image.ANTIALIAS)
