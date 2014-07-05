@@ -129,7 +129,7 @@ class Queue(Callback):
         queue = self.queues.setdefault(server.lower(nick), [])
         queue.insert(0, item)
         self.save()
-        return self.display(len(queue), item)
+        return self.display(1, item)
 
     @command("pop", r"(.*)")
     def pop(self, server, msg, query):
