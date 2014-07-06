@@ -267,7 +267,7 @@ def trace(server, msg, pic):
     if img.size[0] > 4096 or img.size[1] > 4096:
         return "│ Image too large."
 
-    scalefactor = min(img.size[0]/w_max, img.size[1]/h_max)
+    scalefactor = max(img.size[0]/w_max, img.size[1]/h_max)
     x, y = img.size[0]/scalefactor, img.size[1]/scalefactor
     img = img.resize((int(img.size[0]/scalefactor) * w_res, int(img.size[1]/scalefactor)*h_res), Image.ANTIALIAS)
     img = img.convert("RGBA")
