@@ -179,7 +179,7 @@ def render(server, msg, pic):
         h_max = 16
     else: 
         h_max = 6
-    w_max = 10
+    w_max = 20
     w_res, h_res = 6, 2
 
     data = requests.get(pic).content
@@ -222,7 +222,7 @@ def show(server, msg, pic):
         h_max = 16
     else: 
         h_max = 6
-    w_max = 10
+    w_max = 20
     w_res, h_res = 6, 2
 
     data = requests.get(pic).content
