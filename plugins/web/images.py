@@ -136,7 +136,7 @@ def asciiart(server, msg, pic):
         h_max = 16
     else: 
         h_max = 6
-    w_max = 50
+    w_max = 45
     w_res, h_res = 3, 1
 
     data = requests.get(pic).content
