@@ -133,20 +133,21 @@ def asciiart(server, msg, pic):
         ).json()["responseData"]["results"][0]["url"]
     server.lasturl = pic
     if msg.prefix == "!": 
-        k = 16
+        h_max = 16
     else: 
-        k = 6
+        h_max = 6
+    w_max = 55
+    w_res, h_res = 3, 1
 
     data = requests.get(pic).content
     data = BytesIO(data)
-    img = Image.open(data).convert("RGB")
+    img = Image.open(data)
     if img.size[0] > 4096 or img.size[1] > 4096:
         return "│ Image too large."
-    scalefactor = min(img.size[0]*3/k, img.size[1]/k)
-    img = img.resize((int(img.size[0]*3/scalefactor), int(img.size[1]/scalefactor)))
-    if img.size[0] > 50:
-        scalefactor = 50 / img.size[0]
-        img = img.resize((int(scalefactor * img.size[0]), int(scalefactor * img.size[1])))
+
+    scalefactor = max(img.size[0]/w_max, img.size[1]/h_max)
+    x, y = img.size[0]/scalefactor, img.size[1]/scalefactor
+    img = img.resize((int(img.size[0]/scalefactor) * w_res, int(img.size[1]/scalefactor)*h_res), Image.ANTIALIAS)
     img = img.convert("RGBA")
     img.load()  # needed for split()
     background = Image.new('RGB', img.size, (255,255,255))
@@ -175,20 +176,21 @@ def render(server, msg, pic):
         ).json()["responseData"]["results"][0]["url"]
     server.lasturl = pic
     if msg.prefix == "!": 
-        k = 16
+        h_max = 16
     else: 
-        k = 6
+        h_max = 6
+    w_max = 55
+    w_res, h_res = 6, 2
 
     data = requests.get(pic).content
     data = BytesIO(data)
     img = Image.open(data)
     if img.size[0] > 4096 or img.size[1] > 4096:
         return "│ Image too large."
-    scalefactor = min(img.size[0]*3/k, img.size[1]/k)
-    img = img.resize((int(img.size[0]*3/scalefactor) * 2, int(img.size[1]/scalefactor)*2), Image.ANTIALIAS)
-    if img.size[0] > 110:
-        scalefactor = 110 / img.size[0]
-        img = img.resize((int(scalefactor * img.size[0]), int(scalefactor * img.size[1])), Image.ANTIALIAS)
+
+    scalefactor = max(img.size[0]/w_max, img.size[1]/h_max)
+    x, y = img.size[0]/scalefactor, img.size[1]/scalefactor
+    img = img.resize((int(img.size[0]/scalefactor) * w_res, int(img.size[1]/scalefactor)*h_res), Image.ANTIALIAS)
     cmap = img.resize((int(img.size[0]/2), int(img.size[1]/2))).convert("RGBA")
     img = img.convert('1')
     cmap.load()  # needed for split()
@@ -217,20 +219,21 @@ def show(server, msg, pic):
         ).json()["responseData"]["results"][0]["url"]
     server.lasturl = pic
     if msg.prefix == "!": 
-        k = 16
+        h_max = 16
     else: 
-        k = 6
+        h_max = 6
+    w_max = 55
+    w_res, h_res = 6, 2
 
     data = requests.get(pic).content
     data = BytesIO(data)
     img = Image.open(data)
     if img.size[0] > 4096 or img.size[1] > 4096:
         return "│ Image too large."
-    scalefactor = min(img.size[0]*3/k, img.size[1]/k)
-    img = img.resize((int(img.size[0]*3/scalefactor) * 2, int(img.size[1]/scalefactor)*2), Image.ANTIALIAS)
-    if img.size[0] > 110:
-        scalefactor = 110 / img.size[0]
-        img = img.resize((int(scalefactor * img.size[0]), int(scalefactor * img.size[1])), Image.ANTIALIAS)
+
+    scalefactor = max(img.size[0]/w_max, img.size[1]/h_max)
+    x, y = img.size[0]/scalefactor, img.size[1]/scalefactor
+    img = img.resize((int(img.size[0]/scalefactor) * w_res, int(img.size[1]/scalefactor)*h_res), Image.ANTIALIAS)
     img = img.convert("RGBA")
     img.load()  # needed for split()
     background = Image.new('RGB', img.size, (255,255,255))
