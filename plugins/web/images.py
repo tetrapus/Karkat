@@ -92,7 +92,7 @@ def gif(server, msg, flags, query):
     flags = "-g" + (flags or "").strip("-")
     yield from image.funct(server, msg, flags, query)
     
-@command("face", r"(-[fpclgs\d]\s+)?(.+)", templates=exceptions)
+@command("face mfw", r"(-[fpclgs\d]\s+)?(.+)", templates=exceptions)
 def face(server, msg, flags, query):
     flags = "-f" + (flags or "").strip("-")
     yield from image.funct(server, msg, flags, query)
