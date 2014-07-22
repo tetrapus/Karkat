@@ -341,12 +341,12 @@ class Snap(Callback):
             raise Exception("Failed to upload snap.")
         acc.send(media_id, user, time=time)
         
-    @command("reply", r"(?:(-[maciulrdsbfpx1-9]+)\s+)?(https?://\S+|:.+?:)?\s*(.+)?")
+    @command("reply", r"(?:(-[maciulrdsbfpw1-9]+)\s+)?(https?://\S+|:.+?:)?\s*(.+)?")
     def snapreply(self, server, message, flags, background, text):
         user = self.settings[server.lower(message.context)]["history"][-1]["sender"]
         yield from self.snap.funct(self, server, message, flags, user, background, text)
 
-    @command("snap", r"(?:(-[maciulrdsbfpx1-9]+)\s+)?(\S+(?:,\s*\S+)*)(?:\s+(https?://\S+|:.+?:))?(?:\s+(.+))?")
+    @command("snap", r"(?:(-[maciulrdsbfpw1-9]+)\s+)?(\S+(?:,\s*\S+)*)(?:\s+(https?://\S+|:.+?:))?(?:\s+(.+))?")
     def snap(self, server, message, flags, user, background, text):
         acc = self.accounts[server.lower(message.context)]
         if server.lower(message.address.nick) not in self.users:
@@ -388,7 +388,7 @@ class Snap(Callback):
                     outline = False     
                 elif i == "f":
                     force = True
-                elif i == "x":
+                elif i == "w":
                     watermark = False
 
         if not text and not background and not bg:
