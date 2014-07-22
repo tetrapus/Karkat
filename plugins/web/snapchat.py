@@ -451,7 +451,10 @@ class Snap(Callback):
         user = ",".join(users)
 
 
-        img = drawtext(bg, text, fonts=font, wrap=wrap, outline=outline)
+        if text:
+            img = drawtext(bg, text, fonts=font, wrap=wrap, outline=outline)
+        else:
+            img = bg
         if not img:
             yield prefix + "\x0304Could not fit text on the image."
             return
