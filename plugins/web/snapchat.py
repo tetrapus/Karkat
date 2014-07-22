@@ -341,13 +341,12 @@ class Snap(Callback):
             raise Exception("Failed to upload snap.")
         acc.send(media_id, user, time=time)
         
-    @command("reply", r"(?:(-[maciulrdsbfp1-9]+)\s+)?(https?://\S+|:.+?:)?\s*(.+)?")
+    @command("reply", r"(?:(-[maciulrdsbfpw1-9]+)\s+)?(https?://\S+|:.+?:)?\s*(.+)?")
     def snapreply(self, server, message, flags, background, text):
         user = self.settings[server.lower(message.context)]["history"][-1]["sender"]
         yield from self.snap.funct(self, server, message, flags, user, background, text)
 
-
-    @command("snap", r"(?:(-[maciulrdsbfp1-9]+)\s+)?(\S+(?:,\s*\S+)*)(?:\s+(https?://\S+|:.+?:))?(?:\s+(.+))?")
+    @command("snap", r"(?:(-[maciulrdsbfpw1-9]+)\s+)?(\S+(?:,\s*\S+)*)(?:\s+(https?://\S+|:.+?:))?(?:\s+(.+))?")
     def snap(self, server, message, flags, user, background, text):
         acc = self.accounts[server.lower(message.context)]
         if server.lower(message.address.nick) not in self.users:
@@ -366,6 +365,7 @@ class Snap(Callback):
         time = 10
         force = False
         doge = False
+        watermark = True
         if flags:
             for i in flags[1:]:
                 if i in "123456789":
@@ -388,6 +388,8 @@ class Snap(Callback):
                     outline = False     
                 elif i == "f":
                     force = True
+                elif i == "w":
+                    watermark = False
 
         if not text and not background and not bg:
             background = server.lasturl
@@ -426,10 +428,10 @@ class Snap(Callback):
                     dogified += random.choice(">|<") + ("\x03%.2d" % random.randrange(2, 14)) + (random.randrange(len(i)) * " ") + i + (random.randrange(len(i)) * " ")
                 dogified += "\n"
             text = dogified[:-1]
-        elif text:
+        elif text and watermark:
             text = text.replace("\\", "\n")
             text += "\n\n>\x0f -%s" % username
-        else:
+        elif watermark:
             text = "\n>via\xa0%s" % username
 
         users = [self.users[server.lower(i)] if server.lower(i) in self.users else i for i in user.split(",")]
@@ -498,6 +500,8 @@ class Snap(Callback):
         self.send(acc, f, username)
         return prefix + "A verification code has been sent to your snapchat. Type \x02.verify <code>\x02 to complete username verification."
 
+
+
     @command("unverify")
     def unverify(self, server, message):
         key = server.lower(message.address.nick)
@@ -521,7 +525,7 @@ class Snap(Callback):
         json.dump(self.settings, open(self.settingsf, "w"))
 
     @command("snapunlink", "(.+)", admin=True)
-    def link(self, server, msg, chan):
+    def unlink(self, server, msg, chan):
         self.settings[server.lower(chan)].setdefault("linked", []).remove(msg.context)
         json.dump(self.settings, open(self.settingsf, "w"))
 
