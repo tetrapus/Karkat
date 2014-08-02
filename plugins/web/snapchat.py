@@ -428,9 +428,10 @@ class Snap(Callback):
                     dogified += random.choice(">|<") + ("\x03%.2d" % random.randrange(2, 14)) + (random.randrange(len(i)) * " ") + i + (random.randrange(len(i)) * " ")
                 dogified += "\n"
             text = dogified[:-1]
-        elif text and watermark:
+        elif text:
             text = text.replace("\\", "\n")
-            text += "\n\n>\x0f -%s" % username
+            if watermark:
+                text += "\n\n>\x0f -%s" % username
         elif watermark:
             text = "\n>via\xa0%s" % username
 
