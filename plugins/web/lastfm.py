@@ -100,8 +100,10 @@ class LastFM(Callback):
             self.users = {}
             self.savefile()
 
-        if not os.path.exists(server.get_config_dir(self.COMPARE_FILE)):
-            with open(server.get_config_dir(self.COMPARE_FILE), "w") as conf:
+        self.compare_file = server.get_config_dir(self.COMPARE_FILE)
+
+        if not os.path.exists(self.compare_file):
+            with open(self.compare_file, "w") as conf:
                 conf.write("{}")
 
         self.network = pylast.LastFMNetwork(
@@ -348,10 +350,10 @@ class LastFM(Callback):
         users = [user1, user2]
         artists = [i.name for i in artists]
         tasteometer = float(tasteometer)
-        with open(server.get_config_dir(self.COMPARE_FILE)) as compfile:
+        with open(self.compare_file) as compfile:
             data = json.load(compfile)
             data.update({"%s %s" % tuple(sorted(users)): [tasteometer, artists]})
-        with open(server.get_config_dir(self.COMPARE_FILE), "w") as compfile:
+        with open(self.compare_file, "w") as compfile:
             json.dump(data, compfile)
 
         self.lastcompare = time.time()
@@ -359,9 +361,9 @@ class LastFM(Callback):
 
     def compare_rand(self, server, line) -> "ALL":
         if time.time() - self.lastcompare > max(300, len(self.users)**2):
-            user = random.choice(self.users.values())
+            user1 = random.choice(self.users.values())
             user2 = random.choice(self.users.values())
-            self.cached_compare(self, user1, user2)
+            self.cached_compare(user1, user2)
 
     def username_to_nick(self, username):
         possible = [i for i in self.users if self.users[i].lower() == username.lower()]
@@ -391,7 +393,7 @@ class LastFM(Callback):
             rlen = len(user)
             while users:
                 user, similarity = users.pop(0)
-                nick = self.username_to_nick()
+                nick = self.username_to_nick(user)
                 if nick is not None and nick != user:
                     user = "%s (%s)" % (user, nick)
                 tasteometer = ""
