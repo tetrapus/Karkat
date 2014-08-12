@@ -372,7 +372,7 @@ class LastFM(Callback):
     def username_to_nick(self, username):
         possible = [i for i in self.users if self.users[i].lower() == username.lower()]
         if possible:
-            return possible[0]
+            return sorted(possible, key=lambda x: -len(x))[0]
 
     @command("besties", "(.*)")
     def besties(self, server, message, username):
@@ -389,7 +389,7 @@ class LastFM(Callback):
         for users, similarity in data.items():
             if type(similarity) == float: print(users, similarity)
             users = users.split(" ", 1)
-            if luser in users:
+            if luser in users and luser != username.lower():
                 users.remove(luser)
                 matches[users[0]] = similarity
         users = sorted(matches.items(), key=lambda x: -x[1][0])
@@ -405,7 +405,7 @@ class LastFM(Callback):
                 similar_to += "4│ " + user + " · %.2d%.1f " % ([15, 14, 11, 10, 3][int(tasteometer * 4.95)], tasteometer * 100)
                 rlen += len(user) + 9 - (tasteometer < 0.1)
                 if rlen > 42: break
-            return "04│ %s %s04│15 %d ᴜɴᴋɴᴏᴡɴ" % (username, similar_to, len(self.users) - len(matches))
+            return "04│ %s %s04│15 %d ᴜɴᴋɴᴏᴡɴ" % (username_to_nick(username) or username, similar_to, len(self.users) - len(matches))
         # TODO: longform command
 
     @command("lastfm", "(\S*)", templates={Callback.USAGE: "04│ ♫ │ Usage: [.@]lastfm nick"})
