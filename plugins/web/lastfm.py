@@ -383,6 +383,7 @@ class LastFM(Callback):
             dname = sorted(candidates, key=len)[0]
         else:
             dname = username
+        return dname
 
     @command("besties", "(.*)")
     def besties(self, server, message, username):
