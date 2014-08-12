@@ -385,7 +385,6 @@ class LastFM(Callback):
 
         # Figure out who username is
         candidates = [i for i in self.users if self.users[i].lower() == username.lower()]
-        if 
         common = [i for i in server.channels[server.lower(message.context)] if i.lower() in [i.lower() for i in candidates]]
         if common:
             dname = sorted(common, key=len)[0]
