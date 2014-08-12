@@ -415,6 +415,7 @@ class LastFM(Callback):
                 similar_to += "4│ " + user + " · %.2d%.1f " % ([15, 14, 11, 10, 3][int(tasteometer * 4.95)], tasteometer * 100)
                 rlen += len(user) + 9 - (tasteometer < 0.1)
                 if rlen > 42: break
+            unknown = len(self.users) - len(matches)
             return "04│ %s %s04│15" % (dname, similar_to, (" %d ᴜɴᴋɴᴏᴡɴ" % (unknown)) * (unknown > 0))
         # TODO: longform command
 
