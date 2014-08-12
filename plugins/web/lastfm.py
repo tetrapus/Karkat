@@ -432,7 +432,7 @@ class LastFM(Callback):
                     artist = similarity[1].pop(0)
                     common.append(artist)
                     clen += len(artist) + 2
-                common = ", ".join(common) + ("..." * (similarity[1] == []))
+                common = ", ".join(common) + ("..." * (similarity[1] != []))
                 yield "04│ ♫ │%.2d %.1f 4· %s 4· %s" % ([15, 14, 11, 10, 3][int(tasteometer * 4.95)], tasteometer * 100, nick, common)
             yield "04│ ♫ │ Best %d of %d matches for %s shown." % (len(users[:4]), len(users), dname)
 
