@@ -383,7 +383,7 @@ class LastFM(Callback):
             data = json.load(compfile)
         matches = {}
         for users, similarity in data.items():
-            print(users, similarity)
+            if type(similarity) != float: print(users, similarity)
             users = users.lower().split(" ", 1)
             if luser in users:
                 users.remove(luser)
