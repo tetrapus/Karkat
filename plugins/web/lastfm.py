@@ -361,8 +361,8 @@ class LastFM(Callback):
 
     def compare_rand(self, server, line) -> "ALL":
         if time.time() - self.lastcompare > max(300, len(self.users)**2):
-            user1 = random.choice(self.users.values())
-            user2 = random.choice(self.users.values())
+            user1 = random.choice(list(self.users.values()))
+            user2 = random.choice(list(self.users.values()))
             self.cached_compare(user1, user2)
 
     def username_to_nick(self, username):
@@ -379,10 +379,11 @@ class LastFM(Callback):
             user = self.users[lowername]
         luser = user.lower()
 
-        with open(server.get_config_dir(self.COMPARE_FILE)) as compfile:
+        with open(self.compare_file) as compfile:
             data = json.load(compfile)
         matches = {}
         for users, similarity in data.items():
+            print(users, similarity)
             users = users.lower().split(" ", 1)
             if luser in users:
                 users.remove(luser)
