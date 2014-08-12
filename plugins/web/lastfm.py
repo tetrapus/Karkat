@@ -383,6 +383,7 @@ class LastFM(Callback):
             dname = sorted(candidates, key=len)[0]
         else:
             dname = username
+        dname = dname[0] + "\x03" + dname[1:]
         return dname
 
     @command("besties", "(.*)")
