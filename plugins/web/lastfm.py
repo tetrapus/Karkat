@@ -401,7 +401,7 @@ class LastFM(Callback):
                 nick = self.username_to_nick(user)
                 if nick is not None and nick != user:
                     user = "%s (%s)" % (user, nick)
-                tasteometer = ""
+                tasteometer = similarity[0]
                 similar_to += "4│ " + user + " · %.2d%.1f" % ([15, 14, 11, 10, 3][int(tasteometer * 4.95)], tasteometer * 100)
                 rlen += len(user) + 9 - (tasteometer < 0.1)
                 if rlen > 42: break
