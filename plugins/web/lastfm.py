@@ -378,9 +378,18 @@ class LastFM(Callback):
     def besties(self, server, message, username):
         if not username:
             username = message.address.nick
+            dname = username
         lowername = server.lower(username)
         if lowername in self.users:
             username = self.users[lowername]
+            # Figure out who username is
+            candidates = [i for i in self.users if self.users[i].lower() == username.lower()]
+            for i in candidates:
+                common = [i for i in server.channels[server.lower(message.context)] if i.lower() in [i.lower() for i in candidates]]
+                if common:
+                    dname = sorted(common, key=len)[0]
+                else:
+                    dname = username
         luser = username.lower()
 
         with open(self.compare_file) as compfile:
@@ -406,7 +415,7 @@ class LastFM(Callback):
                 similar_to += "4│ " + user + " · %.2d%.1f " % ([15, 14, 11, 10, 3][int(tasteometer * 4.95)], tasteometer * 100)
                 rlen += len(user) + 9 - (tasteometer < 0.1)
                 if rlen > 42: break
-            return "04│ %s %s04│15 %d ᴜɴᴋɴᴏᴡɴ" % (self.username_to_nick(username) or username, similar_to, len(self.users) - len(matches))
+            return "04│ %s %s04│15" % (dname, similar_to, (" %d ᴜɴᴋɴᴏᴡɴ" % (unknown)) * (unknown > 0))
         # TODO: longform command
 
     @command("lastfm", "(\S*)", templates={Callback.USAGE: "04│ ♫ │ Usage: [.@]lastfm nick"})
