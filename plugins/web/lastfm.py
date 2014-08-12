@@ -352,12 +352,16 @@ class LastFM(Callback):
         tasteometer = float(tasteometer)
         with open(self.compare_file) as compfile:
             data = json.load(compfile)
-            data.update({"%s %s" % tuple(sorted(users)): [tasteometer, artists]})
+            data.update({("%s %s" % tuple(sorted(users))).lower(): [tasteometer, artists]})
         with open(self.compare_file, "w") as compfile:
             json.dump(data, compfile)
 
         self.lastcompare = time.time()
         return tasteometer, artists
+
+    def clear_cache(self):
+        with open(self.compare_file, "w") as compfile:
+            json.dump({}, compfile)
 
     def compare_rand(self, server, line) -> "ALL":
         if time.time() - self.lastcompare > max(300, len(self.users)**2):
@@ -384,7 +388,7 @@ class LastFM(Callback):
         matches = {}
         for users, similarity in data.items():
             if type(similarity) == float: print(users, similarity)
-            users = users.lower().split(" ", 1)
+            users = users.split(" ", 1)
             if luser in users:
                 users.remove(luser)
                 matches[users[0]] = similarity
