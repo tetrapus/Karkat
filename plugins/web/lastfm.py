@@ -421,7 +421,7 @@ class LastFM(Callback):
                 rlen += len(nick) + 9 - (tasteometer < 0.1)
                 if rlen > 40: break
             unknown = len(self.users) - len(matches)
-            return "4│ %s%s" % (similar_to, ("%d ᴜɴᴋɴᴏᴡɴ" % (unknown)) * (unknown > 0))
+            yield "4│ %s%s" % (similar_to, ("%d ᴜɴᴋɴᴏᴡɴ" % (unknown)) * (unknown > 0))
         else:
             for user, similarity in users[:4]:
                 nick = self.closest_nick(user, server.channels[server.lower(message.context)])
@@ -433,7 +433,7 @@ class LastFM(Callback):
                     common.append(artist)
                     clen += len(artist) + 2
                 common = ", ".join(common) + ("..." * (similarity[1] == []))
-                yield "04│ ♫ │%.2d %.1f 4· %s 4· %s" % (nick, [15, 14, 11, 10, 3][int(tasteometer * 4.95)], tasteometer * 100, common)
+                yield "04│ ♫ │%.2d %.1f 4· %s 4· %s" % ([15, 14, 11, 10, 3][int(tasteometer * 4.95)], tasteometer * 100, nick, common)
             yield "04│ ♫ │ Best %d of %d matches for %s shown." % (len(users[:4]), len(users), dname)
 
     @command("lastfm", "(\S*)", templates={Callback.USAGE: "04│ ♫ │ Usage: [.@]lastfm nick"})
