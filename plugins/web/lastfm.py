@@ -375,13 +375,13 @@ class LastFM(Callback):
             return possible[0]
 
     @command("besties", "(.*)")
-    def besties(self, server, message, user):
-        if not user:
-            user = message.address.nick
-        lowername = server.lower(user)
+    def besties(self, server, message, username):
+        if not username:
+            username = message.address.nick
+        lowername = server.lower(username)
         if lowername in self.users:
-            user = self.users[lowername]
-        luser = user.lower()
+            username = self.users[lowername]
+        luser = username.lower()
 
         with open(self.compare_file) as compfile:
             data = json.load(compfile)
@@ -395,17 +395,17 @@ class LastFM(Callback):
         users = sorted(matches.items(), key=lambda x: -x[1][0])
         if message.prefix == ".":
             similar_to = ""
-            rlen = len(user)
+            rlen = len(username)
             while users:
                 user, similarity = users.pop(0)
                 nick = self.username_to_nick(user)
                 if nick is not None and nick != user:
-                    user = "%s (%s)" % (user, nick)
+                    user = "%s (%s)" % (nick, user)
                 tasteometer = similarity[0]
-                similar_to += "4│ " + user + " · %.2d%.1f" % ([15, 14, 11, 10, 3][int(tasteometer * 4.95)], tasteometer * 100)
+                similar_to += "4│ " + user + " · %.2d%.1f " % ([15, 14, 11, 10, 3][int(tasteometer * 4.95)], tasteometer * 100)
                 rlen += len(user) + 9 - (tasteometer < 0.1)
                 if rlen > 42: break
-            return "04│ %s %s 04│15 %d ᴜɴᴋɴᴏᴡɴ" % (user, similar_to, len(data) - len(matches))
+            return "04│ %s %s04│15 %d ᴜɴᴋɴᴏᴡɴ" % (username, similar_to, len(self.users) - len(matches))
         # TODO: longform command
 
     @command("lastfm", "(\S*)", templates={Callback.USAGE: "04│ ♫ │ Usage: [.@]lastfm nick"})
