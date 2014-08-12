@@ -378,18 +378,20 @@ class LastFM(Callback):
     def besties(self, server, message, username):
         if not username:
             username = message.address.nick
-            dname = username
+
         lowername = server.lower(username)
         if lowername in self.users:
             username = self.users[lowername]
-            # Figure out who username is
-            candidates = [i for i in self.users if self.users[i].lower() == username.lower()]
-            for i in candidates:
-                common = [i for i in server.channels[server.lower(message.context)] if i.lower() in [i.lower() for i in candidates]]
-                if common:
-                    dname = sorted(common, key=len)[0]
-                else:
-                    dname = username
+
+        # Figure out who username is
+        candidates = [i for i in self.users if self.users[i].lower() == username.lower()]
+        if 
+        common = [i for i in server.channels[server.lower(message.context)] if i.lower() in [i.lower() for i in candidates]]
+        if common:
+            dname = sorted(common, key=len)[0]
+        else:
+            dname = username
+
         luser = username.lower()
 
         with open(self.compare_file) as compfile:
