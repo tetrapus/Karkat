@@ -389,9 +389,10 @@ class LastFM(Callback):
         for users, similarity in data.items():
             if type(similarity) == float: print(users, similarity)
             users = users.split(" ", 1)
-            if luser in users and luser != username.lower():
+            if luser in users:
                 users.remove(luser)
-                matches[users[0]] = similarity
+                if users[0] != username.lower():
+                    matches[users[0]] = similarity
         users = sorted(matches.items(), key=lambda x: -x[1][0])
         if message.prefix == ".":
             similar_to = ""
