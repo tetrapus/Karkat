@@ -5,6 +5,8 @@ import os
 import re
 import sys
 import time
+import random
+import operator
 from urllib.parse import quote_plus, urlencode
 from functools import partial
 
@@ -98,8 +100,10 @@ class LastFM(Callback):
             self.users = {}
             self.savefile()
 
-        if not os.path.exists(server.get_config_dir(self.COMPARE_FILE)):
-            with open(server.get_config_dir(self.COMPARE_FILE), "w") as conf:
+        self.compare_file = server.get_config_dir(self.COMPARE_FILE)
+
+        if not os.path.exists(self.compare_file):
+            with open(self.compare_file, "w") as conf:
                 conf.write("{}")
 
         self.network = pylast.LastFMNetwork(
@@ -107,6 +111,7 @@ class LastFM(Callback):
             api_secret = apikeys["secret"]
         )
 
+        self.lastcompare = 0
         super().__init__(server)
 
     @staticmethod
@@ -314,10 +319,7 @@ class LastFM(Callback):
             users = (user1, user2)
         users_display = ["%s (%s)" % (i, self.users[server.lower(i)]) if server.lower(i) in self.users else i for i in users]
         users = [self.users[server.lower(i)] if server.lower(i) in self.users else i for i in users]
-        first = self.network.get_user(users[0])
-        tasteometer, artists = first.compare_with_user(users[1])
-        _artists = [i.name for i in artists]
-        tasteometer = float(tasteometer)
+        tasteometer, artists = self.cached_compare(*users)
         if tasteometer < 0:
             raise ValueError("tasteometer returned invalid value")
         overflow = ""
@@ -325,32 +327,81 @@ class LastFM(Callback):
         if not artists:
             common = "Absolutely nothing"
         elif len(artists) == 1:
-            common = artists.pop(0).name
+            common = artists.pop(0)
         else:
-            common = artists.pop(0).name
+            common = artists.pop(0)
             while len(common) < artistlimit and len(artists) > 1:
-                common += ", " + artists.pop(0).name
+                common += ", " + artists.pop(0)
             if len(artists) == 1:
-                common += " and %s" % artists.pop(0).name
+                common += " and %s" % artists.pop(0)
             else:
                 overflow = (" and %d+ more" % len(artists)) * bool(len(artists))
 
-        # Cache results.
-        with open(server.get_config_dir(self.COMPARE_FILE)) as compfile:
+        if message.prefix == ".":
+            yield "04│ %.2d%.1f%% 04│ %s%s" % ([15, 14, 11, 10, 3][int(tasteometer * 4.95)], tasteometer * 100, common, "..." if overflow else "")
+        else:
+            yield "04│ ♫ │ %s and %s are %.2d%.1f%% compatible" % (users_display[0], users_display[1], [15, 14, 11, 10, 3][int(tasteometer * 4.95)], tasteometer * 100)
+            yield "04│ ♫ │ %s%s in common." % (common, overflow)
+
+
+    def cached_compare(self, user1, user2):
+        first = self.network.get_user(user1)
+        tasteometer, artists = first.compare_with_user(user2)
+        users = [user1, user2]
+        artists = [i.name for i in artists]
+        tasteometer = float(tasteometer)
+        with open(self.compare_file) as compfile:
             data = json.load(compfile)
-            data.update({"%s %s" % tuple(sorted(users)): [tasteometer, _artists]})
-        with open(server.get_config_dir(self.COMPARE_FILE), "w") as compfile:
+            data.update({"%s %s" % tuple(sorted(users)): [tasteometer, artists]})
+        with open(self.compare_file, "w") as compfile:
             json.dump(data, compfile)
 
-        if message.prefix == ".":
-            yield "04│ %.2d%.1f%% 04│ %s%s" % ([4, 7, 8, 9, 3][int(tasteometer * 4.95)], tasteometer * 100, common, "..." if overflow else "")
-        else:
-            yield "04│ ♫ │ %s and %s are %.2d%.1f%% compatible" % (users_display[0], users_display[1], [4, 7, 8, 9, 3][int(tasteometer * 4.95)], tasteometer * 100)
-            yield "04│ ♫ │ %s%s in common." % (common, overflow)
+        self.lastcompare = time.time()
+        return tasteometer, artists
+
+    def compare_rand(self, server, line) -> "ALL":
+        if time.time() - self.lastcompare > max(300, len(self.users)**2):
+            user1 = random.choice(self.users.values())
+            user2 = random.choice(self.users.values())
+            self.cached_compare(user1, user2)
+
+    def username_to_nick(self, username):
+        possible = [i for i in self.users if self.users[i].lower() == username.lower()]
+        if possible:
+            return possible[0]
 
     @command("besties", "(.*)")
     def besties(self, server, message, user):
-        raise NotImplementedError
+        if not user:
+            user = message.address.nick
+        lowername = server.lower(user)
+        if lowername in self.users:
+            user = self.users[lowername]
+        luser = user.lower()
+
+        with open(server.get_config_dir(self.COMPARE_FILE)) as compfile:
+            data = json.load(compfile)
+        matches = {}
+        for users, similarity in data.items():
+            users = users.lower().split(" ", 1)
+            if luser in users:
+                users.remove(luser)
+                matches[users[0]] = similarity
+        users = sorted(matches.items(), key=lambda x: -x[1][0])
+        if message.prefix == ".":
+            similar_to = ""
+            rlen = len(user)
+            while users:
+                user, similarity = users.pop(0)
+                nick = self.username_to_nick(user)
+                if nick is not None and nick != user:
+                    user = "%s (%s)" % (user, nick)
+                tasteometer = ""
+                similar_to += "4│ " + user + " · %.2d%.1f" % ([15, 14, 11, 10, 3][int(tasteometer * 4.95)], tasteometer * 100)
+                rlen += len(user) + 9 - (tasteometer < 0.1)
+                if rlen > 42: break
+            return "04│ %s %s 04│15 %d ᴜɴᴋɴᴏᴡɴ" % (user, similar_to, len(data) - len(matches))
+        # TODO: longform command
 
     @command("lastfm", "(\S*)", templates={Callback.USAGE: "04│ ♫ │ Usage: [.@]lastfm nick"})
     def lastfm(self, server, message, user):
