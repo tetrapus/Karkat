@@ -372,7 +372,7 @@ class LastFM(Callback):
     def username_to_nick(self, username):
         possible = [i for i in self.users if self.users[i].lower() == username.lower()]
         if possible:
-            return sorted(possible, key=lambda x: -len(x))[0]
+            return sorted(possible, key=len)[0]
 
     @command("besties", "(.*)")
     def besties(self, server, message, username):
