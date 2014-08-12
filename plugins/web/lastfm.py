@@ -412,7 +412,7 @@ class LastFM(Callback):
         users = sorted(matches.items(), key=lambda x: -x[1][0])
         if message.prefix == ".":
             similar_to = ""
-            rlen = len(username)
+            rlen = 0
             while users:
                 user, similarity = users.pop(0)
                 nick = self.closest_nick(user, server.channels[server.lower(message.context)])
@@ -421,8 +421,20 @@ class LastFM(Callback):
                 rlen += len(nick) + 9 - (tasteometer < 0.1)
                 if rlen > 40: break
             unknown = len(self.users) - len(matches)
-            return "04│ %s 4│ %s%s" % (dname, similar_to, ("%d ᴜɴᴋɴᴏᴡɴ" % (unknown)) * (unknown > 0))
-        # TODO: longform command
+            return "4│ %s%s" % (similar_to, ("%d ᴜɴᴋɴᴏᴡɴ" % (unknown)) * (unknown > 0))
+        else:
+            for user, similarity in users[:4]:
+                nick = self.closest_nick(user, server.channels[server.lower(message.context)])
+                tasteometer = similarity[0]
+                common = []
+                clen = len(nick) + 9 - (tasteometer < 0.1)
+                while clen < 40:
+                    artist = similarity[1].pop(0)
+                    common.append(artist)
+                    clen += len(artist) + 2
+                common = ", ".join(common) + ("..." * (similarity[1] == []))
+                yield "04│ ♫ │%.2d %.1f 4· %s 4· %s" % (nick, [15, 14, 11, 10, 3][int(tasteometer * 4.95)], tasteometer * 100, common)
+            yield "04│ ♫ │ Best %d of %d matches for %s shown." % (len(users[:4]), len(users), dname)
 
     @command("lastfm", "(\S*)", templates={Callback.USAGE: "04│ ♫ │ Usage: [.@]lastfm nick"})
     def lastfm(self, server, message, user):
