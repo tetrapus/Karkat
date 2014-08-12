@@ -364,7 +364,7 @@ class LastFM(Callback):
             json.dump({}, compfile)
 
     def compare_rand(self, server, line) -> "ALL":
-        if time.time() - self.lastcompare > max(300, len(self.users)**2):
+        if time.time() - self.lastcompare > max(300, 604800/len(self.users)**2):
             user1 = random.choice(list(self.users.values()))
             user2 = random.choice(list(self.users.values()))
             self.cached_compare(user1, user2)
