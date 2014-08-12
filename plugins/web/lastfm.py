@@ -416,7 +416,7 @@ class LastFM(Callback):
                 rlen += len(user) + 9 - (tasteometer < 0.1)
                 if rlen > 42: break
             unknown = len(self.users) - len(matches)
-            return "04│ %s %s04│15" % (dname, similar_to, (" %d ᴜɴᴋɴᴏᴡɴ" % (unknown)) * (unknown > 0))
+            return "04│ %s %s04│15%s" % (dname, similar_to, (" %d ᴜɴᴋɴᴏᴡɴ" % (unknown)) * (unknown > 0))
         # TODO: longform command
 
     @command("lastfm", "(\S*)", templates={Callback.USAGE: "04│ ♫ │ Usage: [.@]lastfm nick"})
