@@ -374,6 +374,16 @@ class LastFM(Callback):
         if possible:
             return sorted(possible, key=len)[0]
 
+    def closest_nick(self, username, nicks):
+        candidates = [i for i in self.users if self.users[i].lower() == username.lower()]
+        common = [i for i in nicks if i.lower() in [i.lower() for i in candidates]]
+        if common:
+            dname = sorted(common, key=len)[0]
+        elif candidates:
+            dname = sorted(candidates, key=len)[0]
+        else:
+            dname = username
+
     @command("besties", "(.*)")
     def besties(self, server, message, username):
         if not username:
@@ -384,12 +394,7 @@ class LastFM(Callback):
             username = self.users[lowername]
 
         # Figure out who username is
-        candidates = [i for i in self.users if self.users[i].lower() == username.lower()]
-        common = [i for i in server.channels[server.lower(message.context)] if i.lower() in [i.lower() for i in candidates]]
-        if common:
-            dname = sorted(common, key=len)[0]
-        else:
-            dname = username
+        dname = self.closest_nick(username, server.channels[server.lower(message.context)])
 
         luser = username.lower()
 
@@ -409,15 +414,13 @@ class LastFM(Callback):
             rlen = len(username)
             while users:
                 user, similarity = users.pop(0)
-                nick = self.username_to_nick(user)
-                if nick is not None and nick != user:
-                    user = "%s (%s)" % (nick, user)
+                nick = self.closest_nick(user, server.channels[server.lower(message.context)])
                 tasteometer = similarity[0]
-                similar_to += "4│ " + user + " · %.2d%.1f " % ([15, 14, 11, 10, 3][int(tasteometer * 4.95)], tasteometer * 100)
-                rlen += len(user) + 9 - (tasteometer < 0.1)
-                if rlen > 42: break
+                similar_to += nick + " %.2d%.1f 4· " % ([15, 14, 11, 10, 3][int(tasteometer * 4.95)], tasteometer * 100)
+                rlen += len(nick) + 9 - (tasteometer < 0.1)
+                if rlen > 40: break
             unknown = len(self.users) - len(matches)
-            return "04│ %s %s04│15%s" % (dname, similar_to, (" %d ᴜɴᴋɴᴏᴡɴ" % (unknown)) * (unknown > 0))
+            return "04│ %s 4│ %s%s" % (dname, similar_to, (" %d ᴜɴᴋɴᴏᴡɴ" % (unknown)) * (unknown > 0))
         # TODO: longform command
 
     @command("lastfm", "(\S*)", templates={Callback.USAGE: "04│ ♫ │ Usage: [.@]lastfm nick"})
