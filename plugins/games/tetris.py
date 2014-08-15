@@ -132,7 +132,7 @@ class Tetris(Callback):
     def rotate(self, server, message):
         game = self.ensure_created(message.context, message.address.nick)
         player = game.players[self.server.lower(message.address.nick)]
-        player['pieces'][0] = zip(*player['pieces'][0])
+        player['pieces'][0] = list(zip(*player['pieces'][0]))
         return self.format_user(player)
 
     @command
