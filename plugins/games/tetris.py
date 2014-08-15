@@ -108,8 +108,8 @@ class Tetris(Callback):
     def piece(self, server, message):
         game = self.ensure_created(message.context, message.address.nick)
         player = game.players[self.server.lower(message.address.nick)]
-        return "\x0312│\x03 Current: %s · Next: %s · Score: %d" % (draw_half([[j or player['color'] for j in i] for i in player['pieces'][0]]),
-                                                                    draw_half([[j or player['color'] for j in i] for i in player['pieces'][1]]),
+        return "\x0312⡇\x03 Current: %s\x0f · Next: %s\x0f · Score: %d" % (draw_half([[player['color'] if j else j for j in i] for i in player['pieces'][0]]),
+                                                                    draw_half([[player['color'] if j else j for j in i] for i in player['pieces'][1]]),
                                                                     player['score'])
 
     @command
