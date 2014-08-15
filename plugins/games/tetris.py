@@ -104,30 +104,45 @@ class Tetris(Callback):
             game.add_player(luser, user)
         return game
 
+    # TODO: Fix multiline display
+
+    def format_user(self, player):
+        currentp = draw_half([[player['color'] if j else j for j in i] for i in player['pieces'][0]]).split("\n")
+        nextp = draw_half([[player['color'] if j else j for j in i] for i in player['pieces'][1]]).split("\n")
+        currentpl, nextpl = len(currentp), len(nextp)
+        if currentpl > nextpl:
+            nextp.extend([" " * len(player['pieces'][1])] * (currentpl - nextpl))
+        else:
+            currentp.extend([" " * len(player['pieces'][0])] * (nextpl - currentpl))
+        height = max(currentpl, nextpl)
+        left = ["\x0312⡇\x03 Current: "] + (["\x0312⡇\x03          "] * (height - 1))
+        mid = ["\x0f · Next: "] + (["\x0f         "] * (height - 1))
+        lines = zip(left, currentp, mid, nextp)
+        lines = ["%s%s%s%s" % s for s in lines]
+        lines[0] += "\x0f · Score: %d" % player["score"]
+        return "\n".join(lines)            
+
     @command
     def piece(self, server, message):
         game = self.ensure_created(message.context, message.address.nick)
         player = game.players[self.server.lower(message.address.nick)]
-        return "\x0312⡇\x03 Current: %s\x0f · Next: %s\x0f · Score: %d" % (draw_half([[player['color'] if j else j for j in i] for i in player['pieces'][0]]),
-                                                                    draw_half([[player['color'] if j else j for j in i] for i in player['pieces'][1]]),
-                                                                    player['score'])
+        return self.format_user(player)
 
     @command
     def rotate(self, server, message):
         game = self.ensure_created(message.context, message.address.nick)
         player = game.players[self.server.lower(message.address.nick)]
         player['pieces'][0] = zip(*player['pieces'][0])
-        return "\x0312│\x03 Current: %s · Next: %s · Score: %d" % (draw_half([[j or player['color'] for j in i] for i in player['pieces'][0]]),
-                                                                    draw_half([[j or player['color'] for j in i] for i in player['pieces'][1]]),
-                                                                    player['score'])
+        return self.format_user(player)
 
     @command
     def tetris(self, server, message):
-        pass
+        game = self.ensure_created(message.context, message.address.nick)
+        
 
     @command("drop", "\d+")
     def drop(self, server, message, index: int):
-        pass
+        game = self.ensure_created(message.context, message.address.nick)
         
 
 __initialise__ = Tetris
