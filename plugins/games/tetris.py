@@ -31,7 +31,8 @@ def draw_braille(board, size):
     return "\n".join(lines)
     
 
-def draw_half(board, size):
+def draw_half(board):
+    size = (len(board[0]), len(board))
     def getpix(y, x):
         try:
             return board[y][x]
