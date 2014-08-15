@@ -69,7 +69,7 @@ class Game(object):
         return random.choice(self.PIECES)
 
     def add_player(self, key, name):
-        self.players[key] = {"name":name, "score": 0, "pieces": [self.rand_piece(), self.rand_piece()], "color": hash(key) % self.COLORS}
+        self.players[key] = {"name":name, "score": 0, "pieces": [self.rand_piece(), self.rand_piece()], "color": hash(key) % len(self.COLORS)}
 
     
 
