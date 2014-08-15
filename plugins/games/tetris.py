@@ -127,3 +127,5 @@ class Tetris(Callback):
     def drop(self, server, message, index: int):
         pass
         
+
+__initialise__ = Tetris
