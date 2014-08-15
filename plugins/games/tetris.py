@@ -153,11 +153,11 @@ class Tetris(Callback):
     def drop(self, server, message, index: int):
         game = self.ensure_created(message.context, message.address.nick)
         player = game.players[self.server.lower(message.address.nick)]
-        piece = player.pieces[0]
+        piece = player['pieces'][0]
         # Calculate where the blocks fall
         xoff = int(index)
         yoff = 0
-        # TODO: game over, bounds checks
+        # TODO: game over, bounds checks, row elimination
         while yoff < len(game.board) and not self.overlaps(game.board, piece, (xoff, yoff)):
             yoff += 1
         yoff -= 1
