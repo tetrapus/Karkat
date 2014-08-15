@@ -104,11 +104,12 @@ class Tetris(Callback):
             game.add_player(luser, user)
         return game
 
-    # TODO: Fix multiline display
+
+    def draw(self, x): return draw_half(x)
 
     def format_user(self, player):
-        currentp = draw_half([[player['color'] if j else j for j in i] for i in player['pieces'][0]]).split("\n")
-        nextp = draw_half([[player['color'] if j else j for j in i] for i in player['pieces'][1]]).split("\n")
+        currentp = self.draw([[player['color'] if j else j for j in i] for i in player['pieces'][0]]).split("\n")
+        nextp = self.draw([[player['color'] if j else j for j in i] for i in player['pieces'][1]]).split("\n")
         currentpl, nextpl = len(currentp), len(nextp)
         if currentpl > nextpl:
             nextp.extend([" " * len(player['pieces'][1])] * (currentpl - nextpl))
@@ -121,6 +122,14 @@ class Tetris(Callback):
         lines = ["%s%s%s%s" % s for s in lines]
         lines[0] += "\x0f · Score: %d" % player["score"]
         return "\n".join(lines)            
+
+    def overlaps(self, board, piece, xy):
+        xoff, yoff = xy
+        for y, row in enumerate(piece):
+            for x, v in enumerate(row):
+                if v and board[y+yoff][x+xoff] is not None:
+                    return True
+        return False
 
     @command
     def piece(self, server, message):
@@ -138,11 +147,25 @@ class Tetris(Callback):
     @command
     def tetris(self, server, message):
         game = self.ensure_created(message.context, message.address.nick)
-        
+        return self.draw([[game.players[p]["color"] if p is not None else 0 for p in row] for row in game.board])
 
     @command("drop", "\d+")
     def drop(self, server, message, index: int):
         game = self.ensure_created(message.context, message.address.nick)
-        
-
+        player = game.players[self.server.lower(message.address.nick)]
+        piece = player.pieces[0]
+        # Calculate where the blocks fall
+        xoff = int(index)
+        yoff = 0
+        # TODO: game over
+        while not self.overlaps(game.board, piece, (xoff, yoff)):
+            yoff += 1
+        yoff -= 1
+        for y, row in enumerate(piece):
+            for x, v in enumerate(row):
+                if v:
+                    game.board[y+yoff][x+xoff] = self.server.lower(message.address.nick)
+        player.pieces = [player.pieces[1], game.rand_piece()]
+        yield self.format_user(player)
+        yield self.draw([[game.players[p]["color"] if p is not None else 0 for p in row] for row in game.board])
 __initialise__ = Tetris
