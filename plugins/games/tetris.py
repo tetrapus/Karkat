@@ -149,7 +149,7 @@ class Tetris(Callback):
         game = self.ensure_created(message.context, message.address.nick)
         return self.draw([[game.players[p]["color"] if p is not None else 0 for p in row] for row in game.board])
 
-    @command("drop", "\d+")
+    @command("drop", "(\d+)")
     def drop(self, server, message, index: int):
         game = self.ensure_created(message.context, message.address.nick)
         player = game.players[self.server.lower(message.address.nick)]
@@ -157,8 +157,8 @@ class Tetris(Callback):
         # Calculate where the blocks fall
         xoff = int(index)
         yoff = 0
-        # TODO: game over
-        while not self.overlaps(game.board, piece, (xoff, yoff)):
+        # TODO: game over, bounds checks
+        while yoff < len(game.board) and not self.overlaps(game.board, piece, (xoff, yoff)):
             yoff += 1
         yoff -= 1
         for y, row in enumerate(piece):
