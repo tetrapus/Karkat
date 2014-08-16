@@ -162,7 +162,7 @@ class Tetris(Callback):
             return "\x034⡇\x03 Invalid index"
         # Calculate where the blocks fall
         # TODO: game over, bounds checks, row elimination
-        while yoff < len(game.board) - len(piece) and not self.overlaps(game.board, piece, (xoff, yoff)):
+        while not self.overlaps(game.board, piece, (xoff, yoff)):
             yoff += 1
         yoff -= 1
         for y, row in enumerate(piece):
