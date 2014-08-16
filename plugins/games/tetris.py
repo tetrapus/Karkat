@@ -171,6 +171,17 @@ class Tetris(Callback):
                 if v:
                     game.board[y+yoff][x+xoff] = self.server.lower(message.address.nick)
         player['pieces'] = [player['pieces'][1], game.rand_piece()]
+
+        # Eliminate pieces
+        full = []
+        for i, row in enumerate(board):
+            if all(row):
+                for player in row:
+                    game.player["score"] += 1
+                full.append(i)
+        for i in full:
+            del game.board[i]
+            game.board = [None for i in game.size[0]] + game.board
         server.message(self.format_user(player), message.address.nick, "NOTICE")
         yield self.draw([[game.players[p]["color"] if p is not None else 0 for p in row] for row in game.board])
 __initialise__ = Tetris
