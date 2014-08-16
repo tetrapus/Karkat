@@ -207,6 +207,7 @@ class Tetris(Callback):
             del game.board[i]
             game.board = [[None for i in range(game.size[0])]] + game.board
         server.message(self.format_user(player), message.address.nick, "NOTICE")
+        yield "₀₁₂₃₄₅₆₇₈₉"
         yield self.draw([[game.players[p]["color"] if p is not None else 0 for p in row] for row in game.board])
 
 __initialise__ = Tetris
