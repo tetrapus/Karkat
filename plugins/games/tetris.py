@@ -174,7 +174,7 @@ class Tetris(Callback):
         while not self.overlaps(game.board, piece or [[1]], (xoff, yoff)):
             yoff += 1
         yoff -= 1
-        if yoff < 0:
+        if yoff < 0 and piece is not None:
             # Trigger a purge
             for y, row in enumerate(game.board):
                 for x, v in enumerate(row):
