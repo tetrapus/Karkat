@@ -171,7 +171,7 @@ class Tetris(Callback):
             yield "\x034⡇\x03 Invalid index"
             return
         # Calculate where the blocks fall
-        while not self.overlaps(game.board, piece, (xoff, yoff)):
+        while not self.overlaps(game.board, piece or [[1]], (xoff, yoff)):
             yoff += 1
         yoff -= 1
         if yoff < 0:
