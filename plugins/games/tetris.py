@@ -167,7 +167,7 @@ class Tetris(Callback):
         yoff = 0
 
         # Bounds check for index
-        if not (0 <= xoff <= (len(game.board[0]) - len(piece[0]))):
+        if not (0 <= xoff <= (len(game.board[0]) - (len(piece[0]) if piece[0] is not None else 1))):
             yield "\x034⡇\x03 Invalid index"
             return
         # Calculate where the blocks fall
