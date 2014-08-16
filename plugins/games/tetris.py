@@ -58,7 +58,7 @@ class Game(object):
         self.name = name
         self.size = size
         if board is None:
-            board = [[None for i in range(size[1])] for j in range(size[0])]
+            board = [[None for i in range(size[0])] for j in range(size[1])]
         self.board = board
         if players is None:
             players = {}
