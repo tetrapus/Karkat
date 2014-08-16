@@ -121,9 +121,9 @@ class Tetris(Callback):
             nextp = self.draw([[player['color'] if j else j for j in i] for i in nextp]).split("\n")
         currentpl, nextpl = len(currentp), len(nextp)
         if currentpl > nextpl:
-            nextp.extend([" " * len(player['pieces'][1])] * (currentpl - nextpl))
+            nextp.extend([" " * len(player['pieces'][1]) if player['pieces'][1] is not None else 1] * (currentpl - nextpl))
         else:
-            currentp.extend([" " * len(player['pieces'][0])] * (nextpl - currentpl))
+            currentp.extend([" " * len(player['pieces'][0]) if player['pieces'][0] is not None else 1] * (nextpl - currentpl))
         height = max(currentpl, nextpl)
         left = ["\x0312⡇\x03 Current: "] + (["\x0312⡇\x03          "] * (height - 1))
         mid = ["\x0f · Next: "] + (["\x0f         "] * (height - 1))
@@ -187,7 +187,8 @@ class Tetris(Callback):
         if piece is None:
             yoff += 1
             for x, y in [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 0), (0, 1), (1, -1), (1, 0), (1, 1)]:
-                game.board[y+yoff][x+xoff] = None
+                if 0 <= y + yoff < len(board) and 0 <= x + xoff < len(board[0]):
+                    game.board[y+yoff][x+xoff] = None
         else:
             for y, row in enumerate(piece):
                 for x, v in enumerate(row):
