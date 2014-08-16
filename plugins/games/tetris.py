@@ -127,7 +127,7 @@ class Tetris(Callback):
         xoff, yoff = xy
         for y, row in enumerate(piece):
             for x, v in enumerate(row):
-                if v and board[y+yoff][x+xoff] is not None:
+                if v and (board[y+yoff][x+xoff] is not None or y + yoff > len(board)):
                     return True
         return False
 
