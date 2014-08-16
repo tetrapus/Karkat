@@ -174,7 +174,7 @@ class Tetris(Callback):
 
         # Eliminate pieces
         full = []
-        for i, row in enumerate(board):
+        for i, row in enumerate(game.board):
             if all(row):
                 for player in row:
                     game.player["score"] += 1
