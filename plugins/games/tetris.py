@@ -71,7 +71,7 @@ class Game(object):
         return random.choice(self.PIECES)
 
     def add_player(self, key, name):
-        self.players[key] = {"name":name, "score": 0, "pieces": [self.rand_piece(), self.rand_piece()], "color": hash(key) % len(self.COLORS)}
+        self.players[key] = {"name":name, "score": 0, "pieces": [self.rand_piece(), self.rand_piece()], "color": self.COLORS[hash(key) % len(self.COLORS)]}
 
     
 
@@ -171,6 +171,6 @@ class Tetris(Callback):
                 if v:
                     game.board[y+yoff][x+xoff] = self.server.lower(message.address.nick)
         player['pieces'] = [player['pieces'][1], game.rand_piece()]
-        yield self.format_user(player)
+        server.message(self.format_user(player), message.address.nick, "NOTICE")
         yield self.draw([[game.players[p]["color"] if p is not None else 0 for p in row] for row in game.board])
 __initialise__ = Tetris
