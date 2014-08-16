@@ -1,5 +1,6 @@
 import random
 import json
+import itertools
 
 from bot.events import command, Callback
 
@@ -45,14 +46,15 @@ def draw_half(board):
 
 
 class Game(object):
-    COLORS = [10, 6, 3, 8, 9, 13, 14, 11, 7, 2, 4]
+    COLORS = [10, 6, 3, 8, 9, 13, 11, 7, 2, 4]
     PIECES = [[[1, 1, 1, 1]],
               [[1, 1, 1], [0, 0, 1]],
               [[1, 1, 1], [1, 0, 0]],
               [[1, 1], [1, 1]],
               [[0, 1, 1], [1, 1, 0]],
               [[1, 1, 1], [0, 1, 0]],
-              [[1, 1, 0], [0, 1, 1]]]         
+              [[1, 1, 0], [0, 1, 1]],
+              None]         
 
     def __init__(self, name, size=(10, 12), board=None, players=None):
         self.name = name
@@ -108,8 +110,15 @@ class Tetris(Callback):
     def draw(self, x): return draw_half(x)
 
     def format_user(self, player):
-        currentp = self.draw([[player['color'] if j else j for j in i] for i in player['pieces'][0]]).split("\n")
-        nextp = self.draw([[player['color'] if j else j for j in i] for i in player['pieces'][1]]).split("\n")
+        currentp, nextp = player['pieces'][0], player['pieces'][1]
+        if currentp is None:
+            currentp = ["\x034💣"]
+        else:
+            currentp = self.draw([[player['color'] if j else j for j in i] for i in currentp]).split("\n")
+        if nextp is None:
+            nextp = ["\x034💣"]
+        else:
+            nextp = self.draw([[player['color'] if j else j for j in i] for i in nextp]).split("\n")
         currentpl, nextpl = len(currentp), len(nextp)
         if currentpl > nextpl:
             nextp.extend([" " * len(player['pieces'][1])] * (currentpl - nextpl))
@@ -162,14 +171,28 @@ class Tetris(Callback):
             yield "\x034⡇\x03 Invalid index"
             return
         # Calculate where the blocks fall
-        # TODO: game over, bounds checks, row elimination
         while not self.overlaps(game.board, piece, (xoff, yoff)):
             yoff += 1
         yoff -= 1
-        for y, row in enumerate(piece):
-            for x, v in enumerate(row):
-                if v:
-                    game.board[y+yoff][x+xoff] = self.server.lower(message.address.nick)
+        if yoff < 0:
+            # Trigger a purge
+            for y, row in enumerate(game.board):
+                for x, v in enumerate(row):
+                    if v == self.server.lower(message.address.nick):
+                        game.board[y][x] = None
+            server.message(self.format_user(player), message.address.nick, "NOTICE")
+            yield self.draw([[game.players[p]["color"] if p is not None else 0 for p in row] for row in game.board])
+            return
+
+        if piece is None:
+            yoff += 1
+            for x, y in [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 0), (0, 1), (1, -1), (1, 0), (1, 1)]:
+                game.board[y+yoff][x+xoff] = None
+        else:
+            for y, row in enumerate(piece):
+                for x, v in enumerate(row):
+                    if v:
+                        game.board[y+yoff][x+xoff] = self.server.lower(message.address.nick)
         player['pieces'] = [player['pieces'][1], game.rand_piece()]
 
         # Eliminate pieces
