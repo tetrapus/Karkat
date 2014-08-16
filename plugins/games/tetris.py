@@ -54,7 +54,7 @@ class Game(object):
               [[1, 1, 1], [0, 1, 0]],
               [[1, 1, 0], [0, 1, 1]]]         
 
-    def __init__(self, name, size=(10, 16), board=None, players=None):
+    def __init__(self, name, size=(10, 12), board=None, players=None):
         self.name = name
         self.size = size
         if board is None:
