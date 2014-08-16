@@ -176,8 +176,8 @@ class Tetris(Callback):
         full = []
         for i, row in enumerate(game.board):
             if all(row):
-                for player in row:
-                    game.players[player]["score"] += 1
+                for p in row:
+                    game.players[p]["score"] += 1
                 full.append(i)
         for i in full:
             del game.board[i]
