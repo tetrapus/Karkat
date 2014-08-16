@@ -189,7 +189,7 @@ class Tetris(Callback):
         if piece is None:
             yoff += 1
             for x, y in [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 0), (0, 1), (1, -1), (1, 0), (1, 1)]:
-                if 0 <= y + yoff < len(board) and 0 <= x + xoff < len(board[0]):
+                if 0 <= y + yoff < len(game.board) and 0 <= x + xoff < len(game.board[0]):
                     game.board[y+yoff][x+xoff] = None
         else:
             for y, row in enumerate(piece):
