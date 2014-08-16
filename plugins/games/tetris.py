@@ -158,8 +158,9 @@ class Tetris(Callback):
         yoff = 0
 
         # Bounds check for index
-        if not (0 <= xoff < (len(game.board[0]) - len(piece[0]))):
-            return "\x034⡇\x03 Invalid index"
+        if not (0 <= xoff <= (len(game.board[0]) - len(piece[0]))):
+            yield "\x034⡇\x03 Invalid index"
+            return
         # Calculate where the blocks fall
         # TODO: game over, bounds checks, row elimination
         while not self.overlaps(game.board, piece, (xoff, yoff)):
