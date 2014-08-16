@@ -181,7 +181,9 @@ class Tetris(Callback):
                     if v == self.server.lower(message.address.nick):
                         game.board[y][x] = None
             server.message(self.format_user(player), message.address.nick, "NOTICE")
+            yield "₀₁₂₃₄₅₆₇₈₉"
             yield self.draw([[game.players[p]["color"] if p is not None else 0 for p in row] for row in game.board])
+            yield "₀₁₂₃₄₅₆₇₈₉"
             return
 
         if piece is None:
@@ -209,5 +211,7 @@ class Tetris(Callback):
         server.message(self.format_user(player), message.address.nick, "NOTICE")
         yield "₀₁₂₃₄₅₆₇₈₉"
         yield self.draw([[game.players[p]["color"] if p is not None else 0 for p in row] for row in game.board])
+        yield "₀₁₂₃₄₅₆₇₈₉"
+
 
 __initialise__ = Tetris
