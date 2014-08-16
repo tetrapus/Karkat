@@ -154,12 +154,13 @@ class Tetris(Callback):
         game = self.ensure_created(message.context, message.address.nick)
         player = game.players[self.server.lower(message.address.nick)]
         piece = player['pieces'][0]
-        # Bounds check for index
-        if not 0 <= index < len(game.board[0]) - len(piece[0]):
-            return "\x034⡇\x03 Invalid index"
-        # Calculate where the blocks fall
         xoff = int(index)
         yoff = 0
+
+        # Bounds check for index
+        if not 0 <= xoff < len(game.board[0]) - len(piece[0]):
+            return "\x034⡇\x03 Invalid index"
+        # Calculate where the blocks fall
         # TODO: game over, bounds checks, row elimination
         while yoff < len(game.board) - len(piece) and not self.overlaps(game.board, piece, (xoff, yoff)):
             yoff += 1
