@@ -117,11 +117,11 @@ class Tetris(Callback):
         if currentp is None:
             currentp = ["\x034💣"]
         else:
-            currentp = self.draw_piece([[player['color'] if j else j for j in i] for i in currentp]).split("\n")
+            currentp = self.draw([[player['color'] if j else j for j in i] for i in currentp]).split("\n")
         if nextp is None:
             nextp = ["\x034💣"]
         else:
-            nextp = self.draw_piece([[player['color'] if j else j for j in i] for i in nextp]).split("\n")
+            nextp = self.draw([[player['color'] if j else j for j in i] for i in nextp]).split("\n")
         currentpl, nextpl = len(currentp), len(nextp)
         if currentpl > nextpl:
             nextp.extend([" " * (len(player['pieces'][1]) if player['pieces'][1] is not None else 1)] * (currentpl - nextpl))
