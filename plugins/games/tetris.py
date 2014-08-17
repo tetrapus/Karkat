@@ -74,7 +74,8 @@ class Game(object):
         return random.choice(self.PIECES)
 
     def add_player(self, key, name):
-        self.players[key] = {"name":name, "score": 0, "pieces": [self.rand_piece(), self.rand_piece()], "color": self.COLORS[hash(key) % len(self.COLORS)]}
+        color = min(self.COLORS, key=lambda x: len([i for i in self.players if self.players[i]["color"] == x]))
+        self.players[key] = {"name":name, "score": 0, "pieces": [self.rand_piece(), self.rand_piece()], "color": color}
 
     
 
@@ -149,17 +150,24 @@ class Tetris(Callback):
         player = game.players[self.server.lower(message.address.nick)]
         return self.format_user(player)
 
-    @command
-    def rotate(self, server, message):
+    @command("rotate", "(\d*)")
+    def rotate(self, server, message, num):
         game = self.ensure_created(message.context, message.address.nick)
         player = game.players[self.server.lower(message.address.nick)]
-        player['pieces'][0] = list(zip(*player['pieces'][0][::-1]))
+        if num:
+            num = int(num) % 4
+        else:
+            num = 1
+        for i in range(num):
+            player['pieces'][0] = list(zip(*player['pieces'][0][::-1]))
         return self.format_user(player)
 
     @command
     def tetris(self, server, message):
         game = self.ensure_created(message.context, message.address.nick)
-        return self.draw([[game.players[p]["color"] if p is not None else 0 for p in row] for row in game.board])
+        yield "₀₁₂₃₄₅₆₇₈₉"
+        yield self.draw([[game.players[p]["color"] if p is not None else 0 for p in row] for row in game.board])
+        yield "₀₁₂₃₄₅₆₇₈₉"
 
     @command("drop", "(\d+)")
     def drop(self, server, message, index: int):
