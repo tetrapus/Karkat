@@ -1,3 +1,5 @@
+import sys
+import yaml
 import requests
 
 from bot.events import command
