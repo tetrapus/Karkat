@@ -352,7 +352,7 @@ class LastFM(Callback):
         tasteometer = float(tasteometer)
         with open(self.compare_file) as compfile:
             data = json.load(compfile)
-            data.update({("%s %s" % tuple(sorted(users))).lower(): [tasteometer, artists]})
+            data.update({("%s %s" % tuple(sorted([i.lower() for i in users]))): [tasteometer, artists]})
         with open(self.compare_file, "w") as compfile:
             json.dump(data, compfile)
 
@@ -456,7 +456,7 @@ class LastFM(Callback):
         if lowername in self.users:
             user = self.users[lowername]
 
-        defaults = {"user": user, "type": "overall", "size": "3x3"}
+        defaults = {"user": user, "type": "7d", "size": "3x3"}
         for i in (flags or []):
             if i in "cap":
                 defaults[{"c":"caption","a":"artistonly","p":"playcount"}[i]] = "true"
