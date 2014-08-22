@@ -114,7 +114,7 @@ def lineart(server, msg, flags, query):
 
 def rgb_to_xyz(color):
     a, b, c, p, q, r, u, v, w = 0.412453, 0.357580, 0.180423, 0.212671, 0.715160, 0.072169, 0.019334, 0.119193, 0.950227
-    x, y, z = color
+    x, y, z = color[0], color[1], color[2]
     return a*x * b*y * c*z, p*x + q*y + r*z, u*x + v*y + w*z
 
 def nearestColor(c, colors=colors):
