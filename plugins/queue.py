@@ -335,23 +335,26 @@ class Queue(Callback):
         yield from self.untag.funct(self, server, msg, "#hidden", query)        
 
     @command
-    def qexport(self, server, message):
+    def qexport(self, server, msg):
         nick = server.lower(msg.address.nick)
         queue = self.queues.setdefault(nick, [])
         data = "\n".join(queue)
         postres = requests.post("https://api.github.com/gists", data=json.dumps({"files": {"%s-todo.txt" % (msg.address.nick): {"content": data}}}))
         response = postres.json()
-        return "Exported to %s." % response["html_url"]
+        return "06│ Exported to %s." % response["html_url"]
 
     @command("qimport", "(\S+)")
-    def qimport(self, server, message, url):
+    def qimport(self, server, msg, url):
         nick = server.lower(msg.address.nick)
         queue = self.queues.setdefault(nick, [])
+        qlen = len(queue)
         data = requests.get(url).text.split("\n")
         if len(data) > 500:
             return "06│ Queue too large. Upgrade to Karkat Premium to raise your storage limit."
         queue.extend(data)
         self.save()
+        yield from self.displayAll([(i+qlen+1, v) for i, v in enumerate(data)], 25 if msg.prefix == '!' else 5)
+
 
     def save(self):
         with open(self.qfile, "w") as f:
