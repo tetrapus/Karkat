@@ -351,7 +351,8 @@ class Queue(Callback):
         qlen = len(queue)
         data = requests.get(url).text.split("\n")
         if len(data) > 500:
-            return "06│ Queue too large. Upgrade to Karkat Premium to raise your storage limit."
+            yield "06│ Queue too large. Upgrade to Karkat Premium to raise your storage limit."
+            return
         queue.extend(data)
         self.save()
         yield from self.displayAll([(i+qlen+1, v) for i, v in enumerate(data)], 25 if msg.prefix == '!' else 5)
