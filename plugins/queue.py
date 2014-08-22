@@ -3,6 +3,7 @@ import shlex
 import re
 import random
 import math
+import requests
 
 from bot.events import Callback, command
 from util.text import strikethrough, smallcaps
@@ -332,6 +333,25 @@ class Queue(Callback):
     @command("unhide", r"(.+)")
     def unhide(self, server, msg, query):
         yield from self.untag.funct(self, server, msg, "#hidden", query)        
+
+    @command
+    def qexport(self, server, message):
+        nick = server.lower(msg.address.nick)
+        queue = self.queues.setdefault(nick, [])
+        data = "\n".join(queue)
+        postres = requests.post("https://api.github.com/gists", data=json.dumps({"files": {"%s-todo.txt" % (msg.address.nick): {"content": data}}}))
+        response = postres.json()
+        return "Exported to %s." % response["html_url"]
+
+    @command("qimport", "(\S+)")
+    def qimport(self, server, message, url):
+        nick = server.lower(msg.address.nick)
+        queue = self.queues.setdefault(nick, [])
+        data = requests.get(url).text.split("\n")
+        if len(data) > 500:
+            return "06│ Queue too large. Upgrade to Karkat Premium to raise your storage limit."
+        queue.extend(data)
+        self.save()
 
     def save(self):
         with open(self.qfile, "w") as f:
