@@ -64,7 +64,8 @@ class Queue(Callback):
             else:
                 done = 0
             vis = '┝' + "━" * math.ceil(total - done) + '15' + "─" * math.ceil(done) + " " * (align - math.ceil(total))
-        return "06│ %s %s %s" % (num, vis, re.sub(r"#(\S+)", lambda x: r"15%s" % smallcaps(x.group(1)), line))
+        line = re.sub(r"(^| )(#|\+|@)(\S+)", lambda x: r"%s%.2d%s" % (x.group(1), {"#":15,"+":15,"@":6}[x.group(2)], smallcaps(x.group(3))), line)
+        return "06│ %s %s %s" % (num, vis, line)
 
     def displayAll(self, lines, max=25):
         for count, i in enumerate(lines):
@@ -252,7 +253,7 @@ class Queue(Callback):
 
         self.save()
 
-    @command("tag", r"(#\S+(?:\s+#\S+)*)\s+(.+)")
+    @command("tag", r"((?:#|\+|@)\S+(?:\s+(?:#|\+|@)\S+)*)\s+(.+)")
     def tag(self, server, msg, tag, query):
         nick = server.lower(msg.address.nick)
         queue = self.queues.setdefault(nick, [])
@@ -273,7 +274,7 @@ class Queue(Callback):
 
         self.save()
 
-    @command("untag", r"(#\S+(?:\s+#\S+)*)(?:\s+(.+))?")
+    @command("untag", r"((?:#|\+|@)\S+(?:\s+(?:#|\+|@)\S+)*)(?:\s+(.+))?")
     def untag(self, server, msg, tags, query):
         nick = server.lower(msg.address.nick)
         queue = self.queues.setdefault(nick, [])
