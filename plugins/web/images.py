@@ -112,33 +112,8 @@ def lineart(server, msg, flags, query):
     flags = "-l" + (flags or "").strip("-")
     yield from image.funct(server, msg, flags, query)
 
-def rgb_to_xyz(color):
-    a, b, c, p, q, r, u, v, w = 0.412453, 0.357580, 0.180423, 0.212671, 0.715160, 0.072169, 0.019334, 0.119193, 0.950227
-    x, y, z = color[0]/255, color[1]/255, color[2]/255
-    return a*x * b*y * c*z, p*x + q*y + r*z, u*x + v*y + w*z
-
-def f(t):
-    return t**(1/3) if t > 0.008856 else 7.787 * t + 16/116
-
-def xyz_to_cielab(xyz):
-    X, Y, Z = xyz
-    Xn, Yn, Zn = rgb_to_xyz((255, 255, 255))
-    L = 116 * (Y/Yn)**(1/3) - 16 if Y/Yn > 0.008856 else 903.3 * Y/Yn
-    a = 500 * ( f(X/Xn) - f(Y/Yn) )
-    b = 200 * ( f(Y/Yn) - f(Z/Zn) )
-
-    return L, a, b
-
-def rgb_to_cielab(x):
-    return xyz_to_cielab(rgb_to_xyz(x))
-
-def distance(a, b):
-    a, b = rgb_to_cielab(a), rgb_to_cielab(b)
-    return math.sqrt(sum((x - y)**2 for x, y in zip(a, b)))
-
 def nearestColor(c, colors=colors):
-    c = rgb_to_cielab(c)
-    return min(colors.keys(), key=lambda x: math.sqrt(sum((v-c[i])**2 for i, v in enumerate(rgb_to_cielab(x)))))
+    return min(colors.keys(), key=lambda x: math.sqrt(sum((v-c[i])**2 for i, v in enumerate(x))))
 
 @command("view", "(.*)")
 @Callback.threadsafe
