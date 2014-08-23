@@ -412,7 +412,10 @@ def overline(text):
     return "\u0305" + "\u0305".join(text)
 
 def strikethrough(text):
-    return "\u0336" + "\u0336".join(text)
+    text = re.split(r"(\x03(?:\d{0,2}(?:,\d{1,2})?)?|\x1f|\x0f|\x16|\x02|\u0305)", text)
+    # Replace odd indices with strikethrough'd versions
+    text = [t if i % 2 else "\u0336" + "\u0336".join(t) for i, t in enumerate("text")]
+    return "".join(text)
 
 def underline(text):
     return "\u0332" + "\u0332".join(text)
