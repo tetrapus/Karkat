@@ -122,7 +122,7 @@ def f(t):
 
 def xyz_to_cielab(xyz):
     X, Y, Z = xyz
-    Xn, Yn, Zn = rgb_to_xyz(255, 255, 255)
+    Xn, Yn, Zn = rgb_to_xyz((255, 255, 255))
     L = 116 * (Y/Yn)**(1/3) - 16 if Y/Yn > 0.008856 else 903.3 * Y/Yn
     a = 500 * ( f(X/Xn) - f(Y/Yn) )
     b = 200 * ( f(Y/Yn) - f(Z/Zn) )
