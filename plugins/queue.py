@@ -51,7 +51,7 @@ class Queue(Callback):
                 return q
 
 
-    def display(self, num, line):
+    def display(self, num, line, strike=False):
         points = re.split(r"\s*(\[(?:\d+/)?\d+\])\s*", line, maxsplit=1)
         vis = "│"
         if len(points) == 3:
@@ -65,14 +65,15 @@ class Queue(Callback):
                 done = 0
             vis = '┝' + "━" * math.ceil(total - done) + '15' + "─" * math.ceil(done) + " " * (align - math.ceil(total))
         line = re.sub(r"(^| )(#|\+|@)(\S+)", lambda x: r"%s%.2d%s" % (x.group(1), {"#":15,"+":15,"@":6}[x.group(2)], smallcaps(x.group(3))), line)
+        if strike: line = strikethrough(line)
         return "06│ %s %s %s" % (num, vis, line)
 
-    def displayAll(self, lines, max=25):
+    def displayAll(self, lines, max=25, strike=False):
         for count, i in enumerate(lines):
             if max - 1 <= count and max != len(lines):
                 yield "06│ %d of %d items displayed." % (count, len(lines))
                 return
-            yield self.display(*i)
+            yield self.display(*i, strike=strike)
 
     @command("list", r"(.*)")
     def list(self, server, msg, query):
@@ -154,7 +155,7 @@ class Queue(Callback):
         for i in sorted(q, key=lambda x:-x[0]):
             queue.pop(i[0]-1)
 
-        yield from self.displayAll([('✓' if len(q) == 1 else i[0], strikethrough(i[1])) for i in q], 25 if msg.prefix == '!' else 5)
+        yield from self.displayAll([('✓' if len(q) == 1 else i[0], i[1]) for i in q], 25 if msg.prefix == '!' else 5, strike=True)
 
         self.save()
 
