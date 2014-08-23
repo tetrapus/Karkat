@@ -344,19 +344,20 @@ class Queue(Callback):
         response = postres.json()
         return "06│ Exported to %s." % response["html_url"]
 
-    @command("qimport", "(\S+)")
-    def qimport(self, server, msg, url):
+    @command("qimport", r"(-m\s+)?(\S+)")
+    def qimport(self, server, msg, merge, url):
         nick = server.lower(msg.address.nick)
         queue = self.queues.setdefault(nick, [])
         qlen = len(queue)
         data = requests.get(url).text.split("\n")
+        if merge:
+            data = [i for i in data if i not in queue]
         if len(data) > 500:
             yield "06│ Queue too large. Upgrade to Karkat Premium to raise your storage limit."
             return
         queue.extend(data)
         self.save()
         yield from self.displayAll([(i+qlen+1, v) for i, v in enumerate(data)], 25 if msg.prefix == '!' else 5)
-
 
     def save(self):
         with open(self.qfile, "w") as f:
