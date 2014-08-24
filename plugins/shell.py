@@ -25,10 +25,10 @@ class Process(threading.Thread):
         outfile = None
         for line in iter(self.stdout.readline, b""):
             line_buffer.append(line)
-            if lines < 25:
+            if lines < 20:
                 line = line.decode('utf-8')
                 self.parent.stream.message(line, self.target)
-            elif lines == 25:
+            elif lines == 20:
                 outfile = tempfile.NamedTemporaryFile(delete=False)
                 for i in line_buffer:
                     outfile.write(i)
