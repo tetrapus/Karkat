@@ -27,6 +27,7 @@ class Process(threading.Thread):
             line_buffer.append(line)
             if lines < 25:
                 line = line.decode('utf-8')
+                print("//", line)
                 self.parent.stream.message(line, self.target)
             elif lines == 25:
                 outfile = tempfile.NamedTemporaryFile(delete=False)
