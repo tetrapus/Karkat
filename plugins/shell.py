@@ -3,6 +3,7 @@ import signal
 import subprocess
 import threading
 import time
+import tempfile
 
 from util.irc import Callback
 from util.irc import Message
@@ -19,9 +20,23 @@ class Process(threading.Thread):
 
     def run(self):
         started = time.time()
+        lines = 0
+        line_buffer = []
+        outfile = None
         for line in iter(self.stdout.readline, b""):
-            line = line.decode('utf-8')
-            self.parent.stream.message(line, self.target)
+            line_buffer.append(line)
+            if lines < 25:
+                line = line.decode('utf-8')
+                self.parent.stream.message(line, self.target)
+            elif lines == 25:
+                outfile = tempfile.NamedTemporaryFile(delete=False)
+                outfile.write("\n".join(line_buffer) + "\n")
+                self.parent.stream.message("12bash│ Output truncated. Data written to %s" % outfile, self.target)
+            else:
+                outfile.write(line + "\n")
+            lines += 1
+        if outfile is not None:
+            outfile.close()
         self.parent.activeShell = False
         if time.time() - started > 2:
             exitcode = self.shell.poll()
