@@ -26,7 +26,7 @@ def average(points):
     return [sum(i)/len(i) for i in zip(*points)]
 
 def distance(a, b):
-    a, b = colorsys.rgb_to_yiq(*a), colorsys.rgb_to_yiq(*b)
+    a, b = colorsys.rgb_to_yiq(*a[:3]), colorsys.rgb_to_yiq(*b[:3])
     return math.sqrt(sum((x - y)**2 for x, y in zip(a, b)))
 
 def nearestColor(c, colorspace):
