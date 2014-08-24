@@ -27,12 +27,12 @@ class Watchdog(Callback):
         self.lastcheck = time.time()
         t = time.time() - self.last
         if t > 270:
-            server.restart = True
-            server.connected = False
+            self.server.restart = True
+            self.server.connected = False
         elif t > 180:
-            server.printer.raw_message("PING :♥")
+            self.server.printer.raw_message("PING :♥")
 
-class FallbackWatchdog(threading.Thread):
+class FallbackWatchdog(threading.Thread, object):
     def __init__(self, watchdog):
         self.watchdog = watchdog
         super().__init__()
