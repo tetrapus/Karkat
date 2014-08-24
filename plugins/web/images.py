@@ -1,7 +1,6 @@
 import requests
 import re
 import math
-import colorsys
 from PIL import Image
 from io import BytesIO
 
@@ -114,8 +113,7 @@ def lineart(server, msg, flags, query):
     yield from image.funct(server, msg, flags, query)
 
 def nearestColor(c, colors=colors):
-    c = colorsys.rgb_to_yiq(*c[:3])
-    return min(colors.keys(), key=lambda x: math.sqrt(sum((v-c[i])**2 for i, v in enumerate(colorsys.rgb_to_yiq(*x[:3])))))
+    return min(colors.keys(), key=lambda x: math.sqrt(sum((v-c[i])**2 for i, v in enumerate(x))))
 
 @command("view", "(.*)")
 @Callback.threadsafe
