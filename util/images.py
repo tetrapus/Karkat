@@ -1,4 +1,5 @@
 import math
+import colorsys
 from operator import itemgetter
 
 class Palette(object):
@@ -25,6 +26,7 @@ def average(points):
     return [sum(i)/len(i) for i in zip(*points)]
 
 def distance(a, b):
+    a, b = colorsys.rgb_to_yiq(a), colorsys.rgb_to_yiq(b)
     return math.sqrt(sum((x - y)**2 for x, y in zip(a, b)))
 
 def nearestColor(c, colorspace):
