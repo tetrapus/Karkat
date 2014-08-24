@@ -24,16 +24,17 @@ class Process(threading.Thread):
         line_buffer = []
         outfile = None
         for line in iter(self.stdout.readline, b""):
-            line = line.decode('utf-8')
             line_buffer.append(line)
             if lines < 25:
+                line = line.decode('utf-8')
                 self.parent.stream.message(line, self.target)
             elif lines == 25:
                 outfile = tempfile.NamedTemporaryFile(delete=False)
-                outfile.write("\n".join(line_buffer) + "\n")
+                for i in line_buffer:
+                    outfile.write(i)
                 self.parent.stream.message("12bash│ Output truncated. Data written to %s" % outfile, self.target)
             else:
-                outfile.write(line + "\n")
+                outfile.write(line)
             lines += 1
         if outfile is not None:
             outfile.close()
