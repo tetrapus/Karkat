@@ -32,7 +32,7 @@ class Process(threading.Thread):
                 outfile = tempfile.NamedTemporaryFile(delete=False)
                 for i in line_buffer:
                     outfile.write(i)
-                self.parent.stream.message("12bash│ Output truncated. Data written to %s" % outfile, self.target)
+                self.parent.stream.message("12bash│ Output truncated. Data written to %s" % outfile.name, self.target)
             else:
                 outfile.write(line)
             lines += 1
