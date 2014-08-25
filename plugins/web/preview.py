@@ -14,8 +14,10 @@ class Summary(Callback):
 
         super().__init__(server)
 
-    @command("preview", r"(.+)")
+    @command("preview tldr", r"(.*)")
     def preview(self, server, message, url):
+        if not url:
+            url = server.lasturl
         params = {"SM_API_KEY": self.key,
                   "SM_URL": url,
                   "SM_LENGTH": 1}
