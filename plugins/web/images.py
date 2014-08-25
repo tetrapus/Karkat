@@ -1,14 +1,12 @@
 import requests
 import re
-import math
-import colorsys
 from PIL import Image
 from io import BytesIO
 
 from bot.events import command, Callback, msghandler
 from util.services import url
 from util.text import unescape
-from util.images import irc_render, draw_braille
+from util.images import irc_render, draw_braille, nearestColor
 
 exceptions = {Callback.USAGE: "12Google Images│ "\
                               "Usage: .image [-NUM_RESULTS] <query>",
@@ -113,9 +111,13 @@ def lineart(server, msg, flags, query):
     flags = "-l" + (flags or "").strip("-")
     yield from image.funct(server, msg, flags, query)
 
-def nearestColor(c, colors=colors):
-    c = colorsys.rgb_to_yiq(*c[:3])
-    return min(colors.keys(), key=lambda x: math.sqrt(sum((v-c[i])**2 for i, v in enumerate(colorsys.rgb_to_yiq(*x[:3])))))
+def flatten(img, bgcol=(255, 255, 255)):
+    """ Draw the image on a solid background """
+    img = img.convert("RGBA")
+    img.load()                                       # needed for split()
+    background = Image.new('RGB', img.size, bgcol)
+    background.paste(img, mask=img.split()[3])       # 3 is the alpha channel
+    return background
 
 @command("view", "(.*)")
 @Callback.threadsafe
@@ -149,12 +151,9 @@ def asciiart(server, msg, pic):
 
     scalefactor = max(img.size[0]/w_max, img.size[1]/h_max)
     x, y = img.size[0]/scalefactor, img.size[1]/scalefactor
-    img = img.resize((int(img.size[0]/scalefactor) * w_res, int(img.size[1]/scalefactor)*h_res), Image.ANTIALIAS)
-    img = img.convert("RGBA")
-    img.load()  # needed for split()
-    background = Image.new('RGB', img.size, (255,255,255))
-    background.paste(img, mask=img.split()[3])  # 3 is the alpha channel
-    return "\n".join("".join(colors[nearestColor(img.getpixel((i, j)))] for i in range(img.size[0])) for j in range(img.size[1]))
+    img = img.resize((int(x) * w_res, int(y)*h_res), Image.ANTIALIAS)
+    img = flatten(img)
+    return "\n".join("".join(nearestColor(img.getpixel((i, j)), colors) for i in range(img.size[0])) for j in range(img.size[1]))
 
 blocks = {(True, True, False, True): '▛', (True, False, True, True): '▙', (True, True, True, False): '▜', (False, False, False, False): ' ', (True, False, True, False): '▚', (False, False, False, True): '▖', (False, True, False, True): '▞', (True, False, False, True): '▌', (False, True, False, False): '▝', (True, True, True, True): '█', (False, True, True, False): '▐', (False, False, True, False): '▗', (True, True, False, False): '▀', (True, False, False, False): '▘', (False, False, True, True): '▄', (False, True, True, True): '▟'}
 defaults = {(128, 38, 127): '\x036', (195, 59, 59): '\x034', (25, 85, 85): '\x0310', (69, 69, 230): '\x0312', (217, 166, 65): '\x038', (199, 50, 50): '\x035', (42, 140, 42): '\x033', (76, 76, 76): '\x0314', (102, 54, 31): '\x037', (53, 53, 179): '\x032', (46, 140, 116): '\x0311', (0, 0, 0): '\x031', (176, 55, 176): '\x0313', (204, 204, 204): '\x030', (61, 204, 61): '\x039', (149, 149, 149): '\x0315'}
@@ -192,13 +191,11 @@ def render(server, msg, pic):
 
     scalefactor = max(img.size[0]/w_max, img.size[1]/h_max)
     x, y = img.size[0]/scalefactor, img.size[1]/scalefactor
-    img = img.resize((int(img.size[0]/scalefactor) * w_res, int(img.size[1]/scalefactor)*h_res), Image.ANTIALIAS)
+    img = img.resize((int(x) * w_res, int(y)*h_res), Image.ANTIALIAS)
     cmap = img.resize((int(img.size[0]/2), int(img.size[1]/2))).convert("RGBA")
     img = img.convert('1')
-    cmap.load()  # needed for split()
-    background = Image.new('RGB', cmap.size, (255,255,255))
-    background.paste(cmap, mask=cmap.split()[3])  # 3 is the alpha channel
-    return "\n".join("".join(defaults[nearestColor(background.getpixel((x, y)), defaults)] + blocks[img.getpixel((2*x, 2*y)) != 255,
+    background = flatten(cmap)
+    return "\n".join("".join(nearestColor(background.getpixel((x, y)), defaults) + blocks[img.getpixel((2*x, 2*y)) != 255,
                                     img.getpixel((2*x+1, 2*y)) != 255,
                                     img.getpixel((2*x+1, 2*y+1)) != 255,
                                     img.getpixel((2*x, 2*y+1)) != 255] for x in range(int(img.size[0]/2))) for y in range(int(img.size[1]/2)))
@@ -235,11 +232,8 @@ def show(server, msg, pic):
 
     scalefactor = max(img.size[0]/w_max, img.size[1]/h_max)
     x, y = img.size[0]/scalefactor, img.size[1]/scalefactor
-    img = img.resize((int(img.size[0]/scalefactor) * w_res, int(img.size[1]/scalefactor)*h_res), Image.ANTIALIAS)
-    img = img.convert("RGBA")
-    img.load()  # needed for split()
-    background = Image.new('RGB', img.size, (255,255,255))
-    background.paste(img, mask=img.split()[3])  # 3 is the alpha channel
+    img = img.resize((int(x) * w_res, int(y)*h_res), Image.ANTIALIAS)
+    background = flatten(img)
     return irc_render(background)
 
 @command("trace", "(.*)")
@@ -274,11 +268,8 @@ def trace(server, msg, pic):
 
     scalefactor = max(img.size[0]/w_max, img.size[1]/h_max)
     x, y = img.size[0]/scalefactor, img.size[1]/scalefactor
-    img = img.resize((int(img.size[0]/scalefactor) * w_res, int(img.size[1]/scalefactor)*h_res), Image.ANTIALIAS)
-    img = img.convert("RGBA")
-    img.load()  # needed for split()
-    background = Image.new('RGB', img.size, (255,255,255))
-    background.paste(img, mask=img.split()[3])  # 3 is the alpha channel
+    img = img.resize((int(x) * w_res, int(y)*h_res), Image.ANTIALIAS)
+    img = flatten(img)
     return draw_braille(img)
 
 @msghandler
