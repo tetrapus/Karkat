@@ -136,6 +136,11 @@ class Tetris(Callback):
         lines[0] += "\x0f · Score: %d" % player["score"]
         return "\n".join(lines)            
 
+    def format_game(self, game):
+        out = "₀₁₂₃₄₅₆₇₈₉\n"
+        out += self.draw([[game.players[p]["color"] if p is not None else 0 for p in row] for row in game.board])
+        return out + "\n₀₁₂₃₄₅₆₇₈₉"
+
     def overlaps(self, board, piece, xy):
         xoff, yoff = xy
         for y, row in enumerate(piece):
@@ -165,9 +170,7 @@ class Tetris(Callback):
     @command
     def tetris(self, server, message):
         game = self.ensure_created(message.context, message.address.nick)
-        yield "₀₁₂₃₄₅₆₇₈₉"
-        yield self.draw([[game.players[p]["color"] if p is not None else 0 for p in row] for row in game.board])
-        yield "₀₁₂₃₄₅₆₇₈₉"
+        return self.format_game(game)
 
     @command("drop", "(\d+)")
     def drop(self, server, message, index: int):
@@ -192,10 +195,7 @@ class Tetris(Callback):
                     if v == self.server.lower(message.address.nick):
                         game.board[y][x] = None
             server.message(self.format_user(player), message.address.nick, "NOTICE")
-            yield "₀₁₂₃₄₅₆₇₈₉"
-            yield self.draw([[game.players[p]["color"] if p is not None else 0 for p in row] for row in game.board])
-            yield "₀₁₂₃₄₅₆₇₈₉"
-            return
+            return self.format_game(game)
 
         if piece is None:
             yoff += 1
@@ -220,9 +220,7 @@ class Tetris(Callback):
             del game.board[i]
             game.board = [[None for i in range(game.size[0])]] + game.board
         server.message(self.format_user(player), message.address.nick, "NOTICE")
-        yield "₀₁₂₃₄₅₆₇₈₉"
-        yield self.draw([[game.players[p]["color"] if p is not None else 0 for p in row] for row in game.board])
-        yield "₀₁₂₃₄₅₆₇₈₉"
+        return self.format_game(game)
 
 
 __initialise__ = Tetris
