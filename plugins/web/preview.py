@@ -2,6 +2,7 @@ import sys
 import yaml
 import functools
 import requests
+from util.text import unescape
 
 from bot.events import Callback, command
 
@@ -23,7 +24,7 @@ class Summary(Callback):
                   "SM_LENGTH": 1}
         summary = requests.get(self.API_URL, params=params).json()
         try:
-            return "12│ " + summary["sm_api_content"]
+            return "12│ " + unescape(summary["sm_api_content"])
         except:
             return summary["sm_api_message"]
 try:
