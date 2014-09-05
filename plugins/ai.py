@@ -239,7 +239,7 @@ class AI(Callback):
         self.lasttime = 0
         self.lastmsg = ""
         self.context = []
-        self.trigger_rate = 0.3
+        self.trigger_rate = 0.4
 
         self.lastlines = []
 
@@ -351,7 +351,7 @@ class AI(Callback):
     def capsmsg(self, server, msg):
         if not (msg.text[0].isalpha() or msg.text[0] == "\x01"):
             return
-        triggers = [msg.text.isupper(), msg.text.lower().startswith("%s:" % server.nick.lower()) or "karkat" in msg.text.lower() or "pipey" in msg.text.lower()]
+        triggers = [msg.text.isupper(), msg.text.lower().startswith("%s:" % server.nick.lower()) or "karkat" in msg.text.lower() or "pipey" in msg.text.lower(), not msg.context.startswith("#")]
         if any(triggers):
             self.trigger_rate = min(1, self.trigger_rate + 0.1 + 0.15 * (triggers[1]))
             if random.random() > self.trigger_rate:
@@ -362,7 +362,7 @@ class AI(Callback):
             self.lastmsg = response
             self.lastlines.append((time.time(), msg.context, weights, inputs, {}))
         else:
-            self.trigger_rate = max(0.25, self.trigger_rate - 0.025)
+            self.trigger_rate = max(0.4, self.trigger_rate - 0.02)
         if triggers[0] and msg.text not in self.lines:
             self.addline(server.channels.get(server.lower(msg.context), [msg.context]), msg.text.upper())
 
