@@ -23,9 +23,11 @@ def balance(server, msg, disable_strings, expr):
                 out += "\x03%.2d\x1f%s\x1f" % (colors[len(stack) % len(colors)], braks[i])
             stack.pop()
             if len(stack) == 0:
-                out += "%s\x0f"
+                out += "%s\x0f" % i
             else:
                 out += "%s\x03%.2d" % (i, colors[(len(stack) - 1) % len(colors)])
+        else:
+            out += i
     while stack:
         i = stack.pop()
         out += "\x1f%s\x1f\x03%.2d" % (unbraks[i], colors[(len(stack) - 1) % len(colors)])
