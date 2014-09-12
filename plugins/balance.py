@@ -18,6 +18,7 @@ def balance(server, msg, disable_strings, expr):
                 if i == string and not sescape:
                     string = None
                     out += i + "\x03%.2d" % colors[(len(stack) - 1) % len(colors)]
+                    continue
                 if i == "\\":
                     sescape = not sescape
                 else:
