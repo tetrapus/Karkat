@@ -12,7 +12,7 @@ def balance(server, msg, disable_strings, expr):
     errs = 0
     for i in expr:
         if i in braks.values():
-            out += "\x03\x02%.2d\x02%s" % (colors[len(stack) % len(colors)], i)
+            out += "\x03%.2d\x02%s\x02" % (colors[len(stack) % len(colors)], i)
             stack.append(i)
         elif i in braks:
             while stack and braks[i] != stack[-1]:
