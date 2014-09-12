@@ -73,7 +73,7 @@ def balance_passive(server, msg):
         if string is not None:
             if i == string and not sescape:
                 string = None
-                out += i + (("\x03%.2d" % colors[len(stack) - 1 % len(colors)]) if len(stack) > 0 else "\x0f"))
+                out += i + (("\x03%.2d" % colors[len(stack) - 1 % len(colors)]) if len(stack) > 0 else "\x0f")
                 continue
             if i == "\\":
                 sescape = not sescape
