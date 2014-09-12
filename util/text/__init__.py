@@ -23,12 +23,7 @@ class ControlCode:
 def lineify(data, max_size=400):
     """ Split text up into IRC-safe lines. """
 
-    lines = [item.rstrip() for item in data.split('\n')]
-    for item in lines:
-        if len(item) > max_size:
-            index = lines.index(item)
-            lines[index] = item[:item.rfind(' ', 0, max_size)]
-            lines.insert(index+1, item[item.rfind(' ', 0, max_size) + 1:])
+    lines = [item.rstrip()[:max_size] for item in data.split('\n')]
     return lines
 
 
@@ -439,3 +434,9 @@ def generate_vulgarity():
         vulgarity = random.choice(swears) + random.choice(nouns)
 
     return vulgarity
+
+
+rcolors = [19, 20, 22, 24, 25, 26, 27, 28, 29]
+
+def xchat_colour(nick):
+    return rcolors[sum(ord(i) for i in nick) % 9] - 16
