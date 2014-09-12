@@ -21,6 +21,7 @@ def balance(server, msg, disable_strings, expr):
             if not stack:
                 # Add a start bracket to balance things
                 out += "\x03%.2d\x1f%s\x1f" % (colors[len(stack) % len(colors)], braks[i])
+                stack.append(braks[i])
             stack.pop()
             if len(stack) == 0:
                 out += "%s\x0f" % i
