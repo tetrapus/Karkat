@@ -50,6 +50,10 @@ def balance(server, msg, disable_strings, expr):
                 out += "\x02%s\x02\x03%.2d" % (i, colors[(len(stack) - 1) % len(colors)])
         else:
             out += i
+    if sescape:
+        out += "\x1f\\\x1f"
+    if string is not None:
+        out += "\x1f%s\x1f\x03%.2d" % (i, colors[(len(stack) - 1) % len(colors)])
     while stack:
         i = stack.pop()
         out += "\x1f\x02%s\x02\x1f\x03%.2d" % (unbraks[i], colors[(len(stack) - 1) % len(colors)])
