@@ -36,6 +36,6 @@ def balance(server, msg, disable_strings, expr):
         i = stack.pop()
         out += "\x1f%s\x1f\x03%.2d" % (unbraks[i], colors[(len(stack) - 1) % len(colors)])
         errs += 1
-    return "\x0307│\x0315 %d ᴇʀʀᴏʀꜱ \x0307|\x03 %s" % (errs, out)
+    return "\x0307│\x0315 %d ᴇʀʀᴏʀꜱ \x0307│\x03 %s" % (errs, out)
 
 __callbacks__ = {"privmsg": [balance]}
