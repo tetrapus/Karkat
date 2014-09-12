@@ -31,4 +31,4 @@ def balance(server, msg, disable_strings, expr):
         out += "\x1f%s\x1f\x03%.2d" % (unbraks[i], colors[(len(stack) - 1) % len(colors)])
     return out
 
-__callbacks__ = {"privmsg", [balance]}
+__callbacks__ = {"privmsg": [balance]}
