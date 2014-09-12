@@ -10,7 +10,24 @@ def balance(server, msg, disable_strings, expr):
     out = ""
     colors = [6, 13, 12, 2, 10, 11, 9, 8, 7, 4]
     errs = 0
+    string = None
+    sescape = False
     for i in expr:
+        if not disable_strings:
+            if string is not None:
+                if i == string and not sescape:
+                    string = None
+                    out += i + "\x03%.2d" % colors[(len(stack) - 1) % len(colors)]
+                if i == "\\":
+                    sescape = not sescape
+                else:
+                    sescape = False
+                out += i
+                continue
+            elif i in '\'"':
+                string = i
+                out += "\x0315" + i
+                continue
         if i in braks.values():
             out += "\x03%.2d\x02%s\x02" % (colors[len(stack) % len(colors)], i)
             stack.append(i)
