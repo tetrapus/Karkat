@@ -1,5 +1,5 @@
 # check bracket balance
-from bot.events import command
+from bot.events import command, msghandler
 
 braks = dict(zip("]})", "[{("))
 unbraks = dict(zip("[{(", "]})"))
@@ -115,6 +115,6 @@ def balance_passive(server, msg):
         out += "\x1f\x02%s\x02\x1f\x03%.2d" % (unbraks[i], colors[(len(stack) - 1) % len(colors)])
         errs += 1
     if errs:
-        return "\x0307│\x0315 %s" % (errs, out)
+        return "\x0307│\x0315 %s" % (out)
 
 __callbacks__ = {"privmsg": [balance, balance_passive]}
