@@ -59,7 +59,7 @@ def balance(server, msg, disable_strings, expr):
         out += "\x1f\x02%s\x02\x1f\x03%.2d" % (unbraks[i], colors[(len(stack) - 1) % len(colors)])
         errs += 1
     if errs:
-        errs = "\x0304%d ᴇʀʀᴏʀꜱ" % errs
+        errs = ("\x0304%d ᴇʀʀᴏʀ" % errs) + ("ꜱ" * bool(i))
     else:
         errs = "\x0303ʙᴀʟᴀɴᴄᴇᴅ"
     return "\x0307│ %s \x0307│\x03 %s" % (errs, out)
