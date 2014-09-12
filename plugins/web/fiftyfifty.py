@@ -8,14 +8,14 @@ from util.services import url
 def get_rand_link(sub):
     for i in range(5):
         try:
-            link = requests.get("http://reddit.com/r/%s/random.json"%sub).json()[0]["data"]["children"][0]["data"]
+            link = requests.get("http://reddit.com/r/%s/random.json"%sub, headers={"User-Agent": "Karkat/3.0 by Lyucit"}).json()[0]["data"]["children"][0]["data"]
             if link["is_self"]: continue
         except:
             continue
         else:
             return link
 
-@command("5050 fiftyfifty", r"(?:([A-Za-z0-9][A-Za-z0-9_]{2,20}(?:,\s+[A-Za-z0-9][A-Za-z0-9_]{2,20})*)\s+([A-Za-z0-9][A-Za-z0-9_]{2,20}(?:,\s+[A-Za-z0-9][A-Za-z0-9_]{2,20})*))?")
+@command("5050 50/50 fiftyfifty", r"(?:([A-Za-z0-9][A-Za-z0-9_]{2,20}(?:,\s+[A-Za-z0-9][A-Za-z0-9_]{2,20})*)\s+([A-Za-z0-9][A-Za-z0-9_]{2,20}(?:,\s+[A-Za-z0-9][A-Za-z0-9_]{2,20})*))?")
 def fiftyfifty(server, message, good, bad):
     if good and bad:
         good, bad = random.choice(re.split(r",\s+", good)), random.choice(re.split(r",\s+", bad))
