@@ -108,13 +108,15 @@ def balance_passive(server, msg):
             out += i
     if sescape:
         out += "\x1f\\\x1f"
+        errs += 1
     if string is not None:
         out += "\x1f%s\x1f\x03%.2d" % (string, colors[(len(stack) - 1) % len(colors)])
+        errs += 1
     while stack:
         i = stack.pop()
         out += "\x1f\x02%s\x02\x1f\x03%.2d" % (unbraks[i], colors[(len(stack) - 1) % len(colors)])
         errs += 1
     if errs:
-        return "\x0307│\x0315 %s" % (out)
+        return "\x0307│\x03 %s" % (out)
 
 __callbacks__ = {"privmsg": [balance, balance_passive]}
