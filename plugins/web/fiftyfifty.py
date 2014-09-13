@@ -4,6 +4,7 @@ import re
 
 from bot.events import command
 from util.services import url
+from util.text import unescape
 
 def get_rand_link(sub):
     try:
@@ -16,21 +17,27 @@ def get_rand_link(sub):
     else:
         return random.choice(links)
 
-@command("5050 50/50 fiftyfifty", r"(?:([A-Za-z0-9][A-Za-z0-9_]{2,20}(?:,\s+[A-Za-z0-9][A-Za-z0-9_]{2,20})*)\s+([A-Za-z0-9][A-Za-z0-9_]{2,20}(?:,\s+[A-Za-z0-9][A-Za-z0-9_]{2,20})*))?")
-def fiftyfifty(server, message, good, bad):
-    if good and bad:
-        good, bad = random.choice(re.split(r",\s+", good)), random.choice(re.split(r",\s+", bad))
-        good, bad = get_rand_link(good), get_rand_link(bad)
-        if good is None or bad is None:
-            return "Couldn't find a link post"
-        title, link = "[50/50] %s | %s" % (good["title"], bad["title"]), random.choice([good, bad])
+subreddit_rx = r"[A-Za-z0-9][A-Za-z0-9_]{2,20}"
 
+defaults = [[["fiftyfifty"]], 
+            [["aww"], ["spacedicks"]]]
+
+@command("5050 50/50 fiftyfifty", r"(.*)")
+def fiftyfifty(server, message, sublist):
+    if not sublist:
+        sublist = random.choice(defaults)
     else:
-        link = get_rand_link("fiftyfifty")
-        if link is None:
-            return "Couldn't find a link post"
-        title = link["title"]
-    
-    return "│ %s · \x0312\x1f%s" % (title, url.shorten(link["url"]))
+        sublist = [[i for i in x.strip().split() if re.match(subreddit_rx, i)] for x in sublist.split("|")]
+    subs = [random.choice(i) for i in sublist]
+    links = [get_rand_link(i) for i in subs]
+    if None in links:
+        return "\x0304│ 50/50 |\x0304 Couldn't find a link post."
+    link = random.choice(links)["url"]
+    titles = " | ".join(i["title"] for i in links)
+    if len(sublist) > 1:
+        titles = "%s \x0308│\x03 %s" % ("/".join(["%d"%(100//len(sublist))]*len(sublist)), titles)
+    else:
+        titles = re.sub(r"^\[50/50\] ", "50/50 \x0308│\x03 ", titles)
+    return "\x0308│\x03 %s · \x0312\x1f%s" % (titles, url.shorten(link))
 
 __callbacks__ = {"privmsg": [fiftyfifty]}
