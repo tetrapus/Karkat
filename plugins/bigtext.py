@@ -76,8 +76,8 @@ upturned = {'⎞':'⎠','⎠':'⎞','⎝':'⎛','⎛':'⎝','/':'\\','\\':'/','9
 
 def subs(g):
     key = g.group(0)[1:]
-    if key.lower() in mapping:
-        return mapping[key.lower()]
+    if key in mapping:
+        return mapping[key]
     else:
         return "$" + key
 
