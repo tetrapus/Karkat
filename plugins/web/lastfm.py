@@ -345,6 +345,7 @@ class LastFM(Callback):
 
 
     def cached_compare(self, user1, user2):
+        self.lastcompare = time.time()
         first = self.network.get_user(user1)
         tasteometer, artists = first.compare_with_user(user2)
         users = [user1, user2]
@@ -356,7 +357,6 @@ class LastFM(Callback):
         with open(self.compare_file, "w") as compfile:
             json.dump(data, compfile)
 
-        self.lastcompare = time.time()
         return tasteometer, artists
 
     def clear_cache(self):
