@@ -347,7 +347,7 @@ class AI(Callback):
             f.write("\n".join(self.lines))
 
     @Callback.background
-    @msghandler()
+    @msghandler
     def capsmsg(self, server, msg):
         if not (msg.text[0].isalpha() or msg.text.startswith("\x01ACTION")):
             return
