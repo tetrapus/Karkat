@@ -347,9 +347,9 @@ class AI(Callback):
             f.write("\n".join(self.lines))
 
     @Callback.background
-    @msghandler
+    @msghandler()
     def capsmsg(self, server, msg):
-        if not (msg.text[0].isalpha() or msg.text[0] == "\x01"):
+        if not (msg.text[0].isalpha() or msg.text.startswith("\x01ACTION"):
             return
         triggers = [msg.text.isupper(), msg.text.lower().startswith("%s:" % server.nick.lower()) or "karkat" in msg.text.lower() or "pipey" in msg.text.lower(), not msg.context.startswith("#")]
         if any(triggers):
