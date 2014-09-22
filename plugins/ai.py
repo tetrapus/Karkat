@@ -349,7 +349,7 @@ class AI(Callback):
     @Callback.background
     @msghandler()
     def capsmsg(self, server, msg):
-        if not (msg.text[0].isalpha() or msg.text.startswith("\x01ACTION"):
+        if not (msg.text[0].isalpha() or msg.text.startswith("\x01ACTION")):
             return
         triggers = [msg.text.isupper(), msg.text.lower().startswith("%s:" % server.nick.lower()) or "karkat" in msg.text.lower() or "pipey" in msg.text.lower(), not msg.context.startswith("#")]
         if any(triggers):
@@ -363,7 +363,7 @@ class AI(Callback):
             self.lastlines.append((time.time(), msg.context, weights, inputs, {}))
         else:
             self.trigger_rate = max(0.4, self.trigger_rate - 0.02)
-        if triggers[0] and msg.text not in self.lines:
+        if triggers[0] and msg.text.upper() not in self.lines:
             self.addline(server.channels.get(server.lower(msg.context), [msg.context]), msg.text.upper())
 
     @command("purge", "(.*)", admin=True)
