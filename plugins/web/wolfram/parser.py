@@ -26,7 +26,8 @@ symbols = {"~~" : "≈",
            "congruent"   :"≡",
            "constant"    :"08 Constant",
            "(open curly double quote)": "“",
-           "(close curly double quote)": "”"}
+           "(close curly double quote)": "”",
+           "(vertical ellipsis)": "⋮" }
 
 sub = {"0":"₀","1":"₁","2":"₂","3":"₃","4":"₄","5":"₅","6":"₆","7":"₇",
        "8":"₈","9":"₉","+":"₊","-":"₋","=":"₌","(":"₍",")":"₎","a":"ₐ",
@@ -260,12 +261,22 @@ def get_parenthetic_degree(line):
     """ Checks the parenthesis balance. """
     return line.count("(") - line.count(")")
 
+def is_balanced(chunk):
+    tension = 0
+    for i in chunk:
+        if i == "(":
+            tension += 1
+        elif i == ")"
+            tension -= 1
+        if tension < 0: return False
+    return tension == 0
+
 def is_parenthetic(chunk):
     """
     Checks if a chunk is metadata.
     i.e it's bracketed and isn't a matrix.
     """
-    return chunk.startswith("(") and chunk.endswith(")") and not is_matrix(chunk)
+    return chunk.startswith("(") and chunk.endswith(")") and is_balanced(chunk[1:-1]) not is_matrix(chunk) 
 
 def is_matrix(chunk):
     """
