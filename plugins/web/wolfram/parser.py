@@ -266,7 +266,7 @@ def is_balanced(chunk):
     for i in chunk:
         if i == "(":
             tension += 1
-        elif i == ")"
+        elif i == ")":
             tension -= 1
         if tension < 0: return False
     return tension == 0
