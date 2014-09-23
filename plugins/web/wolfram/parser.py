@@ -276,7 +276,7 @@ def is_parenthetic(chunk):
     Checks if a chunk is metadata.
     i.e it's bracketed and isn't a matrix.
     """
-    return chunk.startswith("(") and chunk.endswith(")") and is_balanced(chunk[1:-1]) not is_matrix(chunk) 
+    return chunk.startswith("(") and chunk.endswith(")") and is_balanced(chunk[1:-1]) and not is_matrix(chunk) 
 
 def is_matrix(chunk):
     """
