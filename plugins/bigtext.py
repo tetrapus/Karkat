@@ -66,6 +66,7 @@ mapping = {"dong":"₫",
            "lenny": "( ͡° ͜ʖ ͡°)",
            "sface": "눈_눈",
            "fface": "(ง ° ل °)ง",
+           "hug": "c(˘⌣˘)ↄ", 
            "palette": ' '.join(['\x03,{0:02}  \x0f\x03{0:02} {0:02}\x0f'.format(i) for i in range(16)])}
 
 mapping.update(json.load(open("data/Unicode/unimath.js")))
