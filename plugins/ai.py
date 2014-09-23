@@ -185,22 +185,16 @@ def sigmoid(x):
     return 2 / (1 + math.e**(-x)) - 1
 
 
-class Mutators(object):
-    @staticmethod
-    def cobed(line, weights):
-        print("Cobedising. In: %s" % line)
-        line = requests.get("http://cobed.gefjun.rfw.name/", params={"q": ircstrip(line.lower())}, headers={"X-Cobed-Auth": "kobun:nowbunbun"}).text.upper()
-        print("           Out: %s" % line)
-        line = re.sub(r"^\S+:\s*", "", line)
-        weights["cobedise"] += 1
-        return line
-
 class AI(Callback):
     learningrate = 0.01
     laughter = {"lol": 1, "lmao": 1, "rofl": 1, "ha": 0.5, "lmfao": 1.5}
     positive = "amazing woah cool nice sweet awesome yay ++ good great true yep <3 :D impressive".split()
     negative = "lame boring what ? uh why wtf confuse terrible awful -- wrong nope sucks".split()
     coeff = "wow fucking ur really !".split()
+
+    LEARN = 1
+    RESPOND = 2
+    LOCK = 4
 
     def __init__(self, server):
         self.configdir = server.get_config_dir("AI")
@@ -223,7 +217,6 @@ class AI(Callback):
                 "tangent": 0.164493406685,                               # pi^2 / 6
                 "wadsworth": 0.20322401432901574,                            # sqrt(413)/100
                 "wadsworthconst": 0.3,
-                "cobedise": 0.0429,                                      # Kobun's filth ratio
                 "suggest": 0,                                            # not implemented and this is a terrible idea
                 "grammerify": 0,                                         # not implemented and also a terrible idea
                 "internet": 90.01,                                       # what does this even mean
@@ -234,6 +227,11 @@ class AI(Callback):
             self.istats = json.load(open(self.configdir + "/inputs.json"))
         except:
             self.istats = {}
+
+        try:
+            self.ignore = json.load(open(self.configdir + '/ignore.json'))
+        except:
+            self.ignore = {}
 
         self.last = ""
         self.lasttime = 0
@@ -326,12 +324,6 @@ class AI(Callback):
         rval = [sender if "".join(k for k in i if i.isalnum()).lower() in list(map(str.lower, self.server.nicks)) + ["binary", "disconcerted"] else (i.lower().replace("bot", random.choice(["human","person"])) if i.lower().find("bot") == 0 and (i.lower() == "bot" or i[3].lower() not in "ht") else i) for i in answer]
             
         rval = " ".join(rval).strip().upper().replace("BINARY", sender.upper())
-
-        if random.random() < self.settings["cobedise"]:
-            try:
-                rval = Mutators.cobed(rval, weights)
-            except:
-                print("Cobed failed.")
 
         # Fix mismatching \x01s
         if rval[0] == "\x01" and rval[-1] != "\x01": 
@@ -428,6 +420,7 @@ class AI(Callback):
             json.dump(self.settings, f)
         with open(self.configdir + "/inputs.json", "w") as f:
             json.dump(self.istats, f)
+
 
     def shh(self, server, line) -> "privmsg":
         if re.match("shh+", Message(line).text) and time.time() - self.lasttime < 30:
