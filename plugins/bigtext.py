@@ -3,7 +3,7 @@ import json
 
 from bot.events import command, Callback
 from util.irc import Message
-from util.text import ircstrip, minify
+from util.text import ircstrip, minify, generate_vulgarity
 
 def parse(btf):
     data = open(btf).read().split("\n")
@@ -19,7 +19,8 @@ def parse(btf):
 def big(f, ds):
     if "\n" in f:
         return "\n".join(big(i, ds) for i in f.split("\n"))
-    return "\n".join("".join(p) for p in zip(*[expand(i, ds) for i in re.split(r"(\x03(?:\d{0,2}(?:,\d{1,2})?)?|\x1f|\x0f|\x16|\x02|.)", f) if i]))
+    
+urn "\n".join("".join(p) for p in zip(*[expand(i, ds) for i in re.split(r"(\x03(?:\d{0,2}(?:,\d{1,2})?)?|\x1f|\x0f|\x16|\x02|.)", f) if i]))
 
 def expand(char, ds):
     backup = ds[None]
@@ -78,6 +79,10 @@ def subs(g):
     key = g.group(0)[1:]
     if key in mapping:
         return mapping[key]
+    elif key == "insult":
+        return generate_vulgarity().lower()
+    elif key == "INSULT":
+        return generate_vulgarity().upper()
     else:
         return "$" + key
 
