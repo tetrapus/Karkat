@@ -1,10 +1,14 @@
 import random
 import re
 import time
+import string
 
 from bot.events import command, Callback, msghandler
 from util.text import ircstrip
 from util.scheduler import schedule_after
+
+def strip(x):
+    return "".join(i for i in ircstrip(x) if i in string.printable)
 
 class Aggregator(Callback):
     def __init__(self, server):
@@ -18,7 +22,7 @@ class Aggregator(Callback):
         if "," not in query: return
         context = server.lower(msg.context)
         self.decision[context] = time.time()
-        self.results[context] = {ircstrip(i.strip()): 0 for i in re.split(r",|\bor\b", query)}
+        self.results[context] = {strip(i.strip()): 0 for i in re.split(r",|\bor\b", query)}
         choose = random.choice(list(self.results[context].keys()))
         self.results[context][choose] += 1
         schedule_after(4, self.report, args=(server, msg.context))
@@ -30,7 +34,7 @@ class Aggregator(Callback):
         context = server.lower(msg.context)
         if context in self.decision and time.time() - self.decision[context] < 5:
             for i in self.results[context]:
-                if re.match(r"(\S+: %s|\S+ chose '%s')$"%(re.escape(i), re.escape(i)), ircstrip(msg.text)):
+                if re.match(r"(\S+: %s|\S+ chose '%s')$"%(re.escape(i), re.escape(i)), strip(msg.text)):
                     self.results[context][i] += 1
 
     def report(self, server, channel):
