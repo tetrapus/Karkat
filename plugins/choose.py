@@ -19,7 +19,7 @@ class Aggregator(Callback):
         context = server.lower(msg.context)
         self.decision[context] = time.time()
         self.results[context] = {i.strip(): 0 for i in re.split(r",|\bor\b", query)}
-        choose = random.choice(self.results[context])
+        choose = random.choice(list(self.results[context].keys()))
         self.results[context][choose] += 1
         schedule(5, self.report, args=(server, msg.context))
         return "\x0309│\x03 " + choose
