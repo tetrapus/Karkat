@@ -1,7 +1,6 @@
 import random
 import re
 import time
-import operator
 
 from bot.events import command, Callback, msghandler
 from util.scheduler import schedule
@@ -34,8 +33,8 @@ class Aggregator(Callback):
                     self.results[context][i] += 1
 
     def report(self, server, channel):
-        data = sorted(self.results[server.lower(channel)].items(), key=operator.itemgetter(1))
-        choice = max(data.values())
+        data = sorted(self.results[server.lower(channel)].items(), key=lambda x: -x[1])
+        choice = data[0][1]
         output = " · ".join("%s%s (%d)\x0f" % ("\x02" if i[1] == choice else "", i[0], i[1]) for i in data)
         server.message("\x039│\x03 " + output, channel)
 
