@@ -30,7 +30,7 @@ class Aggregator(Callback):
         context = server.lower(msg.context)
         if context in self.decision and time.time() - self.decision[context] < 5:
             for i in self.results[context]:
-                if re.match(r"(\S+: %s|\S+ chose '%s')"%(re.escape(i), re.escape(i)), ircstrip(msg.text)):
+                if re.match(r"(\S+: %s|\S+ chose '%s')$"%(re.escape(i), re.escape(i)), ircstrip(msg.text)):
                     self.results[context][i] += 1
 
     def report(self, server, channel):
