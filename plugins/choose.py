@@ -21,7 +21,7 @@ class Aggregator(Callback):
         self.results[context] = {ircstrip(i.strip()): 0 for i in re.split(r",|\bor\b", query)}
         choose = random.choice(list(self.results[context].keys()))
         self.results[context][choose] += 1
-        schedule_after(5, self.report, args=(server, msg.context))
+        schedule_after(4, self.report, args=(server, msg.context))
         return "\x0309│\x03 " + choose
 
     @Callback.inline
@@ -35,6 +35,7 @@ class Aggregator(Callback):
 
     def report(self, server, channel):
         data = sorted(self.results[server.lower(channel)].items(), key=lambda x: -x[1])
+        if len(data) < 2: return
         choice = data[0][1]
         output = " · ".join("%s%s (%d)\x0f" % ("\x02" if i[1] == choice else "", i[0], i[1]) for i in data)
         server.message("\x039│\x03 " + output, channel)
