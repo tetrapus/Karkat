@@ -3,7 +3,7 @@ import re
 import time
 
 from bot.events import command, Callback, msghandler
-from util.scheduler import schedule
+from util.scheduler import schedule_after
 
 class Aggregator(Callback):
     def __init__(self, server):
@@ -20,7 +20,7 @@ class Aggregator(Callback):
         self.results[context] = {i.strip(): 0 for i in re.split(r",|\bor\b", query)}
         choose = random.choice(list(self.results[context].keys()))
         self.results[context][choose] += 1
-        schedule(5, self.report, args=(server, msg.context))
+        schedule_after(5, self.report, args=(server, msg.context))
         return "\x0309│\x03 " + choose
 
     @Callback.inline
