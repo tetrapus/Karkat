@@ -2,13 +2,14 @@ import random
 import re
 import time
 import string
+import unicodedata
 
 from bot.events import command, Callback, msghandler
 from util.text import ircstrip
 from util.scheduler import schedule_after
 
 def strip(x):
-    return "".join(i for i in ircstrip(x) if i in string.printable)
+    return "".join(i for i in ircstrip(x) if not unicodedata.category(i).startswith("C"))
 
 class Aggregator(Callback):
     def __init__(self, server):
