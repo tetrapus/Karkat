@@ -9,21 +9,22 @@ from util.text import ircstrip
 from util.scheduler import schedule_after
 
 def strip(x):
-    return "".join(i for i in ircstrip(x) if not unicodedata.category(i).startswith("C"))
+    return "".join(i.strip() for i in ircstrip(x) 
+                     if not unicodedata.category(i).startswith("C"))
 
 class Aggregator(Callback):
     def __init__(self, server):
         self.decision = {}
         self.results = {}
         super().__init__(server)
-
+ 
     @Callback.inline
     @command("choose", "(.+)", prefixes=("", "."))
     def choose(self, server, msg, query):
         if "," not in query: return
         context = server.lower(msg.context)
         self.decision[context] = time.time()
-        self.results[context] = {strip(i.strip()): 0 for i in re.split(r",|\bor\b", query)}
+        self.results[context] = {strip(i): 0 for i in re.split(r",|\bor\b", query)}
         schedule_after(1, self.report, args=(server, msg.context))
 
     @Callback.inline
