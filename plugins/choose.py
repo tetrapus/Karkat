@@ -44,7 +44,7 @@ class Aggregator(Callback):
         highest = max(results.values())
         choice = random.choice([i for i in results if results[i] == highest])
         results[choice] += 1
-        server.message("\x0309│\x03 " + choose, channel)
+        server.message("\x0309│\x03 " + choice, channel)
         data = sorted(results.items(), key=lambda x: -x[1])
         if len(data) < 2: 
             return
