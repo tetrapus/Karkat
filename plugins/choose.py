@@ -24,10 +24,7 @@ class Aggregator(Callback):
         context = server.lower(msg.context)
         self.decision[context] = time.time()
         self.results[context] = {strip(i.strip()): 0 for i in re.split(r",|\bor\b", query)}
-        choose = random.choice(list(self.results[context].keys()))
-        self.results[context][choose] += 1
         schedule_after(1, self.report, args=(server, msg.context))
-        return "\x0309│\x03 " + choose
 
     @Callback.inline
     @msghandler
@@ -43,11 +40,15 @@ class Aggregator(Callback):
         if time.time() - self.decision[server.lower(channel)] < 2:
             schedule_after(1, self.report, args=(server, channel))
             return
-        data = sorted(self.results[server.lower(channel)].items(), key=lambda x: -x[1])
+        results = self.results[server.lower(channel)]
+        highest = max(results.values())
+        choice = random.choice([i for i in results if results[i] == highest])
+        results[choice] += 1
+        server.message("\x0309│\x03 " + choose, channel)
+        data = sorted(results.items(), key=lambda x: -x[1])
         if len(data) < 2: 
             return
-        choice = data[0][1]
-        output = " · ".join("%s%s (%d)\x0f" % ("\x02" if i[1] == choice else "", i[0], i[1]) for i in data)
+        output = " · ".join("%s%s (%d)\x0f" % ("\x02" if i[0] == choice else "", i[0], i[1]) for i in data)
         server.message("\x039│\x03 " + output, channel)
 
 __initialise__ = Aggregator
