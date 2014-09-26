@@ -9,7 +9,7 @@ from util.text import ircstrip
 from util.scheduler import schedule_after
 
 def strip(x):
-    return "".join(i.strip() for i in ircstrip(x) 
+    return "".join(i for i in ircstrip(x.strip()) 
                      if not unicodedata.category(i).startswith("C"))
 
 class Aggregator(Callback):
