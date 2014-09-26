@@ -165,7 +165,7 @@ class Queue(Callback):
         yield from self.displayAll(q, 25 if msg.prefix == '!' else 5)
 
 
-    @command("choose", r"^([^\d,]*)$")
+    @command("choose", r"^([^,]*[^,\d\s][^,]*|)$")
     def choose(self, server, msg, query):
         nick = server.lower(msg.address.nick)
         queue = self.queues.setdefault(nick, [])
