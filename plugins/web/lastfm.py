@@ -456,7 +456,7 @@ class LastFM(Callback):
         if lowername in self.users:
             user = self.users[lowername]
 
-        defaults = {"user": user, "type": "7d", "size": "3x3"}
+        defaults = {"user": user, "type": "7day", "size": "3x3"}
         for i in (flags or []):
             if i in "cap":
                 defaults[{"c":"caption","a":"artistonly","p":"playcount"}[i]] = "true"
