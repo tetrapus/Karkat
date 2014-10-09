@@ -418,14 +418,12 @@ class Queue(Callback):
         nick = server.lower(msg.address.nick)
         queue = self.queues.setdefault(nick, [])
         if not queue:
-            yield "06│ Your queue is empty. "
-            return
+            return "06│ Your queue is empty. "
 
         q = self.find(queue, query)
 
         if not q:
-            yield "06│ No matching items."
-            return
+            return "06│ No matching items."
 
         data = "\n".join(i[1] for i in q)
         postres = requests.post("https://api.github.com/gists", data=json.dumps({"files": {"%s-todo.txt" % (msg.address.nick): {"content": data}}}))
