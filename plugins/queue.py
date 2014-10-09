@@ -19,6 +19,7 @@ def numeric_priority(item):
 def alpha_priority(letters):
     return sum((ord(a) - ord("A") + 1) * 26 ** i for i, a in enumerate(letters[::-1]))
 
+
 def priority_sorted(queue):
     """ 
     An item with a priority has the form ^\(([A-Z]+|\d+(\.\d+))\)\S+(.+)$
@@ -55,7 +56,7 @@ def priority_sorted(queue):
 
     queue = [(alphabetic_priorities[i] if i in alphabetic else numeric_priority(i), i) for i in queue]
 
-    return sorted(queue, key=operator.itemgetter(0))
+    return sorted(queue, key=lambda x: -x[0])
 
 def priority_sort(queue):
     # Pull alphabetic priorities out of the list
@@ -77,7 +78,7 @@ def priority_sort(queue):
         # Align so that alpha priority 1 == largest
         alpha_priorities = {i: align_to-p + 1 for p, i in alphabetic}
 
-    queue.sort(key=lambda i: alphabetic_priorities[i] if i in alphabetic else numeric_priority(i))
+    queue.sort(key=lambda i: -alphabetic_priorities[i] if i in alphabetic else -numeric_priority(i))
 
 
 class Queue(Callback):
@@ -426,7 +427,7 @@ class Queue(Callback):
             yield "06│ No matching items."
             return
 
-        data = "\n".join(q)
+        data = "\n".join(i[1] for i in q)
         postres = requests.post("https://api.github.com/gists", data=json.dumps({"files": {"%s-todo.txt" % (msg.address.nick): {"content": data}}}))
         response = postres.json()
         return "06│ Exported to %s." % response["html_url"]
@@ -436,7 +437,7 @@ class Queue(Callback):
         nick = server.lower(msg.address.nick)
         queue = self.queues.setdefault(nick, [])
         qlen = len(queue)
-        data = requests.get(url).text.split("\n")
+        data = requests.get(url).text.strip().split("\n")
         if merge:
             data = [i for i in data if i not in queue]
         if sum([len(i) for i in data]) > 262144:
