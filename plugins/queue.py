@@ -54,7 +54,7 @@ def priority_sorted(queue):
         # Align so that alpha priority 1 == largest
         alpha_priorities = {i: align_to-p + 1 for p, i in alphabetic}
 
-    queue = [(alpha_priorities[i] if i in alphabetic else numeric_priority(i), i) for i in queue]
+    queue = [(alpha_priorities[i] if i in alpha_priorities else numeric_priority(i), i) for i in queue]
 
     return sorted(queue, key=lambda x: -x[0])
 
@@ -78,7 +78,7 @@ def priority_sort(queue):
         # Align so that alpha priority 1 == largest
         alpha_priorities = {i: align_to-p + 1 for p, i in alphabetic}
 
-    queue.sort(key=lambda i: -alpha_priorities[i] if i in alphabetic else -numeric_priority(i))
+    queue.sort(key=lambda i: -alpha_priorities[i] if i in alpha_priorities else -numeric_priority(i))
 
 
 class Queue(Callback):
