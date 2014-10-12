@@ -3,6 +3,7 @@ import json
 import itertools
 
 from bot.events import command, Callback
+from util.text import xchat_colour
 
 
 braille = "⠀⠁⠈⠉⠂⠃⠊⠋⠐⠑⠘⠙⠒⠓⠚⠛⠄⠅⠌⠍⠆⠇⠎⠏⠔⠕⠜⠝⠖⠗⠞⠟⠠⠡⠨⠩⠢⠣⠪⠫⠰⠱⠸⠹⠲⠳⠺⠻⠤⠥⠬⠭⠦⠧⠮⠯⠴⠵⠼⠽⠶⠷⠾⠿⡀⡁⡈⡉⡂⡃⡊⡋⡐⡑⡘⡙⡒⡓⡚⡛⡄⡅⡌⡍⡆⡇⡎⡏⡔⡕⡜⡝⡖⡗⡞⡟⡠⡡⡨⡩⡢⡣⡪⡫⡰⡱⡸⡹⡲⡳⡺⡻⡤⡥⡬⡭⡦⡧⡮⡯⡴⡵⡼⡽⡶⡷⡾⡿⢀⢁⢈⢉⢂⢃⢊⢋⢐⢑⢘⢙⢒⢓⢚⢛⢄⢅⢌⢍⢆⢇⢎⢏⢔⢕⢜⢝⢖⢗⢞⢟⢠⢡⢨⢩⢢⢣⢪⢫⢰⢱⢸⢹⢲⢳⢺⢻⢤⢥⢬⢭⢦⢧⢮⢯⢴⢵⢼⢽⢶⢷⢾⢿⣀⣁⣈⣉⣂⣃⣊⣋⣐⣑⣘⣙⣒⣓⣚⣛⣄⣅⣌⣍⣆⣇⣎⣏⣔⣕⣜⣝⣖⣗⣞⣟⣠⣡⣨⣩⣢⣣⣪⣫⣰⣱⣸⣹⣲⣳⣺⣻⣤⣥⣬⣭⣦⣧⣮⣯⣴⣵⣼⣽⣶⣷⣾⣿"
@@ -74,8 +75,7 @@ class Game(object):
         return random.choice(self.PIECES)
 
     def add_player(self, key, name):
-        color = min(self.COLORS, key=lambda x: len([i for i in self.players if self.players[i]["color"] == x]))
-        self.players[key] = {"name":name, "score": 0, "pieces": [self.rand_piece(), self.rand_piece()], "color": color}
+        self.players[key] = {"name":name, "score": 0, "pieces": [self.rand_piece(), self.rand_piece()], "color": xchat_colour(name)}
 
     
 
@@ -155,8 +155,8 @@ class Tetris(Callback):
         player = game.players[self.server.lower(message.address.nick)]
         return self.format_user(player)
 
-    @command("rotate", "(\d*)")
-    def rotate(self, server, message, num):
+    @command("turn", "(\d*)")
+    def turn(self, server, message, num):
         game = self.ensure_created(message.context, message.address.nick)
         player = game.players[self.server.lower(message.address.nick)]
         if num:
@@ -182,8 +182,10 @@ class Tetris(Callback):
 
         # Bounds check for index
         if not (0 <= xoff <= (len(game.board[0]) - (len(piece[0]) if piece is not None else 1))):
-            yield "\x034⡇\x03 Invalid index"
-            return
+            return "\x034⡇\x03 Invalid index"
+
+        player['pieces'] = [player['pieces'][1], game.rand_piece()]
+
         # Calculate where the blocks fall
         while not self.overlaps(game.board, piece or [[1]], (xoff, yoff)):
             yoff += 1
@@ -207,7 +209,6 @@ class Tetris(Callback):
                 for x, v in enumerate(row):
                     if v:
                         game.board[y+yoff][x+xoff] = self.server.lower(message.address.nick)
-        player['pieces'] = [player['pieces'][1], game.rand_piece()]
 
         # Eliminate pieces
         full = []
