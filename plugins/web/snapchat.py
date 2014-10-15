@@ -6,6 +6,7 @@ import os
 import re
 import hashlib
 import subprocess
+import zipfile
 
 from io import BytesIO
 
@@ -346,6 +347,8 @@ class Snap(Callback):
         user = self.settings[server.lower(message.context)]["history"][-1]["sender"]
         yield from self.snap.funct(self, server, message, flags, user, background, text)
 
+    #@command("rotate", r"(\.jpg?)")
+
     @command("snap", r"(?:(-[maciulrdsbfpw1-9]+)\s+)?(\S+(?:,\s*\S+)*)(?:\s+(https?://\S+|:.+?:))?(?:\s+(.+))?")
     def snap(self, server, message, flags, user, background, text):
         acc = self.accounts[server.lower(message.context)]
@@ -532,6 +535,24 @@ class Snap(Callback):
     def unlink(self, server, msg, chan):
         self.settings[server.lower(chan)].setdefault("linked", []).remove(msg.context)
         json.dump(self.settings, open(self.settingsf, "w"))
+
+    @command("snapexport")
+    def export(self, server, message):
+        acc = self.accounts[server.lower(message.context)]
+        if server.lower(message.address.nick) not in self.users:
+            return prefix + "\x0304You must verify your snapchat username with .setsnap <username> to use this command."
+        else:
+            username = self.users[server.lower(message.address.nick)]
+        filename = save("", "zip")
+        with zipfile.ZipFile(snapfolder + "/" + filename + ".zip", "w") as archive:
+            for channel in self.settings:
+                chansnap = self.settings[channel]["username"]
+                snaps = [i for i in self.settings[channel]["history"] if i["sender"].lower() == username.lower()]
+                snaps = [[i, self.settings[channel]["snaps"].get(i["id"], None)] for i in snaps]
+                for snap, url in snaps:
+                    archive.writestr("%s/%s-%s" % (chansnap, snap["id"], url.rsplit("/")[-1]), requests.get(url).bytes)
+                archive.writestr(chansnap + "/meta.js", json.dumps(snaps))
+        return prefix + snapfolder + "/" + filename + ".zip"
 
     @command("snaps", r"^(?:(last|first)\s+(?:(?:(\d+)(?:-|\s+to\s+))?(\d*))\s*)?((?:gifs|videos|snaps|pics|clips)(?:(?:\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*)(?:gifs|videos|snaps|pics|clips))*)?(?:\s*(?:from|by)\s+(\S+(?:(?:\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*)\S+)*))?(?:\s*to\s+(\S+))?$", templates={Callback.USAGE: prefix + "\x0304Usage: .snaps [first/last index] [type] [by user] [to channel]"})
     def search(self, server, message, anchor, frm, to, typefilter, users, context):
