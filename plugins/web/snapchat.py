@@ -7,6 +7,7 @@ import re
 import hashlib
 import subprocess
 import zipfile
+import uuid
 
 from io import BytesIO
 
@@ -543,7 +544,7 @@ class Snap(Callback):
             return prefix + "\x0304You must verify your snapchat username with .setsnap <username> to use this command."
         else:
             username = self.users[server.lower(message.address.nick)]
-        filename = save(b"", "zip")
+        filename = uuid.uuid4().hex
         with zipfile.ZipFile(snapfolder + "/" + filename + ".zip", "w") as archive:
             for channel in self.settings:
                 chansnap = self.settings[channel]["username"]
