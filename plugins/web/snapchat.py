@@ -550,7 +550,8 @@ class Snap(Callback):
                 snaps = [i for i in self.settings[channel]["history"] if i["sender"].lower() == username.lower()]
                 snaps = [[i, self.settings[channel]["snaps"].get(i["id"], None)] for i in snaps]
                 for snap, url in snaps:
-                    archive.writestr("%s/%s-%s" % (chansnap, snap["id"], url.rsplit("/")[-1]), requests.get(url).bytes)
+                    print("Downloading %s" % url)
+                    archive.writestr("%s/%s-%s" % (chansnap, snap["id"], url.rsplit("/")[-1]), requests.get(url).content)
                 archive.writestr(chansnap + "/meta.js", json.dumps(snaps))
         return prefix + snapfolder + "/" + filename + ".zip"
 
