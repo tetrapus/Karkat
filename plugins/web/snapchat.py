@@ -553,7 +553,7 @@ class Snap(Callback):
                     print("Downloading %s" % url)
                     archive.writestr("%s/%s-%s" % (chansnap, snap["id"], url.rsplit("/")[-1]), requests.get(url).content)
                 archive.writestr(chansnap + "/meta.js", json.dumps(snaps))
-        return prefix + snapfolder + "/" + filename + ".zip"
+        return prefix + "Archive saved to \x0312\x1f%s.zip\x1f\x0f" % (public_url + filename)
 
     @command("snaps", r"^(?:(last|first)\s+(?:(?:(\d+)(?:-|\s+to\s+))?(\d*))\s*)?((?:gifs|videos|snaps|pics|clips)(?:(?:\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*)(?:gifs|videos|snaps|pics|clips))*)?(?:\s*(?:from|by)\s+(\S+(?:(?:\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*)\S+)*))?(?:\s*to\s+(\S+))?$", templates={Callback.USAGE: prefix + "\x0304Usage: .snaps [first/last index] [type] [by user] [to channel]"})
     def search(self, server, message, anchor, frm, to, typefilter, users, context):
