@@ -552,7 +552,10 @@ class Snap(Callback):
                 snaps = [[i, self.settings[channel]["snaps"].get(i["id"], None)] for i in snaps]
                 for snap, url in snaps:
                     print("Downloading %s" % url)
-                    archive.writestr("%s/%s-%s" % (chansnap, snap["id"], url.rsplit("/")[-1]), requests.get(url).content)
+                    try:
+                        archive.writestr("%s/%s-%s" % (chansnap, snap["id"], url.rsplit("/")[-1]), requests.get(url).content)
+                    except:
+                        print("Couldn't download")
                 archive.writestr(chansnap + "/meta.js", json.dumps(snaps))
         return prefix + "Archive saved to \x0312\x1f%s.zip\x1f\x0f" % (public_url + filename)
 
