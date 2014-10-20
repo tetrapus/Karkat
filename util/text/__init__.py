@@ -20,9 +20,10 @@ class ControlCode:
     RESET = NORMAL = "\x0f"
     REVERSE = "\x16"
 
+
 def lineify(data, max_size=400):
     """ Split text up into IRC-safe lines. """
-
+    # TODO
     lines = [item.rstrip()[:max_size] for item in data.split('\n')]
     return lines
 
@@ -339,7 +340,8 @@ class Buffer(object):
         if b"\n" not in self.buffer:
             raise StopIteration
         else:
-            data, self.buffer = tuple(self.buffer.split(b"\r\n", 1))
+            data, self.buffer = tuple(self.buffer.split(b"\n", 1))
+            data = data.rstrip("\r")
             return data.decode("utf-8", "replace")
 
     def __next__(self):
