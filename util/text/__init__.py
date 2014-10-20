@@ -341,7 +341,7 @@ class Buffer(object):
             raise StopIteration
         else:
             data, self.buffer = tuple(self.buffer.split(b"\n", 1))
-            data = data.rstrip("\r")
+            data = data.rstrip(b"\r")
             return data.decode("utf-8", "replace")
 
     def __next__(self):
