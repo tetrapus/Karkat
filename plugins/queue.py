@@ -435,16 +435,15 @@ class Queue(Callback):
             yield "06│ No matching items."
             return
 
-        newq = []
+        items = []
 
         for i, item in q:
-            item = priority_break(item)[1]
-            newq.append("(%s) %s" % (rank, item))
-            queue[i-1] = "(%s) %s" % (rank, item)
+            item = "(%s) %s" % (rank, priority_break(item)[1])
+            items.append(id(item))
+            queue[i-1] = item
 
         priority_sort(queue)
-        q = sorted([(queue.index(i) + 1, i) for i in newq])
-        yield from self.displayAll([(i[0], queue[i[0]-1]) for i in q], 25 if msg.prefix == '!' else 5)
+        yield from self.displayAll(sorted([(i+1, item) for i, item in queue if id(item) in items]), 25 if msg.prefix == '!' else 5)
         self.save()
 
     # TODO: Alter hidden tags
