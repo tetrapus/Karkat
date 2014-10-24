@@ -422,6 +422,31 @@ class Queue(Callback):
         # TODO: Priority sort (only technically necessary)
         self.save()
 
+    @command("rank prioritise prioritize priority", r"(-?\d+|[A-Z])\s+(.+)")
+    def prioritise(self, server, msg, rank, query):
+        nick = server.lower(msg.address.nick)
+        queue = self.queues.setdefault(nick, [])
+        if not queue:
+            yield "06│ Your queue is empty. "
+            return
+        q = self.find(queue, query)
+
+        if not q:
+            yield "06│ No matching items."
+            return
+
+        newq = []
+
+        for i, item in q:
+            item = priority_break(x)[1]
+            newq.append("(%s) %s" % (rank, item))
+            queue[i-1] = "(%s) %s" % (rank, item)
+
+        priority_sort(queue)
+        q = sorted([(queue.index(i) + 1, i) for i in newq])
+        yield from self.displayAll([(i[0], queue[i[0]-1]) for i in q], 25 if msg.prefix == '!' else 5)
+        self.save()
+
     # TODO: Alter hidden tags
     @command("hide", r"(.+)")
     def hide(self, server, msg, query):
