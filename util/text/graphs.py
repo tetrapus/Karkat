@@ -49,7 +49,7 @@ def graph(values, height, symbols=GRAPH_BLOCK):
     output = [minify(i) for i in output[::-1]]
     return "\n".join(output)
 
-def graph_dos(values, height, top=False, right=True, bottom=True, left=False):
+def graph_dos(values, height, top=False, right=False, bottom=True, left=True):
     t, b, l, r = [], [], "", ""
     if bottom:
         delta = 2*height + 1
