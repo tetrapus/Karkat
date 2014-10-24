@@ -287,7 +287,8 @@ class Queue(Callback):
         for i, item in q:
             queue.insert(0, item)
         priority_sort(queue)
-        q = sorted([(queue.index(i[1]) + 1, i[1]) for i in q])
+        items = [id(item) for i, item in q]
+        q = sorted([(i+1, item) for i, item in enumerate(queue) if id(item) in items])
         yield from self.displayAll(q, 25 if msg.prefix == '!' else 5)
 
         self.save()
@@ -312,8 +313,8 @@ class Queue(Callback):
             queue.append(item)
 
         priority_sort(queue)
-        updated = sorted([(queue.index(i[1]) + 1, i[1]) for i in q])
-
+        items = [id(item) for i, item in q]
+        updated = sorted([(i+1, item) for i, item in enumerate(queue) if id(item) in items])
         yield from self.displayAll(updated, 25 if msg.prefix == '!' else 5)
 
         self.save()
