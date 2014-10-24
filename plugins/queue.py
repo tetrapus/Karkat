@@ -438,7 +438,7 @@ class Queue(Callback):
         newq = []
 
         for i, item in q:
-            item = priority_break(x)[1]
+            item = priority_break(item)[1]
             newq.append("(%s) %s" % (rank, item))
             queue[i-1] = "(%s) %s" % (rank, item)
 
