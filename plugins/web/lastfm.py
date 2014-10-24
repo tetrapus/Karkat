@@ -233,7 +233,7 @@ class LastFM(Callback):
             data = ["04│" + i for i in graph(data, height).split("\n")]
         else:
             data = graph(data, height).split("\n")
-            data = ["%2d %s" % (round(largest/9*(8-2*i)), s) if not i % 2 else "   " + s for i, s in enumerate(data)]
+            data = ["%s %2d" % (s, round(largest/9*(8-2*i))) if not i % 2 else "   " + s for i, s in enumerate(data)]
         if len(usedtracks) > 1:
             average = len(usedtracks) / (int(usedtracks[0].timestamp) - int(usedtracks[-1].timestamp))
         else:
