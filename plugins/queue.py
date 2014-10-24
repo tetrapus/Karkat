@@ -80,6 +80,26 @@ def priority_sort(queue):
 
     queue.sort(key=lambda i: -alpha_priorities[i] if i in alpha_priorities else -numeric_priority(i))
 
+def num_to_braille(points):
+    full, overflow = divmod(points, 8)
+    return "⣿" * full + ["", '⠁', '⠃', '⠇', '⡇', '⣇', '⣧', '⣷'][overflow]
+
+def priority_vis(x):
+    alpha = re.match(r"^\(([A-Z]+)\)\s+(.*)$", x)
+    if alpha:
+        return ("┆ %s │" % alpha.group(1), alpha.group(2))
+    num = re.match(r"^\((-?\d+(?:\.\d+)?)\)\s+(.*)$", x)
+    if num:
+        n = float(num.group(1))
+        if n > 0:
+            return ("┆ %s │" % num.group(1), num.group(2))
+        elif n < 0:
+            return ("\x0315┆ %s │" % num.group(1), num.group(2))
+        else:
+            return  "│", num.group(2)
+    else:
+        return "│", x
+
 
 class Queue(Callback):
     QFILE = "queues.json"
@@ -127,7 +147,8 @@ class Queue(Callback):
 
     def display(self, num, line, strike=False):
         points = re.split(r"\s*(\[(?:\d+/)?\d+\])\s*", line, maxsplit=1)
-        vis = "│"
+        vis, line = priority_vis(line)
+        
         if len(points) == 3:
             line = "%s %s" % (points[0], points[-1])
             points = [float(x) for x in points[1][1:-1].split("/")]
@@ -137,7 +158,7 @@ class Queue(Callback):
                 done = points[0]
             else:
                 done = 0
-            vis = '┝' + "━" * math.ceil(total - done) + '15' + "─" * math.ceil(done) + " " * (align - math.ceil(total))
+            vis += "━" * math.ceil(total - done) + '15' + "─" * math.ceil(done) + " " * (align - math.ceil(total))
         line = re.sub(r"(^| )(#|\+|@)(\S+)", lambda x: r"%s%.2d%s" % (x.group(1), {"#":15,"+":15,"@":6}[x.group(2)], smallcaps(x.group(3))), line)
         if strike: line = strikethrough(line)
         return "06│ %s %s %s" % (num, vis, line)
