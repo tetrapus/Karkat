@@ -84,19 +84,17 @@ def num_to_braille(points):
     full, overflow = divmod(points, 8)
     return "⣿" * full + ["", '⠁', '⠃', '⠇', '⡇', '⣇', '⣧', '⣷'][overflow]
 
+def priority_break(x):
+    match = re.match(r"^\(([A-Z]+|-?\d+(?:\.\d+)?)\)\s+(.*)$", x)
+    if match:
+        return match.group(1), match.group(2)
+    else:
+        return "0", x
+
 def priority_vis(x):
-    alpha = re.match(r"^\(([A-Z]+)\)\s+(.*)$", x)
-    if alpha:
-        return ("┆ %s │" % alpha.group(1), alpha.group(2))
-    num = re.match(r"^\((-?\d+(?:\.\d+)?)\)\s+(.*)$", x)
-    if num:
-        n = float(num.group(1))
-        if n > 0:
-            return ("┆ %s │" % num.group(1), num.group(2))
-        elif n < 0:
-            return ("\x0315┆ %s │" % num.group(1), num.group(2))
-        else:
-            return  "│", num.group(2)
+    priority, line = priority_break(x)
+    if priority != "0":
+        return ("┆ %s │" % priority, line)
     else:
         return "│", x
 
