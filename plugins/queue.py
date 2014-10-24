@@ -84,19 +84,17 @@ def num_to_braille(points):
     full, overflow = divmod(points, 8)
     return "⣿" * full + ["", '⠁', '⠃', '⠇', '⡇', '⣇', '⣧', '⣷'][overflow]
 
+def priority_break(x):
+    match = re.match(r"^\(([A-Z]+|-?\d+(?:\.\d+)?)\)\s+(.*)$", x)
+    if match:
+        return match.group(1), match.group(2)
+    else:
+        return "0", x
+
 def priority_vis(x):
-    alpha = re.match(r"^\(([A-Z]+)\)\s+(.*)$", x)
-    if alpha:
-        return ("┆ %s │" % alpha.group(1), alpha.group(2))
-    num = re.match(r"^\((-?\d+(?:\.\d+)?)\)\s+(.*)$", x)
-    if num:
-        n = float(num.group(1))
-        if n > 0:
-            return ("┆ %s │" % num.group(1), num.group(2))
-        elif n < 0:
-            return ("\x0315┆ %s │" % num.group(1), num.group(2))
-        else:
-            return  "│", num.group(2)
+    priority, line = priority_break(x)
+    if priority != "0":
+        return ("┆ %s │" % priority, line)
     else:
         return "│", x
 
@@ -422,6 +420,31 @@ class Queue(Callback):
 
         yield from self.displayAll([(i[0], queue[i[0]-1]) for i in q], 25 if msg.prefix == '!' else 5)
         # TODO: Priority sort (only technically necessary)
+        self.save()
+
+    @command("rank prioritise prioritize priority", r"(-?\d+|[A-Z])\s+(.+)")
+    def prioritise(self, server, msg, rank, query):
+        nick = server.lower(msg.address.nick)
+        queue = self.queues.setdefault(nick, [])
+        if not queue:
+            yield "06│ Your queue is empty. "
+            return
+        q = self.find(queue, query)
+
+        if not q:
+            yield "06│ No matching items."
+            return
+
+        newq = []
+
+        for i, item in q:
+            item = priority_break(x)[1]
+            newq.append("(%s) %s" % (rank, item))
+            queue[i-1] = "(%s) %s" % (rank, item)
+
+        priority_sort(queue)
+        q = sorted([(queue.index(i) + 1, i) for i in newq])
+        yield from self.displayAll([(i[0], queue[i[0]-1]) for i in q], 25 if msg.prefix == '!' else 5)
         self.save()
 
     # TODO: Alter hidden tags
