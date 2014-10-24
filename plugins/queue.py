@@ -443,7 +443,7 @@ class Queue(Callback):
             queue[i-1] = item
 
         priority_sort(queue)
-        yield from self.displayAll(sorted([(i+1, item) for i, item in queue.enumerate() if id(item) in items]), 25 if msg.prefix == '!' else 5)
+        yield from self.displayAll(sorted([(i+1, item) for i, item in enumerate(queue) if id(item) in items]), 25 if msg.prefix == '!' else 5)
         self.save()
 
     # TODO: Alter hidden tags
