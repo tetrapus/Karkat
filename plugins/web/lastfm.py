@@ -449,7 +449,7 @@ class LastFM(Callback):
 
     @command("collage", "(-[cap]+\s+)?((?:(?:3x3|4x4|5x5|2x8|7d|1m|3m|6m|12m|overall)\s*)+)?(\S+)?")
     def collage(self, server, message, flags, data, user):
-        tapmusic = "http://tapmusic.net/lastfm/collage.php?"
+        tapmusic = "http://nsfcd.com/lastfm/collage.php?"
         if not user:
             user = message.address.nick
         lowername = server.lower(user)
