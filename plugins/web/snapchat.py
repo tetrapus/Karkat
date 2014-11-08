@@ -355,7 +355,8 @@ class Snap(Callback):
 
     @command("rotate", r"(\.jpg?)?\s*(left|right)?")
     def rotate(self, server, message, img, rotation):
-        acc = self.accounts[server.lower(message.context)]
+        channel = server.lower(message.context)
+        acc = self.accounts[channel]
         if server.lower(message.address.nick) not in self.users:
             yield prefix + "\x0304You must verify your snapchat username with .setsnap <username> to use this command."
             return
@@ -363,10 +364,10 @@ class Snap(Callback):
             username = self.users[server.lower(message.address.nick)]
         if img:
             # Check if is owned and accessible
-            if not any(i["sender"].lower() == username.lower() and i["url"] == public_url + img for i in self.settings[server.lower(message.context)]["history"]):
+            if not any(i["sender"].lower() == username.lower() and self.settings[channel]["snaps"].get(i["id"], None) == public_url + img for i in self.settings[channel]["history"]):
                 return prefix + "\x0304No snap was found at that URL, or you do not have access to it."
         else:
-            candidates = [i["url"][len(public_url):] for i in self.settings[server.lower(message.context)]["history"] if i["sender"].lower() == username.lower() and i["url"].startswith(public_url) and i["url"].endswith(".jpg")]
+            candidates = [self.settings[channel]["snaps"][i["id"]][len(public_url):] for i in self.settings[channel]["history"] if i["sender"].lower() == username.lower() and self.settings[channel]["snaps"].get(i["id"], "").startswith(public_url) and self.settings[channel]["snaps"].get(i["id"], "").endswith(".jpg")]
             if not candidates:
                 return prefix + "\x0304No accessible snaps were found from that user."
             img = candidates[-1]
