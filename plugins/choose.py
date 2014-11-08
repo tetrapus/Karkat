@@ -47,7 +47,7 @@ class Aggregator(Callback):
         results[choice] += 1
         server.message("\x0309│\x03 " + choice, channel)
         data = sorted(results.items(), key=lambda x: -x[1])
-        if len(data) < 2: 
+        if len(data) < 2 or sum(results[i] for i in results) == 1: 
             return
         output = " · ".join("%s%s (%d)\x0f" % ("\x02" if i[0] == choice else "", i[0], i[1]) for i in data)
         server.message("\x039│\x03 " + output, channel)
