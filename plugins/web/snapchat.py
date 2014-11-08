@@ -208,6 +208,11 @@ def gifify(fname):
     subprocess.call("rm /tmp/snapchat-%(pid)s-%(id)s.*.png" % var, shell=True)
     return fname
 
+def rotate(img_path, degs):
+    img = Image.open(img_path)
+    img = img.rotate(degs)
+    img.save(img_path, "jpeg")
+
 class Snap(Callback):
 
     SETTINGS_FILE = "snapchat.json"
@@ -348,7 +353,27 @@ class Snap(Callback):
         user = self.settings[server.lower(message.context)]["history"][-1]["sender"]
         yield from self.snap.funct(self, server, message, flags, user, background, text)
 
-    #@command("rotate", r"(\.jpg?)")
+    @command("rotate", r"(\.jpg?)?\s*(left|right)?")
+    def rotate(self, server, message, img, rotation):
+        acc = self.accounts[server.lower(message.context)]
+        if server.lower(message.address.nick) not in self.users:
+            yield prefix + "\x0304You must verify your snapchat username with .setsnap <username> to use this command."
+            return
+        else:
+            username = self.users[server.lower(message.address.nick)]
+        if img:
+            # Check if is owned and accessible
+            if not any(i["sender"].lower() == username.lower() and i["url"] == public_url + img for i in self.settings[server.lower(message.context)]["history"]):
+                return prefix + "\x0304No snap was found at that URL, or you do not have access to it."
+        else:
+            candidates = [i["url"][len(public_url):] for i in self.settings[server.lower(message.context)]["history"] if i["sender"].lower() == username.lower() and i["url"].startswith(public_url) and i["url"].endswith(".jpg")]
+            if not candidates:
+                return prefix + "\x0304No accessible snaps were found from that user."
+            img = candidates[-1]
+        if not rotation: rotation = "right"
+        rotate(snapfolder + "/" + img, 90 if rotation == "right" else -90)
+        return prefix + "Rotated \x0312\x1f%s\x1f\x0f" % (public_url + img)
+
 
     @command("snap", r"(?:(-[maciulrdsbfpw1-9]+)\s+)?(\S+(?:,\s*\S+)*)(?:\s+(https?://\S+|:.+?:))?(?:\s+(.+))?")
     def snap(self, server, message, flags, user, background, text):
