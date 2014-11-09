@@ -244,7 +244,7 @@ class Snap(Callback):
         for i in self.settings:
             self.accounts[i].login(self.settings[i]["username"], self.settings[i]["password"])
         self.cache = {}
-        self.checker = scheduler.schedule_after(45, self.checksnaps, args=(server,), stop_after=None)
+        self.checker = scheduler.schedule_after(30, self.checksnaps, args=(server,), stop_after=None)
         self.server = server
 
         super().__init__(server)
