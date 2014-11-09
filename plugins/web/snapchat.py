@@ -358,8 +358,7 @@ class Snap(Callback):
         channel = server.lower(message.context)
         acc = self.accounts[channel]
         if server.lower(message.address.nick) not in self.users:
-            yield prefix + "\x0304You must verify your snapchat username with .setsnap <username> to use this command."
-            return
+            return prefix + "\x0304You must verify your snapchat username with .setsnap <username> to use this command."
         else:
             username = self.users[server.lower(message.address.nick)]
         if img:
