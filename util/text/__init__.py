@@ -39,7 +39,7 @@ def pretty_date(delta):
     day_diff = diff.days
 
     if day_diff < 0:
-        return ''
+        return 'just now'
 
     if day_diff == 0:
         if second_diff < 10:
