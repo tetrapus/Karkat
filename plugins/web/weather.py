@@ -134,6 +134,6 @@ class Weather(Callback):
         pieces = ["%s %s" % (conditions["icon"], conditions["weather"]), "\x03%d🌡 %s" % (temperature_color, temperature)]
         pieces.append("%s humidity" % data["relative_humidity"])
         pieces.append("⌚ " + pretty_date(int(data["local_epoch"]) - int(data["observation_epoch"])))
-        return "2│ %s 2│ %s"  (data["display_location"]["full"], " · ".join(pieces))
+        return "2│ %s 2│ %s" % (data["display_location"]["full"], " · ".join(pieces))
 
 __initialise__ = Weather
