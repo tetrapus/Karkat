@@ -480,8 +480,8 @@ class Snap(Callback):
             users += [username]
         user = ",".join(users)
 
-        # Rescale so longest edge is 1184px
-        scalefactor = 1184/max(bg.size[0], bg.size[1])
+        # Rescale so it fits in the bounding box
+        scalefactor = min(1184/max(bg.size[0], bg.size[1]), 720/min(bg.size[0], bg.size[1]))
         bg = bg.resize((int(bg.size[0] * scalefactor), int(bg.size[1]*scalefactor)), Image.ANTIALIAS)
 
         if text:
