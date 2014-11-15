@@ -198,26 +198,26 @@ class WolframAlpha(Callback):
                 wasettings["ip"] = self.server.iptracker.known[user]
         return wasettings
 
-    @command("waset", r"(\S+)(?:\s+(.+))?", templates={
-                Callback.USAGE:"05Wolfram Settings04⎟ Usage: [.@](waset) 03(ip|location) [value]"})
+    @command("waset set", r"(\S+)(?:\s+(.+))?", templates={
+                Callback.USAGE:"05Wolfram Settings04⎟ Usage: [.@](set) 03(ip|location) [value]"})
     def update_settings(self, server, msg, varname, value):
         var = varname.lower()
         nick = server.lower(msg.address.nick) 
         if varname not in ("location", "ip"):
-            return "05Wolfram Settings04⎟ No such setting."
+            return "05Settings04⎟ No such setting."
         elif value is None:
             try:
                 value = repr(self.settings[nick][var])
             except:
                 value = "not set"
-            return "05Wolfram Settings05⎟ Your %s is currently %s." % (var, value) 
+            return "05Settings05⎟ Your %s is currently %s." % (var, value) 
         else:
             if nick in self.settings:
                 self.settings[nick][var] = value
             else:
                 self.settings[nick] = {var: value}
             json.dump(self.settings, open(self.settingsf, "w"))
-            return "05Wolfram Settings05⎟ Your %s has been set to %r." % (var, value)
+            return "05Settings05⎟ Your %s has been set to %r." % (var, value)
 
 
     @Callback.threadsafe
