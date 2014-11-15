@@ -111,7 +111,10 @@ class Weather(Callback):
         
         data = "http://api.wunderground.com/api/%s/conditions/q/%s" % (apikey, location)
         data = requests.get(data).json()
-        data = data["current_observation"]
+        try:
+            data = data["current_observation"]
+        except:
+            return "04│ ☀ │ Couldn't figure out the weather."
         station = data["station_id"]
         conditions = {"location"     : data["display_location"]["full"],
                       "time"         : pretty_date(int(data["local_epoch"]) - int(data["observation_epoch"])),
