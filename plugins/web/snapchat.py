@@ -40,7 +40,7 @@ fonts = {"arial": {"regular": "data/fonts/Arial.ttf", "bold": "data/fonts/Arial_
          "ubuntu": {"regular": "data/fonts/Ubuntu-R.ttf", "bold": "data/fonts/Ubuntu-B.ttf"}
         }
 
-def drawtext(img, text, minsize=13, maxsize=909090, wrap=True, outline=True, fonts=fonts["dejavu sans mono"]):
+def drawtext(img, text, minsize=13, maxsize=90, wrap=True, outline=True, fonts=fonts["dejavu sans mono"]):
     lines = None
     size = maxsize + 5
     while size > minsize and not lines:
