@@ -8,7 +8,7 @@ from bot.events import command
 try:
     apikeys = yaml.safe_load(open("config/apikeys.conf"))["yo"]
 except:
-    print("Error: invalid or nonexistant last.fm api key.", file=sys.stderr)
+    print("Error: invalid or nonexistant yo api key.", file=sys.stderr)
     raise ImportError("Could not load module.")
 
 @command("yo", r"(\S+)")
