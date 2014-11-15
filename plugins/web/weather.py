@@ -67,7 +67,7 @@ except:
 icons = {"flurries": "❄", "rain": "☔", "sleet": "⛆", "snow": "☃", "tstorms": "⛈", "clear": "☀", "cloudy": "☁", "fog": "🌁", "hazy": "🌁", "unknown": "?"}
 
 def icon_to_unicode(icon):
-    if icon.startswith("mostly") or icon.startswith("cloudy"): return "\x032⛅\x0f"
+    if icon.startswith("mostly") or icon.startswith("partly"): return "\x032⛅\x0f"
     if icon.startswith("chance"):
         color = 12
         icon = icon[6:]
