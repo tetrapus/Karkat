@@ -117,7 +117,6 @@ class Weather(Callback):
             return "04│ ☀ │ Couldn't figure out the weather."
         station = data["station_id"]
         conditions = {"location"     : data["display_location"]["full"],
-                      "time"         : pretty_date(int(data["local_epoch"]) - int(data["observation_epoch"])),
                       "weather"      : data["weather"],
                       "temperature"  : data["temperature_string"],
                       "feels_like"   : data["feelslike_string"],
@@ -132,6 +131,9 @@ class Weather(Callback):
         t = data["temp_c"]
         temperature_color = [2, 12, 14, 7, 4][(t > 6) + (t > 16) + (t > 26) + (t > 36)]
         temperature = "%d °C \x0315%d °F\x03" %(data["temp_c"], data["temp_f"])
-        return "2│ %s %s · \x03%d🌡 %s" %(conditions["icon"], conditions["weather"], temperature_color, temperature)
+        pieces = ["%s %s" % (conditions["icon"], conditions["weather"]), "\x03%d🌡 %s" % (temperature_color, temperature)]
+        pieces.append("%s humidity" % data["relative_humidity"])
+        pieces.append("⌚ " + pretty_date(int(data["local_epoch"]) - int(data["observation_epoch"])))
+        return "2│ %s 2│ %s"  (data["display_location"]["full"], " · ".join(pieces))
 
 __initialise__ = Weather
