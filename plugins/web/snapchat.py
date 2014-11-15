@@ -40,7 +40,7 @@ fonts = {"arial": {"regular": "data/fonts/Arial.ttf", "bold": "data/fonts/Arial_
          "ubuntu": {"regular": "data/fonts/Ubuntu-R.ttf", "bold": "data/fonts/Ubuntu-B.ttf"}
         }
 
-def drawtext(img, text, minsize=13, maxsize=100, wrap=True, outline=True, fonts=fonts["dejavu sans mono"]):
+def drawtext(img, text, minsize=13, maxsize=90, wrap=True, outline=True, fonts=fonts["dejavu sans mono"]):
     lines = None
     size = maxsize + 5
     while size > minsize and not lines:
@@ -480,6 +480,9 @@ class Snap(Callback):
             users += [username]
         user = ",".join(users)
 
+        # Rescale so longest edge is 1184px
+        scalefactor = 1184/max(bg.size[0], bg.size[1])
+        bg = bg.resize((bg.size[0] * scalefactor, bg.size[1]*scalefactor), Image.ANTIALIAS)
 
         if text:
             img = drawtext(bg, text, fonts=font, wrap=wrap, outline=outline)
