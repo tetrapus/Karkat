@@ -374,6 +374,10 @@ class Snap(Callback):
         rotate(snapfolder + "/" + img, 90 if rotation == "right" else -90)
         return prefix + "Rotated \x0312\x1f%s\x1f\x0f" % (public_url + img)
 
+    @command("frotate", r"(.+)", admin=True)
+    def force_rotate(self, server, message, img):
+        rotate(snapfolder + "/" + img, 90)
+        return prefix + "Rotated \x0312\x1f%s\x1f\x0f" % (public_url + img)
 
     @command("snap", r"(?:(-[maciulrdsbfpw1-9]+)\s+)?(\S+(?:,\s*\S+)*)(?:\s+(https?://\S+|:.+?:))?(?:\s+(.+))?")
     def snap(self, server, message, flags, user, background, text):
