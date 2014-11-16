@@ -353,7 +353,7 @@ class Snap(Callback):
         user = self.settings[server.lower(message.context)]["history"][-1]["sender"]
         yield from self.snap.funct(self, server, message, flags, user, background, text)
 
-    @command("rotate", r"(\.jpg?)?\s*(left|right)?")
+    @command("rotate", r"(.+\.jpg?)?\s*(left|right)?")
     def rotate(self, server, message, img, rotation):
         channel = server.lower(message.context)
         acc = self.accounts[channel]
