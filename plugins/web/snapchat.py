@@ -633,6 +633,7 @@ class Snap(Callback):
             filtr |= types[i.lower()]
         if users:
             users = {i.lower() for i in re.split(r"\s+or\s+|\s+and\s+|\s*/\s*|\s*\+\s*", users)}
+            users = users | {self.users[i] for i in users if i in self.users}
         history = self.settings[context]["history"]
         history = [i for i in history if (i["media_type"] in filtr) and ((not users) or (i["sender"].lower() in users))]
         results = history[frm:to:anchor][:1 if message.prefix == "." else 5]
