@@ -70,8 +70,8 @@ If <b>index</b> is specified, return the <b>index</b>th last played song in your
 
 Full Response:
 <pre>
-<span style="color:#a40000;">&#9474; &#9835; &#9474;</span> <b>Artist Name</b> &#183; <b>Album Name</b> &#183; <b>Song Title</b>
-<span style="color:#a40000;">&#9474; &#9835; &#9474;</span> &#8634; <b>listens</b> <em>&#8986; <b>timestamp</b></em> &#8987; <b>length</b> <a href="http://youtu.be/6zWlf6TLq5E" style="color:#3465a4;">&#8599; <u>http://youtu.be/6zWlf6TLq5E</u></a>
+<span style="color:#a40000;">&#9474; &#9835; &#9474;</span> <b data-toggle="tooltip" data-placement="top" title="Artist Name">Grouplove</b> &#183; <b data-toggle="tooltip" data-placement="top" title="Album Name">Never Trust A Happy Song</b> &#183; <b data-toggle="tooltip" data-placement="top" title="Song Title">Naked Kids</b>
+<span style="color:#a40000;">&#9474; &#9835; &#9474;</span> &#8634; <b data-toggle="tooltip" data-placement="top" title="# of recorded listens">3 listens</b> <em>&#8986; <b data-toggle="tooltip" data-placement="top" title="Timestamp (if not currently playing)">3 minutes ago</b></em> &#8987; <b data-toggle="tooltip" data-placement="top" title="Song length">3m27s</b> <a href="http://youtu.be/6zWlf6TLq5E" style="color:#3465a4;" data-toggle="tooltip" data-placement="top" title="Song URL (if found)">&#8599; <u><em>http://youtu.be/6zWlf6TLq5E</em></u></a>
 </pre>
 Full Syntax:
 <img src="svg/lastfm-np.svg"></img>
@@ -88,13 +88,35 @@ If <b>user2</b> is not specified, your current nick or associated username is us
 
 Full Response:
 <pre>
-<span style="color:#a40000;">&#9474; &#9835; &#9474;</span> <b>Nick1</b><em> (<b>Username1</b>)</em> and <b>Nick2</b><em> (<b>Username2</b>)</em> are <span style="color:#4e9a06;"><b>percentage</b>% compatible</span>
-<span style="color:#a40000;">&#9474; &#9835; &#9474;</span> <b>[list of common bands]</b> in common.
+<span style="color:#a40000;">&#9474; &#9835; &#9474;</span> <b data-toggle="tooltip" data-placement="top" title="First user's nickname">Lion</b><em> (<b data-toggle="tooltip" data-placement="top" title="First user's Last.FM">Lyucit</b>)</em> and <b data-toggle="tooltip" data-placement="top" title="Second user's nickname">giraffe</b><em> (<b data-toggle="tooltip" data-placement="top" title="Second user's Last.FM">giraffstadon</b>)</em> are <span style="color:#4e9a06;"><b data-toggle="tooltip" data-placement="top" title="Taste-o-meter rating">97.0</b>% compatible</span>
+<span style="color:#a40000;">&#9474; &#9835; &#9474;</span> <b data-toggle="tooltip" data-placement="top" title="Common artists">Andrew Jackson Jihad, Streetlight Manifesto, Toh Kay, Mogwai and Tame Impala</b> in common.
 </pre>
 Full Syntax:
 <img src="svg/lastfm-compare.svg"></img>
                         </pre>
-                        <pre class="response"><span style="color:#a40000;">&#9474;</span> <span style="color:#4e9a06;"><b>Similarity</b>%</span> <span style="color:#a40000;">&#9474;</span> <b>[list of common bands]</b>...</pre>
+                        <pre class="response"><span style="color:#a40000;">&#9474;</span> <span style="color:#4e9a06;"><b>Similarity</b></span> <span style="color:#a40000;">&#9474;</span> <b>[common bands]/b></pre>
+
+<h3 id="lastfm-besties">Find best friends</h3>
+                        <pre class="command" data-toggle="collapse" data-target="#more-lastfm-besties">.besties <b data-toggle="tooltip" data-placement="top" title="Nick or Last.FM username"><em>user</em></b>
+</pre>
+                        <pre id="more-lastfm-besties" class="explanation collapse">
+List users on the network with the highest scoring taste-o-meter ratings to <b data-toggle="tooltip" data-placement="top" title="Nick or Last.FM username">user</b>.
+
+If <b>user</b> is not specified, your current nick is used.
+
+Full Response:
+<pre>
+<span style="color:#a40000;">&#9474; &#9835; &#9474;</span> <b data-toggle="tooltip" data-placement="top" title="Similarity" style="color:#4e9a06;">99.6</b> <span style="color:#a40000;">&#183;</span> <b data-toggle="tooltip" data-placement="top" title="User">catlover</b> <span style="color:#a40000;">&#183;</span> <b data-toggle="tooltip" data-placement="top" title="Common artists">The Mountain Goats, Andrew Jackson Jihad...</b>
+<span style="color:#a40000;">&#9474; &#9835; &#9474;</span> <b data-toggle="tooltip" data-placement="top" title="Similarity" style="color:#4e9a06;">99.5</b> <span style="color:#a40000;">&#183;</span> <b data-toggle="tooltip" data-placement="top" title="User">nutella</b> <span style="color:#a40000;">&#183;</span> <b data-toggle="tooltip" data-placement="top" title="Common artists">Defiance, Ohio, The Mountain Goats...</b>
+<span style="color:#a40000;">&#9474; &#9835; &#9474;</span> <b data-toggle="tooltip" data-placement="top" title="Similarity" style="color:#4e9a06;">98.6</b> <span style="color:#a40000;">&#183;</span> <b data-toggle="tooltip" data-placement="top" title="User">consent</b> <span style="color:#a40000;">&#183;</span> <b data-toggle="tooltip" data-placement="top" title="Common artists">The Mountain Goats, Jonathan Coulton...</b>
+<span style="color:#a40000;">&#9474; &#9835; &#9474;</span> <b data-toggle="tooltip" data-placement="top" title="Similarity" style="color:#4e9a06;">97.3</b> <span style="color:#a40000;">&#183;</span> <b data-toggle="tooltip" data-placement="top" title="User">supergauntlet</b> <span style="color:#a40000;">&#183;</span> <b data-toggle="tooltip" data-placement="top" title="Common artists">Andrew Jackson Jihad...</b>
+<span style="color:#a40000;">&#9474; &#9835; &#9474;</span> Best <b data-toggle="tooltip" data-placement="top" title="# displayed (default 4)">4</b> of <b data-toggle="tooltip" data-placement="top" title="# of known ratings">89</b>
+</pre>
+Full Syntax:
+<img src="svg/lastfm-besties.svg"></img>
+                        </pre>
+                        <pre class="response"><span style="color:#a40000;">&#9474;</span> [<b>username</b> <b style="color:#4e9a06;">similarity</b>] <span style="color:#a40000;">&#183;</span> <span style="color:#555753;" data-toggle="tooltip" data-placement="top" title="Number of potential matches not checked"><b>#</b> unknown</span></pre>
+
 
 
                       <h3 id="lastfm-listens">Show listening history</h3>
@@ -180,7 +202,6 @@ Full Syntax:
 This command links to a nick's associated Last.FM profile.
 
 If <b>nick</b> is not provided, your own nick is used.
-
 
 
 Full Syntax:
