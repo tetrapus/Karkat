@@ -18,6 +18,7 @@ body { background: #191919; font-family: 'Open Sans'; }
     position: sticky;
     margin: 25px 0px;
     padding-left: 0px;
+    top: 10px;
 }
 
 #navigation a {
