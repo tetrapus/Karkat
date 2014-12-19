@@ -33,7 +33,7 @@ try:
     cfg = yaml.safe_load(open("config/apikeys.conf"))["google"]
     key, engine = cfg["key"], cfg["engine"]
 except:
-    raise ImportError("Google search requires api keys. ")
+    raise ImportError("Google search requires api keys.")
 
 def google(query, nresults, retry=None):
     """
@@ -58,7 +58,7 @@ def google(query, nresults, retry=None):
                 break
 
             title = unescape(re.sub("</?b>", "", result["htmlTitle"]))
-            description = re.sub(r"\s+", " ", 
+            description = re.sub(r"(\s|<br>)+", " ", 
                                  unescape(re.sub("</?b>", "", 
                                                  result["htmlSnippet"])))
             data.append({"color" : [12, 5, 8, 3][i % 4],
