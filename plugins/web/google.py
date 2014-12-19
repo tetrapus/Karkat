@@ -3,9 +3,9 @@ Perform google web searches.
 """
 
 import re
-import urllib.parse as urllib
 
 import requests
+import yaml
 
 from bot.events import Callback, command
 from util.text import unescape
@@ -27,8 +27,13 @@ deflines = {'@': 1,
             '.': 1,
             '!': 4}
 
-google_api_url = "http://ajax.googleapis.com/ajax/services/search/web?v=1.0&q="
+google_api_url = "https://www.googleapis.com/customsearch/v1"
 
+try:
+    cfg = yaml.safe_load(open("config/apikeys.conf"))["google"]
+    key, engine = cfg["key"], cfg["engine"]
+except:
+    raise ImportError("Google search requires api keys. ")
 
 def google(query, nresults, retry=None):
     """
@@ -37,32 +42,36 @@ def google(query, nresults, retry=None):
     If a result matches a key in retry, the query is replaced with the value
     of that key.
     """
-    page = requests.get(google_api_url + urllib.quote(query)).json()
+    page = requests.get(google_api_url, 
+                        params={"key": key, "cx": engine, "q": query}
+                       ).json()
     data = []
 
-    if page["responseData"]["results"]:
+    if page["items"]:
         for keyword in retry or {}:
             if any(keyword in i["title"].lower() 
-                    for i in page["responseData"]["results"]):
+                   for i in page["items"]):
                 return google(retry[keyword], nresults)
 
-        for i, result in enumerate(page["responseData"]["results"]): 
+        for i, result in enumerate(page["items"]): 
             if i >= nresults: 
                 break
 
+            title = unescape(re.sub("</?b>", "", result["htmlTitle"]))
+            description = re.sub(r"\s+", " ", 
+                                 unescape(re.sub("</?b>", "", 
+                                                 result["htmlSnippet"])))
             data.append({"color" : [12, 5, 8, 3][i % 4],
-                    "title": unescape(re.sub("</?b>", "", result["title"])),
-                    "url"  : result["unescapedUrl"],
-                    "description": re.sub(r"\s+", 
-                                          " ", 
-                                          unescape(re.sub("</?b>", "", 
-                                                    result["content"])))})
+                         "title" : title,
+                         "url"   : result["link"],
+                         "description": description
+                        })
     return data
 
 @Callback.threadsafe
 @command("google gooogle goooogle gooooogle search g", r"(-\d\s+)?(.+)",
          templates=exceptions)
-def google_template(server, message, nresults, query):
+def google_template(_, message, nresults, query):
     """
     Perform a google search and print the first n results.
     If a search is a gooo+gle search, use the number of extra 'o's as nresults.
@@ -82,4 +91,4 @@ def google_template(server, message, nresults, query):
         yield "05Google│ No results found."
 
 
-__callbacks__  = {"privmsg": [google_template]}
+__callbacks__ = {"privmsg": [google_template]}
