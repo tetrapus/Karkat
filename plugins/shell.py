@@ -1,3 +1,7 @@
+"""
+Run bash commands.
+"""
+
 import os
 import signal
 import subprocess
@@ -10,6 +14,7 @@ from util.irc import Message
 from bot.events import command
 
 class Process(threading.Thread):
+    """ Manages a subprocess """
     def __init__(self, shell, target, invocator):
         self.shell = shell
         self.stdout = shell.stdout
@@ -38,7 +43,7 @@ class Process(threading.Thread):
             lines += 1
         if outfile is not None:
             outfile.close()
-        self.parent.activeShell = False
+        self.parent.active_shell = False
         if time.time() - started > 2:
             exitcode = self.shell.poll()
             self.parent.stream.message("%.2dbash│ Program exited with code %s"%(5 if exitcode else 12, exitcode), self.target)
@@ -47,8 +52,8 @@ class Shell(object):
 
     def __init__(self, server):
         self.stream = server.printer
-        self.activeShell = False
-        self.shellThread = None
+        self.active_shell = False
+        self.shell_thread = None
 
         server.register("privmsg", self.trigger)
         server.register("privmsg", self.terminate)
@@ -60,7 +65,7 @@ class Shell(object):
         if server.is_admin(user.hostmask) and message.text.split()[0] == "$":
             args = text.split(" ", 1)[-1]
 
-            if not self.activeShell:
+            if not self.active_shell:
                 try:
                     shell = subprocess.Popen(args, 
                                              stdin=subprocess.PIPE, 
@@ -71,16 +76,16 @@ class Shell(object):
                 except OSError:
                     server.printer.message("05bash│ Command failed.", target)
                     return
-                self.activeShell = True
-                self.shellThread = Process(shell, target, self)
-                self.shellThread.start()
+                self.active_shell = True
+                self.shell_thread = Process(shell, target, self)
+                self.shell_thread.start()
             else:
-                self.shellThread.stdin.write((args + "\n").encode("utf-8"))
-                self.shellThread.stdin.flush()
+                self.shell_thread.stdin.write((args + "\n").encode("utf-8"))
+                self.shell_thread.stdin.flush()
 
     @command("terminate", admin=True)
     def terminate(self, server, msg):
-        if self.activeShell:
-            os.killpg(self.shellThread.shell.pid, signal.SIGTERM)
+        if self.active_shell:
+            os.killpg(self.shell_thread.shell.pid, signal.SIGTERM)
 
 __initialise__ = Shell
