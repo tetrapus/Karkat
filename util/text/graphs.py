@@ -1,26 +1,33 @@
+"""
+Render unicode charts.
+"""
+
 from collections import deque
 import re
 
 # For axis declarations, [top, right, bottom, left]
 
-GRAPH_BLOCK = [' ', '▁', '▂', '▃', '▄', '▅', '▆', '▇', '█', '\x16 \x16']
+GRAPH_BLOCK = (' ', '▁', '▂', '▃', '▄', '▅', '▆', '▇', '█', '\x16 \x16')
 
-GRAPH_FILLED_DOTS = ['\x0300⋅\x0300', '\x0315⋅\x0315', '\x0314⋅\x0314', '\x0301⋅\x0301']
-GRAPH_DOTS = [' ', '\x0315⋅\x0315', '\x0314⋅\x0314', '\x0301⋅\x0301']
+GRAPH_FILLED_DOTS = ('\x0300⋅\x0300', 
+                     '\x0315⋅\x0315', 
+                     '\x0314⋅\x0314', 
+                     '\x0301⋅\x0301')
+GRAPH_DOTS = (' ', '\x0315⋅\x0315', '\x0314⋅\x0314', '\x0301⋅\x0301')
 
-GRAPH_FILLED_DOS = ["─", "┬", "│"]
-GRAPH_DOS = [" ", "╷", "│"]
+GRAPH_FILLED_DOS = ("─", "┬", "│")
+GRAPH_DOS = (" ", "╷", "│")
 
-GRAPH_FILLED_UNICODE = ['│', '╽', '┃']
-GRAPH_UNICODE = [' ', '╻', '┃']
+GRAPH_FILLED_UNICODE = ('│', '╽', '┃')
+GRAPH_UNICODE = (' ', '╻', '┃')
 
 
 def minify(string):
     """
     Gets rid of redundant irc codes.
     """
-    foreground, background = None, None
-    bold, italics, reverse, underline = False, False, False, False
+    # foreground, background = None, None
+    # bold, italics, reverse, underline = False, False, False, False
     minified = ""
     string = deque(string)
     while string:
