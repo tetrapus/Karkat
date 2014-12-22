@@ -760,7 +760,7 @@ class StatefulBot(SelectiveBot):
 
     def can_send(self, message, target, method):
         msg = ":%s!%s@%s %s\r\n" % (self.nick, self.username, self.hostmask, self.printer.pack(message, target, method))
-        return len(msg.encode(self.encoding)) < MAX_LINE_LENGTH
+        return len(msg.encode(self.encoding)) <= MAX_LINE_LENGTH
 
     def parse_A_mode(self, channel, action, mode, args):
         settings = self.channel_modes.setdefault(self.lower(channel), {})
