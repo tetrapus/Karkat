@@ -63,6 +63,9 @@ class Config(object):
     def update(self, *args, **kwargs): 
         return self.data.update(*args, **kwargs)
     @_locked
+    def values(self, *args, **kwargs): 
+        return self.data.values(*args, **kwargs)
+    @_locked
     def __iter__(self, *args, **kwargs): 
         return self.data.__iter__(*args, **kwargs)
     @_updater
@@ -90,11 +93,20 @@ class Config(object):
     def __gt__(self, *args, **kwargs): 
         return self.data.__gt__(*args, **kwargs)
     @_locked
+    def items(self, *args, **kwargs): 
+        return self.data.items(*args, **kwargs)
+    @_locked
     def __sizeof__(self, *args, **kwargs): 
         return self.data.__sizeof__(*args, **kwargs)
+    @_updater
+    def setdefault(self, *args, **kwargs): 
+        return self.data.setdefault(*args, **kwargs)
     @_locked
     def __lt__(self, *args, **kwargs): 
         return self.data.__lt__(*args, **kwargs)
+    @_locked
+    def get(self, *args, **kwargs): 
+        return self.data.get(*args, **kwargs)
     @_updater
     def clear(self, *args, **kwargs): 
         return self.data.clear(*args, **kwargs)
@@ -110,6 +122,9 @@ class Config(object):
     @_locked
     def __contains__(self, *args, **kwargs): 
         return self.data.__contains__(*args, **kwargs)
+    @_locked
+    def __getitem__(self, *args, **kwargs): 
+        return self.data.__getitem__(*args, **kwargs)
 
 
 
