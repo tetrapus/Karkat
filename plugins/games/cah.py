@@ -41,15 +41,6 @@ class CardsAgainstHumanity(object):
         
         self.answers = self.white[:] + white[:]
 
-        # Get trends from google
-        trends = requests.get("http://www.google.com/trends/hottrends/atom/hourly").text
-        trends = re.findall(">([^<]+)</a></span></li>", trends)
-        self.answers.extend([i + "." for i in trends])
-
-        # Get trends from twitter
-        twit = requests.get("https://api.twitter.com/1.1/trends/place.json?id=2458410", headers={"Authorization": "Bearer AAAAAAAAAAAAAAAAAAAAAG8uWwAAAAAA%2BKplZ2OgC1RPLd64ac9OIdP%2FHc4%3DEFiiimJ2pmK8UICRFzeO6zgmDIFwcMd7xiA0iH7pr0gZzqbmld"}).json()
-        twit = [i["name"] for i in twit[0]["trends"]]
-        self.answers.extend([i + "." if not i.startswith("#") else i for i in twit])
         # Get trends from Know Your Meme
         memes = requests.get("http://knowyourmeme.com/").text
         memes = re.findall("<h5 class='left'>Also Trending:</h5>(.+?)</div>", memes)
@@ -123,7 +114,7 @@ class CardsAgainstHumanity(object):
     def var(self, v):
         if v == "PLAYER":
             return random.choice(self.players).nick
-        elif v == "CZAR": return self.czar
+        elif v == "CZAR": return self.czar.nick
 
     def addRando(self):
         try:
