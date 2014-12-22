@@ -13,11 +13,12 @@ import fnmatch
 import random
 import json
 import ssl
+import codecs
 
 import yaml
 
 import util
-from util.irc import Address, Callback
+from util.irc import Address, Callback, MAX_LINE_LENGTH
 from util.text import lineify, TimerBuffer, Buffer, ircstrip
 
 
@@ -165,6 +166,9 @@ class Printer(WorkerThread):
         """
         self.flush = True
 
+    def pack(self, msg, recipient, method):
+        return "%s %s :%s" % (method, recipient, msg)
+
     def message(self, mesg, recipient, method="PRIVMSG"):
         """
         Send a message.
@@ -172,7 +176,7 @@ class Printer(WorkerThread):
         msg = lineify(str(mesg))
         self.history[self.lower(recipient)] = msg
         for message in [i for i in msg if i]:
-            self.work.put("%s %s :%s" % (method, recipient, message))
+            self.work.put(self.pack(message, recipient, method))
         return mesg # Debugging
 
     def raw_message(self, mesg):
@@ -255,12 +259,12 @@ class ColourPrinter(Printer):
                 value.append("\x03%s%s" % (color, line))
         return ("\n".join(value)) # TODO: Minify.
 
-    def message(self, msg, recipient=None, method="PRIVMSG"):
+    def pack(self, msg, recipient, method):
         msg = str(msg)
         if method.upper() in ["PRIVMSG", "NOTICE"] and self.hasink:
-            super().message(self.defaultcolor(msg), recipient, method)
+            super().pack(self.defaultcolor(msg), recipient, method)
         else:
-            super().message(msg, recipient, method)
+            super().pack(msg, recipient, method)
 
         return msg
 
@@ -381,12 +385,14 @@ class Connection(threading.Thread, object):
         self.connected = False
         self.restart = False
 
+        self.encoding = "utf-8"
+
         self.printer = MultiPrinter(self)
 
         if debug is not None:
-            self.buff = TimerBuffer(debug)
+            self.buff = TimerBuffer(debug, encoding=self.encoding)
         else:
-            self.buff = Buffer()
+            self.buff = Buffer(encoding=self.encoding)
 
     def connect(self):
         self.sock = socket.socket()
@@ -429,7 +435,7 @@ class Connection(threading.Thread, object):
         print("Connected.")
 
     def sendline(self, line):
-        self.sock.send(("%s\r\n" % line).encode("utf-8"))
+        self.sock.send(("%s\r\n" % line).encode(self.encoding))
 
     def dispatch(self, line):
         """
@@ -465,6 +471,15 @@ class Connection(threading.Thread, object):
 
     def msg(self, target, message):
         return self.printer.message(message, target)
+
+    def set_encoding(self, encoding):
+        try:
+            codecs.lookup(encoding)
+        except LookupError:
+            raise
+        else:
+            self.encoding = encoding       # output encoding
+            self.buff.encoding = encoding  # input encoding
 
 
 class EventHandler(object):
@@ -743,6 +758,9 @@ class StatefulBot(SelectiveBot):
     def is_admin(self, address):
         return any(fnmatch.fnmatch(address, i) for i in self.admins) or any(address.endswith("@" + i) for i in self.admins)
 
+    def can_send(self, message, target, method):
+        msg = ":%s!%s@%s %s\r\n" % (self.nick, self.username, self.hostmask, self.printer.pack(message, target, method))
+        return len(msg.encode(self.encoding)) < MAX_LINE_LENGTH
 
     def parse_A_mode(self, channel, action, mode, args):
         settings = self.channel_modes.setdefault(self.lower(channel), {})
@@ -914,6 +932,13 @@ class StatefulBot(SelectiveBot):
                 self.server_settings[i] = True
             else:
                 key, value = i.split("=", 1)
+                # Check if server is sending charset
+                # TODO: generalise into settings hooks
+                if key == "CHARSET":
+                    try:
+                        self.set_encoding(value)
+                    except LookupError:
+                        raise Warning("Server sent invalid charset %r, using %s." % (value, self.encoding))
                 self.server_settings[key] = value
     
         if "PREFIX" in self.server_settings:
