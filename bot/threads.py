@@ -12,6 +12,7 @@ import inspect
 import fnmatch
 import random
 import json
+import ssl
 
 import yaml
 
@@ -368,6 +369,7 @@ class Connection(threading.Thread, object):
         self.username = config["Username"]
         self.realname = config["Real Name"]
         self.mode = config.get("Mode", 0)
+        self.ssl = config.get("SSL", False)
         
         self.nick = None
         self.nicks = config["Nick"]
@@ -388,6 +390,8 @@ class Connection(threading.Thread, object):
 
     def connect(self):
         self.sock = socket.socket()
+        if self.ssl:
+            self.sock = ssl.wrap_socket(self.sock)
         print("Connecting...")
         self.sock.connect(self.server)
         # Try our first nickname.
@@ -695,6 +699,8 @@ class StatefulBot(SelectiveBot):
         self.channel_modes = {}
         self.listbuffer = {}
         self.topic = {}
+        self.hostmask = None
+        self.username = None
         self.rawmap = {346:"I", 348:"e", 367:"b", 386:"q", 388:"a"} # TODO: parse these.
         self.register_all({"quit" : [self.user_quit],
                            "part" : [self.user_left],
@@ -703,6 +709,7 @@ class StatefulBot(SelectiveBot):
                            "kick" : [self.user_kicked],
                            "mode" : [self.channel_mode], 
                            "topic": [self.topic_changed],
+                           "002"  : [self.on_connect],
                            "332"  : [self.channel_topic],  
                            "352"  : [self.joined_channel],
                            "005"  : [self.onServerSettings],
@@ -864,7 +871,7 @@ class StatefulBot(SelectiveBot):
     def list_end(self, server, line):
         words = line.split(" ")
         self.channel_modes.setdefault(self.lower(words[3]), {}).update({self.rawmap[int(words[1])-1]: self.listbuffer.get((int(words[1])-1, self.lower(words[3])), [])})
-        self.listbuffer[(int(words[1])-1, self.lower(words[3]))] = {}
+        self.listbuffer[int(words[1])-1, self.lower(words[3])] = []
 
     @Callback.inline
     def channel_mode(self, server, line):
@@ -952,6 +959,8 @@ class StatefulBot(SelectiveBot):
     def joined_channel(self, server, line):
         """ Handles 352s (WHOs) """
         words = line.split()
+        if self.eq(words[7], self.nick):
+            self.username, self.hostmask = words[4], words[5]
         self.channels.setdefault(self.lower(words[3]), set()).add(words[7])
         self.user_modes.setdefault(self.lower(words[3]), {}).update({self.lower(words[7]): [self.valid_modes[0][self.valid_modes[1].index(i)] for i in words[8] if i in self.valid_modes[1]]})
 
@@ -975,3 +984,8 @@ class StatefulBot(SelectiveBot):
         nick = words[3]
         channel = self.lower(words[2])
         self.channels[channel].remove(nick)
+
+    @Callback.inline
+    def on_connect(self, server, line):
+        """ Runs code on successful connection """
+        self.sendline("WHO :%s" % self.nick)
