@@ -169,6 +169,9 @@ class Printer(WorkerThread):
     def pack(self, msg, recipient, method):
         return "%s %s :%s" % (method, recipient, msg)
 
+    def can_send(self, msg, recipient, method):
+        return self.bot.can_send(msg, recipient, method)
+
     def message(self, mesg, recipient, method="PRIVMSG"):
         """
         Send a message.
