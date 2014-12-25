@@ -385,8 +385,8 @@ class TimerBuffer(Buffer):
     Prints out the time between loop iterations.
     """
 
-    def __init__(self, threshhold):
-        super(TimerBuffer, self).__init__()
+    def __init__(self, threshhold, encoding="utf-8"):
+        super(TimerBuffer, self).__init__(encoding=encoding)
         self.start = None
         self.threshhold = threshhold
         self.log = []
