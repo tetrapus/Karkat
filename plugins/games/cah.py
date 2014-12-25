@@ -496,9 +496,9 @@ class CAHBot(object):
                             if all((bet + args).count(i) == 1 and 1 <= i <= len(player.hand) for i in bet + args) and (len(args) == game.numcards() and len(bet) in [game.numcards(), 0]):
                                 player.setResponses(args)
                                 player.setBet(bet)
-                                printer.message(CAHPREFIX + "01,00 Response 00,01 %s " % game.substitute(player.responses), nick, "NOTICE")
+                                printer.message(CAHPREFIX + "00,01 Response 01,00 %s " % game.substitute(player.responses), nick, "NOTICE")
                                 if bet:
-                                    printer.message(CAHPREFIX + "01,00 Backup   00,01 %s " % game.substitute(player.bets), nick, "NOTICE")
+                                    printer.message(CAHPREFIX + "01,00 Backup   01,00 %s " % game.substitute(player.bets), nick, "NOTICE")
                             else:
                                 printer.message(CAHPREFIX + "Invalid arguments.", nick, "NOTICE")
                             if not [i for i in game.players if i.responses is None and i != game.czar]:
@@ -630,13 +630,14 @@ class CAHPlayer(object):
 
     @staticmethod
     def fmt_card(card):
+        card = card[0], (card[1][0].upper() + card[1][1:]).rstrip(".")
         return "00,01 %d 01,00 %s " % card
 
     def get_compact_hand(self, server):
         # assert len(self.hand) > 1
         lines = [CAHPREFIX + self.fmt_card((1, self.hand[0]))]
         for i, text in enumerate(self.hand[1:]):
-            card = i+2, (text[0].upper() + text[1:]).rstrip(".")
+            card = i+2, text
             line = lines[-1] + " " + self.fmt_card(card)
             if server.can_send(line, self.nick, "NOTICE"):
                 lines[-1] = line
