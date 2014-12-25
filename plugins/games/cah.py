@@ -629,7 +629,7 @@ class CAHPlayer(object):
         return lines
 
     @staticmethod
-    def fmt_card(self, card):
+    def fmt_card(card):
         return "00,01 %d 01,00 %s " % card
 
     def get_compact_hand(self, server):
