@@ -636,7 +636,7 @@ class CAHPlayer(object):
         # assert len(self.hand) > 1
         lines = [CAHPREFIX + self.fmt_card((1, self.hand[0]))]
         for i, text in enumerate(self.hand[1:]):
-            card = i+2, text
+            card = i+2, (text[0].upper() + text[1:]).rstrip(".")
             line = lines[-1] + " " + self.fmt_card(card)
             if server.can_send(line, self.nick, "NOTICE"):
                 lines[-1] = line
