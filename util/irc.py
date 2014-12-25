@@ -1,6 +1,12 @@
+"""
+Utilities relating to the IRC protocol and parsing messages from the IRC layer.
+"""
+
 import functools
 import re
 import inspect
+
+MAX_MESSAGE_SIZE = 512 # in bytes
 
 class Address(object):
     def __init__(self, addr):

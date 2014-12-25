@@ -330,8 +330,9 @@ class Buffer(object):
     Note: This object is not thread safe.
     """
 
-    def __init__(self):
+    def __init__(self, encoding="utf-8"):
         self.buffer = b''
+        self.encoding = encoding
 
     def __iter__(self):
         return self
@@ -342,7 +343,7 @@ class Buffer(object):
         else:
             data, self.buffer = tuple(self.buffer.split(b"\n", 1))
             data = data.rstrip(b"\r")
-            return data.decode("utf-8", "replace")
+            return data.decode(self.encoding, "replace")
 
     def __next__(self):
         return self.next()

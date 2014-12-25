@@ -1,23 +1,31 @@
+"""
+An agile-style todo-list implementation.
+"""
+
 import json
 import shlex
 import re
 import random
 import math
 import requests
-import operator
 
 from bot.events import Callback, command
 from util.text import strikethrough, smallcaps
 
 def numeric_priority(item):
-    m = re.match(r"^\((-?\d+(?:\.\d+)?)\)\s+.*$", item)
-    if not m:
+    """ Parse a numeric priority out of a todo list item. """
+    match = re.match(r"^\((-?\d+(?:\.\d+)?)\)\s+.*$", item)
+    if not match:
         return 0
     else:
-        return float(m.group(1))
+        return float(match.group(1))
 
 def alpha_priority(letters):
-    return sum((ord(a) - ord("A") + 1) * 26 ** i for i, a in enumerate(letters[::-1]))
+    """ 
+    Calculate the numeric priority corresponding to an alphabetic priority. 
+    """
+    return sum((ord(a) - ord("A") + 1) * 26 ** i 
+               for i, a in enumerate(letters[::-1]))
 
 
 def priority_sorted(queue):
@@ -26,12 +34,13 @@ def priority_sorted(queue):
     where \1 is the priority and \2 is the rest of the todo list.
 
     Alphabetic priorities are interpreted in shortlex order where the lowest
-    value corresponds to the highest priority, whereas integer priorities correspond
-    to base 10 integers where higher values correspond to higher priorities.
+    value corresponds to the highest priority, whereas integer priorities
+    correspond to base 10 integers where higher values correspond to higher 
+    priorities.
 
-    An alphabetic priority is converted to a numeric priority such that the highest
-    alphabetic priority corresponds with the highest numeric priority or higher, and
-    all alphabetic priorities are greater than 0. 
+    An alphabetic priority is converted to a numeric priority such that the 
+    highest alphabetic priority corresponds with the highest numeric priority 
+    or higher, and all alphabetic priorities are greater than 0. 
 
     Items without priorities are considered to have a numeric priority of 0.
     """
@@ -39,12 +48,12 @@ def priority_sorted(queue):
     alphabetic = []
     numeric = []
     for i in queue:
-        m = re.match(r"^\(([A-Z]+)\)\s+.*$", i)
-        if m:
-            alphabetic.append((alpha_priority(m.group(1)), i))
+        match = re.match(r"^\(([A-Z]+)\)\s+.*$", i)
+        if match:
+            alphabetic.append((alpha_priority(match.group(1)), i))
         else:
             numeric.append((numeric_priority(i), i))
-    alpha_priorities = {}
+    alpha_rank = {}
     if alphabetic:
         # Find the largest integer priority
         largest = math.ceil(max(i[0] for i in numeric)) if numeric else 1
@@ -52,23 +61,29 @@ def priority_sorted(queue):
         alpha_max = max(i[0] for i in alphabetic)
         align_to = max(alpha_max, largest)
         # Align so that alpha priority 1 == largest
-        alpha_priorities = {i: align_to-p + 1 for p, i in alphabetic}
+        alpha_rank = {i: align_to-p + 1 for p, i in alphabetic}
 
-    queue = [(alpha_priorities[i] if i in alpha_priorities else numeric_priority(i), i) for i in queue]
+    queue = [(alpha_rank[i] 
+              if i in alpha_rank 
+              else numeric_priority(i), i) 
+             for i in queue]
 
     return sorted(queue, key=lambda x: -x[0])
 
 def priority_sort(queue):
+    """
+    Sort (stable) a queue based on the priority of the items.
+    """
     # Pull alphabetic priorities out of the list
     alphabetic = []
     numeric = []
     for i in queue:
-        m = re.match(r"^\(([A-Z]+)\)\s+.*$", i)
-        if m:
-            alphabetic.append((alpha_priority(m.group(1)), i))
+        match = re.match(r"^\(([A-Z]+)\)\s+.*$", i)
+        if match:
+            alphabetic.append((alpha_priority(match.group(1)), i))
         else:
             numeric.append((numeric_priority(i), i))
-    alpha_priorities = {}
+    alpha_rank = {}
     if alphabetic:
         # Find the largest integer priority
         largest = math.ceil(max(i[0] for i in numeric)) if numeric else 1
@@ -76,9 +91,9 @@ def priority_sort(queue):
         alpha_max = max(i[0] for i in alphabetic)
         align_to = max(alpha_max, largest)
         # Align so that alpha priority 1 == largest
-        alpha_priorities = {i: align_to-p + 1 for p, i in alphabetic}
+        alpha_rank = {i: align_to-p + 1 for p, i in alphabetic}
 
-    queue.sort(key=lambda i: -alpha_priorities[i] if i in alpha_priorities else -numeric_priority(i))
+    queue.sort(key=lambda i: -alpha_rank[i] if i in alpha_rank else -numeric_priority(i))
 
 def num_to_braille(points):
     full, overflow = divmod(points, 8)
@@ -158,7 +173,8 @@ class Queue(Callback):
                 done = 0
             vis += "━" * math.ceil(total - done) + '15' + "─" * math.ceil(done) + " " * (align - math.ceil(total))
         line = re.sub(r"(^| )(#|\+|@)(\S+)", lambda x: r"%s%.2d%s" % (x.group(1), {"#":15,"+":15,"@":6}[x.group(2)], smallcaps(x.group(3))), line)
-        if strike: line = strikethrough(line)
+        if strike: 
+            line = strikethrough(line)
         return "06│ %s %s %s" % (num, vis, line)
 
     def displayAll(self, lines, max=25, strike=False):
@@ -269,7 +285,7 @@ class Queue(Callback):
 
         return self.display(*q[0])
         
-    @command("next promote", r"(.+)")
+    @command("next promote prefer", r"(.+)")
     def promote(self, server, msg, query):
         nick = server.lower(msg.address.nick)
         queue = self.queues.setdefault(nick, [])
@@ -293,7 +309,7 @@ class Queue(Callback):
 
         self.save()
             
-    @command("last demote", r"(.+)")
+    @command("last demote defer", r"(.+)")
     def demote(self, server, msg, query):
         nick = server.lower(msg.address.nick)
         queue = self.queues.setdefault(nick, [])
@@ -423,7 +439,7 @@ class Queue(Callback):
         # TODO: Priority sort (only technically necessary)
         self.save()
 
-    @command("rank prioritise prioritize priority", r"(-?\d+|[A-Z])\s+(.+)")
+    @command("rank prioritise prioritize priority", r"(-?\d+|[A-Z]+)\s+(.+)")
     def prioritise(self, server, msg, rank, query):
         nick = server.lower(msg.address.nick)
         queue = self.queues.setdefault(nick, [])
