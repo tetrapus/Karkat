@@ -265,9 +265,9 @@ class ColourPrinter(Printer):
     def pack(self, msg, recipient, method):
         msg = str(msg)
         if method.upper() in ["PRIVMSG", "NOTICE"] and self.hasink:
-            super().pack(self.defaultcolor(msg), recipient, method)
+            msg = super().pack(self.defaultcolor(msg), recipient, method)
         else:
-            super().pack(msg, recipient, method)
+            msg = super().pack(msg, recipient, method)
 
         return msg
 
