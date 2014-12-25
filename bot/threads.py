@@ -937,11 +937,11 @@ class StatefulBot(SelectiveBot):
                 key, value = i.split("=", 1)
                 # Check if server is sending charset
                 # TODO: generalise into settings hooks
-                if key == "CHARSET":
-                    try:
-                        self.set_encoding(value)
-                    except LookupError:
-                        raise Warning("Server sent invalid charset %r, using %s." % (value, self.encoding))
+                #if key == "CHARSET":
+                #    try:
+                #        self.set_encoding(value)
+                #    except LookupError:
+                #        raise Warning("Server sent invalid charset %r, using %s." % (value, self.encoding))
                 self.server_settings[key] = value
     
         if "PREFIX" in self.server_settings:
