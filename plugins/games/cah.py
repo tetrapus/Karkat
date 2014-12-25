@@ -7,13 +7,16 @@ import sys
 import os
 import functools
 import requests
+import json
 
 from util import cmp
 from util.text import ordinal, unescape
 from util.irc import Callback, Address, Message, command
+from util.files import Config
 
 CAHPREFIX = "01│14│15│ "
 datadir = "data/CardsAgainstHumanity"
+CONFIG_FILE = "cahsettings.json"
 
 
 # Dynamic cards:
@@ -24,7 +27,7 @@ class CardsAgainstHumanity(object):
     black = [i.strip() for i in open(datadir + "/black.txt").read().split("\n")]
     white = [i.strip() for i in open(datadir + "/white.txt").read().split("\n")]
 
-    def __init__(self, printer, channel, rounds=None, black=[], white=[], rando=False, numcards=10, minplayers=3, bets=True, firstto=None, ranked=False, democracy=False):
+    def __init__(self, printer, channel, rounds=None, black=[], white=[], rando=False, numcards=10, minplayers=3, bets=True, firstto=None, ranked=False, democracy=False, compact=True):
         self.printer = printer
 
         self.lock = threading.Lock()
@@ -67,6 +70,7 @@ class CardsAgainstHumanity(object):
         self.firstto = firstto
         self.ranked = ranked
         self.democracy = democracy
+        self.compact = compact
         
         self.players = []
         self.allplayers = []
@@ -100,7 +104,7 @@ class CardsAgainstHumanity(object):
         elif player in [x.nick for x in self.allplayers]:
             p = [i for i in self.allplayers if i.nick == player][0]
         else:
-            p = CAHPlayer(player)
+            p = CAHPlayer(player, compact_hand=self.compact)
             self.allplayers.append(p)
             self.repopulate(p)
             self.answers.append(player)
@@ -362,6 +366,8 @@ class CAHBot(object):
         self.games = {}
         self.lock = threading.Lock()
 
+        self.config = Config(server.get_config_dir(CONFIG_FILE))
+
         self.expansiondir = server.get_config_dir("CardsAgainstHumanity")
         if not os.path.exists(self.expansiondir):
             os.makedirs(self.expansiondir, exist_ok=True)
@@ -394,7 +400,6 @@ class CAHBot(object):
             return
         if msg.words[0] == "!Q.":
             data = re.sub("_+", "_______", msg.text.split(" ", 1)[-1])
-            # TODO: Probably not locking the right resource.
             with self.lock:
                 CardsAgainstHumanity.expansionqs.append(data)
                 CardsAgainstHumanity.savecards(self.expansiondir)
@@ -491,9 +496,9 @@ class CAHBot(object):
                             if all((bet + args).count(i) == 1 and 1 <= i <= len(player.hand) for i in bet + args) and (len(args) == game.numcards() and len(bet) in [game.numcards(), 0]):
                                 player.setResponses(args)
                                 player.setBet(bet)
-                                printer.message(CAHPREFIX + "Response 15│00,01 %s " % game.substitute(player.responses), nick, "NOTICE")
+                                printer.message(CAHPREFIX + "01,00 Response 00,01 %s " % game.substitute(player.responses), nick, "NOTICE")
                                 if bet:
-                                    printer.message(CAHPREFIX + "Backup   15│00,01 %s " % game.substitute(player.bets), nick, "NOTICE")
+                                    printer.message(CAHPREFIX + "01,00 Backup   00,01 %s " % game.substitute(player.bets), nick, "NOTICE")
                             else:
                                 printer.message(CAHPREFIX + "Invalid arguments.", nick, "NOTICE")
                             if not [i for i in game.players if i.responses is None and i != game.czar]:
@@ -560,15 +565,20 @@ class CAHBot(object):
 
         return kwargs
 
+    @command("forcecompact", "(on|off)", public=":", private="", admin=True)
+    def forcecompact(self, server, message, state):
+        self.config["compact"] = state == "on"
+
 __initialise__ = CAHBot
 
 class CAHPlayer(object):
-    def __init__(self, nick):
+    def __init__(self, nick, compact_hand=False):
         self.nick = nick
         self.hand = []
         self.points = 0
         self.responses = None
         self.bets = None
+        self.compact = compact_hand
         
     def rename(self, newname):
         self.nick = newname
@@ -603,10 +613,13 @@ class CAHPlayer(object):
         return value
     
     def printHand(self, printer):
-        # TODO: Refactor out.
-        with printer.buffer(self.nick, "NOTICE") as buffer:
-            for i in self.getHand():
-                buffer += i
+        if self.compact:
+            lines = self.get_compact_hand(printer.bot)
+        else:
+            lines = self.getHand()
+        with printer.buffer(self.nick, "NOTICE") as buff:
+            for i in lines:
+                buff += i
 
     def getHand(self):
         lines = []
@@ -615,5 +628,21 @@ class CAHPlayer(object):
         lines.append(CAHPREFIX + "You have %d point%s." % (self.points, "" if self.points == 1 else "s"))
         return lines
 
+    @staticmethod
+    def fmt_card(self, card):
+        return "00,01 %d 01,00 %s " % card
+
+    def get_compact_hand(self, server):
+        # assert len(self.hand) > 1
+        lines = [CAHPREFIX + self.fmt_card((1, self.hand[0]))]
+        for i, text in enumerate(self.hand[1:]):
+            card = i+2, text
+            line = lines[-1] + " " + self.fmt_card(card)
+            if server.can_send(line):
+                lines[-1] = line
+            else:
+                lines.append(CAHPREFIX + self.fmt_card(card))
+        return lines      
+                
 class CAHDeck(list):
     pass
