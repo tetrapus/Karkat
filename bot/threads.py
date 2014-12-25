@@ -18,7 +18,7 @@ import codecs
 import yaml
 
 import util
-from util.irc import Address, Callback, MAX_LINE_LENGTH
+from util.irc import Address, Callback, MAX_MESSAGE_SIZE
 from util.text import lineify, TimerBuffer, Buffer, ircstrip
 
 
@@ -763,7 +763,7 @@ class StatefulBot(SelectiveBot):
 
     def can_send(self, message, target, method):
         msg = ":%s!%s@%s %s\r\n" % (self.nick, self.username, self.hostmask, self.printer.pack(message, target, method))
-        return len(msg.encode(self.encoding)) <= MAX_LINE_LENGTH
+        return len(msg.encode(self.encoding)) <= MAX_MESSAGE_SIZE
 
     def parse_A_mode(self, channel, action, mode, args):
         settings = self.channel_modes.setdefault(self.lower(channel), {})
