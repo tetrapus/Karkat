@@ -374,7 +374,7 @@ class LineReader(object):
             self.buffer += data
 
     def next(self):
-        if not self.refill():
+        if self.refill() == False:
             raise StopIteration
         data, self.buffer = tuple(self.buffer.split("\r\n", 1))
         return data
