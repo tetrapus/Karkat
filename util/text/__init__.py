@@ -379,6 +379,9 @@ class LineReader(object):
         data, self.buffer = tuple(self.buffer.split("\r\n", 1))
         return data
 
+    def __next__(self):
+        return self.next()
+
 
 class TimerBuffer(Buffer):
     """
