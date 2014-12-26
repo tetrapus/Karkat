@@ -330,18 +330,19 @@ class Buffer(object):
     Note: This object is not thread safe.
     """
 
-    def __init__(self, encoding="utf-8"):
+    def __init__(self, encoding="utf-8", delim=b"\n"):
         self.buffer = b''
         self.encoding = encoding
+        self.delim = delim
 
     def __iter__(self):
         return self
 
     def next(self):
-        if b"\n" not in self.buffer:
+        if self.delim not in self.buffer:
             raise StopIteration
         else:
-            data, self.buffer = tuple(self.buffer.split(b"\n", 1))
+            data, self.buffer = tuple(self.buffer.split(self.delim, 1))
             data = data.rstrip(b"\r")
             return data.decode(self.encoding, "replace")
 
@@ -374,7 +375,7 @@ class LineReader(object):
             self.buffer += data
 
     def next(self):
-        if self.refill() == False:
+        if not self.refill():
             raise StopIteration
         data, self.buffer = tuple(self.buffer.split("\r\n", 1))
         return data
