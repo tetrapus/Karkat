@@ -146,8 +146,8 @@ class PushBullet(Callback):
 
     @command("setpush", "(.+@.+)")
     def set_push(self, server, msg, email):
-        with self.config:
-            self.config["users"][email.lower()] = msg.address.nick
+        with self.config as conf:
+            conf[email.lower()] = msg.address.nick
         return "03│ ⁍ │ Associated %s with pushbullet account %s." % (msg.address.nick, email)
 
     @command("pushassoc", r"(#\S+)\s+(\S+)", admin=True)
