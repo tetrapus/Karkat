@@ -8,15 +8,16 @@ def _locked(function):
     @wraps(function)
     def _(self, *args, **kwargs):
         with self.mutex:
-            function(self, *args, **kwargs)
+            return function(self, *args, **kwargs)
     return _
 
 def _updater(function):
     @wraps(function)
     def _(self, *args, **kwargs):
         with self.mutex:
-            function(self, *args, **kwargs)
+            val = function(self, *args, **kwargs)
             self._save()
+            return val
     return _    
 
 class Config(object):
