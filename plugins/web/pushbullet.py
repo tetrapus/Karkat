@@ -160,6 +160,43 @@ class PushBullet(Callback):
         listener.start()
         return "03│ ⁍ │ Done."
 
+    @command("send", "(\S+(?:,\s*\S+)*)(?:\s+(https?://\S+|:.+?:))?(?:\s+(.+))?")
+    def send_push(self, server, msg, user, link, text):
+        try:
+            acc = self.config["accounts"][server.lower(msg.context)]
+        except:
+            return
+        push = {}
+        if "@" not in user:
+            users = self.config["users"]
+            users = [i for i in users if server.lower(i) == server.lower(users)]
+            if not users:
+                return "03│ ⁍ │ %s has not associated their pushbullet." % user
+            else:
+                user = users[0]
+        if link:
+            if link.startswith(":"):
+                params = {
+                    "safe": "off",
+                    "v": "1.0",
+                    "rsz": 1,
+                    "q": link[1:-1]
+                }
+                link = requests.get(
+                  "https://ajax.googleapis.com/ajax/services/search/images",
+                  params=params
+                ).json()["responseData"]["results"][0]["url"] 
+            push["type"] = "link"
+        else:
+            push["type"] = "note"
+        if ": " in text:
+            push["title"], text = text.split(": ", 1)
+        push["body"] = text
+
+        headers = {"Authorization": "Bearer " + acc["token"]}
+        requests.post("https://api.pushbullet.com/v2/pushes", headers=headers, data=push)
+        return "03│ ⁍ │ Sent."
+
     def __destroy__(self, server):
         for listener in self.listeners:
             listener.listening = False

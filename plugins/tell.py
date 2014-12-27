@@ -63,7 +63,7 @@ class Reminder(Callback):
         self.server = server
         super().__init__(server)
 
-    @command("remind tell note send", r"^(?:to\s+)?(\S+):?\s+(?:(?:in|after)\s+%(time)s\s+)?(?:that|to\s+)?(what to \S+|.+?)(?:\s+(?:in|after)\s+%(time)s)?(?:\s+via\s+(snapchat|pm|notice|channel message|message|private message|#\S+))?(?:\s+every\s+%(time)s(?:\s+until\s+(cancelled|active))?)?$" % {"time": time_expression})
+    @command("remind tell note", r"^(?:to\s+)?(\S+):?\s+(?:(?:in|after)\s+%(time)s\s+)?(?:that|to\s+)?(what to \S+|.+?)(?:\s+(?:in|after)\s+%(time)s)?(?:\s+via\s+(snapchat|pm|notice|channel message|message|private message|#\S+))?(?:\s+every\s+%(time)s(?:\s+until\s+(cancelled|active))?)?$" % {"time": time_expression})
     def reminder(self, server, msg, user, after, text, after2, method, repeat, cancel):
         # TODO: handle inactive people
         # TODO: print reminders in last-spoke channel
