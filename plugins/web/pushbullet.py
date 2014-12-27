@@ -90,7 +90,7 @@ class PushBullet(Callback):
     def update(self, account):
         acc = self.config["accounts"][account]
         params = {"modified_after": acc["last"]}
-        headers = {"Authorization": acc["token"]}
+        headers = {"Authorization": "Bearer " + acc["token"]}
         req = requests.get("https://api.pushbullet.com/v2/pushes", params=params, headers=headers)
         pushes = req.json()["pushes"]
         if not pushes:
