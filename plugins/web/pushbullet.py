@@ -161,3 +161,5 @@ class PushBullet(Callback):
         self.listeners.append(listener)
         listener.start()
         return "03│ ⁍ │ Done."
+
+__initialise__ = PushBullet
