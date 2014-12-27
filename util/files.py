@@ -23,7 +23,6 @@ class Config(object):
     def __init__(self, filename, default=None):
         self.mutex = Lock()
         self.filename = filename
-        self._safe_mutate = False
         if default is None:
             default = {}
         try:
@@ -36,8 +35,14 @@ class Config(object):
         with self.mutex:
             self.save()
 
-    def updater(self):
-        return ConfigUpdater(self)
+    def __enter__(self):
+        self.mutex.acquire()
+        return self.data
+
+    def __exit__(self, ty, value, traceback):
+        if ty is None:
+            self._save()
+        self.mutex.release()
 
     # Unsafe functions
 
@@ -127,69 +132,3 @@ class Config(object):
         return self.data.__getitem__(*args, **kwargs)
 
 
-
-class ConfigUpdater(object):
-    def __init__(self, config):
-        self.config = config
-
-    def __enter__(self):
-        self.config.mutex.acquire()
-        return self
-
-    def __exit__(self, ty, value, traceback):
-        if ty is None:
-            self.config._save()
-        self.config.mutex.release()
-        
-    def __len__(self, *args, **kwargs): 
-        return self.config.data.__len__(*args, **kwargs)
-    def copy(self, *args, **kwargs): 
-        return self.config.data.copy(*args, **kwargs)
-    def __hash__(self, *args, **kwargs): 
-        return self.config.data.__hash__(*args, **kwargs)
-    def update(self, *args, **kwargs): 
-        return self.config.data.update(*args, **kwargs)
-    def values(self, *args, **kwargs): 
-        return self.config.data.values(*args, **kwargs)
-    def __iter__(self, *args, **kwargs): 
-        return self.config.data.__iter__(*args, **kwargs)
-    def __delitem__(self, *args, **kwargs): 
-        return self.config.data.__delitem__(*args, **kwargs)
-    def pop(self, *args, **kwargs): 
-        return self.config.data.pop(*args, **kwargs)
-    def __repr__(self, *args, **kwargs): 
-        return self.config.data.__repr__(*args, **kwargs)
-    def __ne__(self, *args, **kwargs): 
-        return self.config.data.__ne__(*args, **kwargs)
-    def __setitem__(self, *args, **kwargs): 
-        return self.config.data.__setitem__(*args, **kwargs)
-    def popitem(self, *args, **kwargs): 
-        return self.config.data.popitem(*args, **kwargs)
-    def keys(self, *args, **kwargs): 
-        return self.config.data.keys(*args, **kwargs)
-    def __gt__(self, *args, **kwargs): 
-        return self.config.data.__gt__(*args, **kwargs)
-    def items(self, *args, **kwargs): 
-        return self.config.data.items(*args, **kwargs)
-    def __sizeof__(self, *args, **kwargs): 
-        return self.config.data.__sizeof__(*args, **kwargs)
-    def setdefault(self, *args, **kwargs): 
-        return self.config.data.setdefault(*args, **kwargs)
-    def __lt__(self, *args, **kwargs): 
-        return self.config.data.__lt__(*args, **kwargs)
-    def get(self, *args, **kwargs): 
-        return self.config.data.get(*args, **kwargs)
-    def fromkeys(self, *args, **kwargs): 
-        return self.config.data.fromkeys(*args, **kwargs)
-    def clear(self, *args, **kwargs): 
-        return self.config.data.clear(*args, **kwargs)
-    def __eq__(self, *args, **kwargs): 
-        return self.config.data.__eq__(*args, **kwargs)
-    def __le__(self, *args, **kwargs): 
-        return self.config.data.__le__(*args, **kwargs)
-    def __ge__(self, *args, **kwargs): 
-        return self.config.data.__ge__(*args, **kwargs)
-    def __contains__(self, *args, **kwargs): 
-        return self.config.data.__contains__(*args, **kwargs)
-    def __getitem__(self, *args, **kwargs): 
-        return self.config.data.__getitem__(*args, **kwargs)
