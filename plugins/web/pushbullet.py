@@ -79,7 +79,7 @@ class PushBullet(Callback):
         self.config = Config(self.configf, default={"accounts":{}, "users":{}})
         self.listeners = []
         self.listen()
-        super().__init__()
+        super().__init__(server)
 
     def listen(self):
         for channel, account in self.config["accounts"].items():
