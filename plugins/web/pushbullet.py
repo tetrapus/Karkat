@@ -160,4 +160,8 @@ class PushBullet(Callback):
         listener.start()
         return "03│ ⁍ │ Done."
 
+    def __destroy__(self, server):
+        for listener in self.listeners:
+            listener.listening = False
+
 __initialise__ = PushBullet
