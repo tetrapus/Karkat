@@ -169,7 +169,7 @@ class PushBullet(Callback):
         push = {}
         if "@" not in user:
             users = self.config["users"]
-            users = [i for i in users if server.lower(i) == server.lower(users)]
+            users = [i for i in users if server.lower(user) == server.lower(users[i])]
             if not users:
                 return "03│ ⁍ │ %s has not associated their pushbullet." % user
             else:
