@@ -199,9 +199,10 @@ class PushBullet(Callback):
             push["type"] = "link"
         else:
             push["type"] = "note"
-        if ": " in text:
-            push["title"], text = text.split(": ", 1)
-        push["body"] = text
+        if text:
+            if ": " in text:
+                push["title"], text = text.split(": ", 1)
+            push["body"] = text
         push["email"] = user
         headers = {"Authorization": "Bearer " + acc["token"]}
         requests.post("https://api.pushbullet.com/v2/pushes", headers=headers, data=push)
