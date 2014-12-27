@@ -157,4 +157,7 @@ class PushBullet(Callback):
         account = {"token": token, "last": time.time()}
         with self.config as conf:
             conf["accounts"][server.lower(channel)] = account
+        listener = PushListener(account["token"], partial(self.update, channel))
+        self.listeners.append(listener)
+        listener.start()
         return "03│ ⁍ │ Done."
