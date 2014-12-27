@@ -186,6 +186,7 @@ class PushBullet(Callback):
                   "https://ajax.googleapis.com/ajax/services/search/images",
                   params=params
                 ).json()["responseData"]["results"][0]["url"] 
+            push["url"] = link
             push["type"] = "link"
         else:
             push["type"] = "note"
