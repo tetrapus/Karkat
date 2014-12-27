@@ -78,7 +78,13 @@ class PushBullet(Callback):
         self.configf = server.get_config_dir("pushbullet.json")
         self.config = Config(self.configf, default={"accounts":{}, "users":{}})
         self.listeners = []
+        self.channels = {}
         self.listen()
+        for channel, account in self.config["accounts"].items():
+            try:
+                self.channels[channel] = requests.get("https://api.pushbullet.com/v2/users/me", headers={"Authorization": "Bearer " + account["token"]}).json()
+            except:
+                pass
         super().__init__(server)
 
     def listen(self):
@@ -122,13 +128,16 @@ class PushBullet(Callback):
                 self.queue(push)
 
             users = self.config["users"]
-            email = push["sender_email"]
+            if push["sender_email"] == self.channels[account]["email"]:
+                tag, email = "to", push["receiver_email"]
+            else:
+                tag, email = "from", push["sender_email"]
             if email.lower() in users:
                 user = users[email.lower()]
             else:
                 user = "\x0303" + email + "\x03"
 
-            fields.append("from " + user)
+            fields.append(tag + " " + user)
             fields.append("\u231a " + pretty_date(time.time() - push["modified"]))
 
             self.server.message("03│ ⁍ │ " + " · ".join(fields), account)
@@ -196,7 +205,6 @@ class PushBullet(Callback):
         push["email"] = user
         headers = {"Authorization": "Bearer " + acc["token"]}
         requests.post("https://api.pushbullet.com/v2/pushes", headers=headers, data=push)
-        return "03│ ⁍ │ Sent."
 
     def __destroy__(self, server):
         for listener in self.listeners:
