@@ -76,8 +76,6 @@ class PushBullet(Callback):
     def __init__(self, server):
         self.server = server
         self.configf = server.get_config_dir("pushbullet.json")
-        if not os.path.exists(self.configf):
-            os.makedirs(self.configf, exist_ok=True)
         self.config = Config(self.configf, default={"accounts":{}, "users":{}})
         self.listeners = []
         self.listen()
