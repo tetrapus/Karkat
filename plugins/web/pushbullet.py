@@ -178,13 +178,13 @@ class PushBullet(Callback):
         steps = ["Go to https://www.pushbullet.com/add-friend", 
                  "Add %s (%s) as a friend" % (msg.context, email), 
                  "Visit https://www.pushbullet.com/?email=%s and send your first push to the channel!" % email]
-        if not user:
-            user = self.get_user(user)
+        if user:
+            email = self.get_user(user)
+            if user not in self.config["users"]:
+                steps = ["If you don't have an account: Set up an account at http://www.pushbullet.com/ and install pushbullet on your devices", "Type /msg %s .setpush %s" % (server.nick, user)] + steps
         else:
-            user = None
-        if user not in self.config["users"]:
-            steps = ["If you don't have an account: Set up an account at http://www.pushbullet.com/ and install pushbullet on your devices", "Type /msg %s .setpush %s" % (server.nick, user)] + steps
-        if user is None:
+            return "03│ ⁍ │ Type .setpush \x02email\x02, then go to 12https://www.pushbullet.com/add-friend\x0f and add \x0303%s\x03 as a friend." % (user, email)            
+        if email is None:
             return "03│ ⁍ │ %s: type .setpush \x02email\x02, then go to 12https://www.pushbullet.com/add-friend\x0f and add \x0303%s\x03 as a friend." % (user, email)
         else:
             self.push({"type" : "link", 
