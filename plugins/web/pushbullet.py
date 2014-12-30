@@ -3,7 +3,6 @@ import json
 import time
 import threading
 import ssl
-import os
 import requests
 from functools import partial
 
@@ -11,6 +10,7 @@ from bot.events import Callback, command
 from util.text import Buffer, pretty_date
 from util.files import Config
 from util.services import url
+from util.images import image_search
 
 HEADERS = """GET /websocket/%(key)s HTTP/1.1\r\nHost: stream.pushbullet.com\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:34.0) Gecko/20100101 Firefox/34.0\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.5\r\nAccept-Encoding: gzip, deflate\r\nSec-WebSocket-Version: 13\r\nSec-WebSocket-Key: VwQcElXiDe4ZsgAPdAur0g==\r\nConnection: keep-alive, Upgrade\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nUpgrade: websocket\r\n\r\n"""
 
@@ -79,6 +79,7 @@ class PushBullet(Callback):
         self.config = Config(self.configf, default={"accounts":{}, "users":{}})
         self.listeners = []
         self.channels = {}
+        self.lower = server.lower
         self.listen()
         for channel, account in self.config["accounts"].items():
             try:
@@ -166,32 +167,50 @@ class PushBullet(Callback):
         listener.start()
         return "03│ ⁍ │ Done."
 
-    @command("send", "(\S+(?:,\s*\S+)*)(?:\s+(https?://\S+|:.+?:))?(?:\s+(.+))?")
+    @command("pushbullet", "(.*)")
+    def pushbullet_info(self, server, msg, user):
+        try:
+            acc = self.config["accounts"][self.lower(msg.context)]
+            email = self.channels[self.lower(msg.context)]
+        except KeyError:
+            return "04│ ⁍ │ This channel has no associated pushbullet."
+
+        steps = ["Go to https://www.pushbullet.com/add-friend", 
+                 "Add %s (%s) as a friend" % (msg.context, email), 
+                 "Visit https://www.pushbullet.com/?email=%s and send your first push to the channel!" % email]
+        if not user:
+            user = self.get_user(user)
+        else:
+            user = None
+        if user not in self.config["users"]:
+            steps = ["If you don't have an account: Set up an account at http://www.pushbullet.com/ and install pushbullet on your devices", "Type /msg %s .setpush %s" % (server.nick, user)] + steps
+        if user is None:
+            return "03│ ⁍ │ %s: type .setpush \x02email\x02, then go to 12https://www.pushbullet.com/add-friend\x0f and add \x0303%s\x03 as a friend." % (user, email)
+        else:
+            self.push({"type" : "link", 
+                       "title": "Add %s on PushBullet" % msg.context,
+                       "body" : "\r\n".join("%d) %s" % (i+1, s) for i, s in enumerate(steps)),
+                       "link" : "https://www.pushbullet.com/add-friend",
+                       "email": user}, 
+                      acc["token"])
+        
+        
+    @command("send", r"(\S+(?:,\s*\S+)*)(?:\s+(https?://\S+|:.+?:))?(?:\s+(.+))?")
     def send_push(self, server, msg, user, link, text):
         try:
             acc = self.config["accounts"][server.lower(msg.context)]
-        except:
+        except KeyError:
             return
+
         push = {}
-        if "@" not in user:
-            users = self.config["users"]
-            users = [i for i in users if server.lower(user) == server.lower(users[i])]
-            if not users:
-                return "03│ ⁍ │ %s has not associated their pushbullet." % user
-            else:
-                user = users[0]
+
+        user = self.get_user(user)
+        if user is None:
+            return "03│ ⁍ │ %s has not associated their pushbullet." % user
+
         if link:
             if link.startswith(":"):
-                params = {
-                    "safe": "off",
-                    "v": "1.0",
-                    "rsz": 1,
-                    "q": link[1:-1]
-                }
-                link = requests.get(
-                  "https://ajax.googleapis.com/ajax/services/search/images",
-                  params=params
-                ).json()["responseData"]["results"][0]["url"] 
+                link = image_search(link[1:-1])[0]["url"] 
             push["url"] = link
             push["type"] = "link"
         else:
@@ -201,8 +220,21 @@ class PushBullet(Callback):
                 push["title"], text = text.split(": ", 1)
             push["body"] = text
         push["email"] = user
-        headers = {"Authorization": "Bearer " + acc["token"]}
+        self.push(push, acc["token"])
+
+    def push(self, push, token):
+        headers = {"Authorization": "Bearer " + token}
         requests.post("https://api.pushbullet.com/v2/pushes", headers=headers, data=push)
+
+    def get_user(self, user):
+        if "@" not in user:
+            users = self.config["users"]
+            users = [i for i in users if self.lower(user) == self.lower(users[i])]
+            if not users:
+                return
+            else:
+                user = users[0]
+        return user
 
     def __destroy__(self, server):
         for listener in self.listeners:
