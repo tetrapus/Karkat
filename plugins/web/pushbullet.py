@@ -183,7 +183,7 @@ class PushBullet(Callback):
             if user not in self.config["users"]:
                 steps = ["If you don't have an account: Set up an account at http://www.pushbullet.com/ and install pushbullet on your devices", "Type /msg %s .setpush %s" % (server.nick, user)] + steps
         else:
-            return "03│ ⁍ │ Type .setpush \x02email\x02, then go to 12https://www.pushbullet.com/add-friend\x0f and add \x0303%s\x03 as a friend." % (user, email)            
+            return "03│ ⁍ │ Type .setpush \x02email\x02, then go to 12https://www.pushbullet.com/add-friend\x0f and add \x0303%s\x03 as a friend." % email            
         if email is None:
             return "03│ ⁍ │ %s: type .setpush \x02email\x02, then go to 12https://www.pushbullet.com/add-friend\x0f and add \x0303%s\x03 as a friend." % (user, email)
         else:
