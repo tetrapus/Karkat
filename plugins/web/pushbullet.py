@@ -171,7 +171,7 @@ class PushBullet(Callback):
     def pushbullet_info(self, server, msg, user):
         try:
             acc = self.config["accounts"][self.lower(msg.context)]
-            email = self.channels[self.lower(msg.context)]
+            email = self.channels[self.lower(msg.context)]["email"]
         except KeyError:
             return "04│ ⁍ │ This channel has no associated pushbullet."
 
