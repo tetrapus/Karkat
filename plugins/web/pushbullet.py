@@ -111,7 +111,7 @@ class PushBullet(Callback):
                 if "title" in push:
                     message_field.append("\x0303%s\x03" % push["title"])
                 if "body" in push:
-                    message_field.append(push["body"])
+                    message_field.append(push["body"].replace("\n", " ")) # TODO: temporary
                 if message_field:
                     fields.append(" ".join(message_field))
                 if "url" in push:
