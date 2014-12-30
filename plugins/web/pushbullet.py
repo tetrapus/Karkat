@@ -104,8 +104,10 @@ class PushBullet(Callback):
         for push in pushes:
             fields = []
             # TODO: shorten long fields
-            if push["type"] in ["note", "link"]:
+            if push["type"] in ["note", "link", "file"]:
                 message_field = []
+                if "file_url" in push:
+                    fields.append(url.format(url.shorten(push["file_url"])))
                 if "title" in push:
                     message_field.append("\x0303%s\x03" % push["title"])
                 if "body" in push:
@@ -119,11 +121,6 @@ class PushBullet(Callback):
                     fields.append("\x0303 📍 %s\x03" % push["name"])
                 if "address" in push:
                     fields.append(push["address"])
-            elif push["type"] == "file":
-                if "file_url" in push:
-                    fields.append(url.format(url.shorten(push["file_url"])))
-                if "body" in push:
-                    fields.append(push["body"])
             elif push["type"] == "checklist":
                 self.queue(push)
 
