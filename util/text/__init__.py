@@ -21,7 +21,7 @@ class ControlCode:
     REVERSE = "\x16"
 
 
-def lineify(data, max_size=400):
+def lineify(data, max_size=512):
     """ Split text up into IRC-safe lines. """
     # TODO
     lines = [item.rstrip()[:max_size] for item in data.split('\n')]
