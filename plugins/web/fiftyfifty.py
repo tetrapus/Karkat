@@ -20,7 +20,8 @@ def get_rand_link(sub):
 subreddit_rx = r"[A-Za-z0-9][A-Za-z0-9_]{2,20}"
 
 defaults = [[["fiftyfifty"]], 
-            [["aww"], ["spacedicks"]]]
+            [["aww"], ["spacedicks"]],
+            [["gonewild"], ["mangonewild"]]]
 
 @command("5050 50/50 fiftyfifty", r"(.*)")
 def fiftyfifty(server, message, sublist):
