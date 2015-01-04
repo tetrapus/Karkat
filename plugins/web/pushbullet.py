@@ -165,6 +165,7 @@ class PushBullet(Callback):
         listener = PushListener(account["token"], partial(self.update, channel))
         self.listeners.append(listener)
         listener.start()
+        self.channels[channel] = requests.get("https://api.pushbullet.com/v2/users/me", headers={"Authorization": "Bearer " + token}).json()
         return "03│ ⁍ │ Done."
 
     # @command("pushbullet", "(.*)")
