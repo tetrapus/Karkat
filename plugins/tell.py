@@ -146,7 +146,7 @@ class Reminder(Callback):
             json.dump(self.reminders, f)
 
     def __destroy__(self, server):
-        for i in self.waiting:
+        for i in self.waiting.values():
             for job in i.values():
                 job["job"].cancel()
 
