@@ -449,7 +449,10 @@ class Snap(Callback):
         if doge:
             if not text: text = "wow, such snapchat"
             dogified = ""
-            for i in text.split(",") + [random.choice("wow, such very many so".split()) + " " + username]:
+            lines = text.split(",")
+            if watermark:
+                lines.append(random.choice("wow, such very many so".split()) + " " + username)
+            for i in lines:
                 i = i.strip()
                 if random.random() < 0.75:
                     dogified += " \n"
