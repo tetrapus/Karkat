@@ -109,7 +109,7 @@ class Reminder(Callback):
             json.dump(self.reminders, f)
 
         when = "in %s" % from_now(after) if after else "next time I see them"
-        return "03│ Okay, I'll tell %s %s" % (user, when)
+        return "03│ I'll tell %s that %s." % (user, when)
 
     def privmsg_check(self, server, line) -> "privmsg":
         msg = Message(line)
