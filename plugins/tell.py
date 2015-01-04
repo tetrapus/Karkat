@@ -43,6 +43,18 @@ def parse_time(expr):
         seconds += num * seconds_map[unit.rstrip("s").lower()]
     return seconds
 
+def from_now(seconds):
+    units = ["seconds", "minutes", "hours", "days", "weeks", "years"]
+    multipliers = [60, 60, 24, 7, 52.14]
+    acc = []
+    qty = seconds
+    for i in multipliers:
+        qty, unit = divmod(qty, i)
+        acc.append(unit)
+    acc.append(qty)
+    return " ".join(["%d %s" % (q, u) for q, u in zip(acc, units) if q][::-1])
+
+
 class Reminder(Callback):
 
     REMINDERF = "reminders.json"
@@ -96,7 +108,8 @@ class Reminder(Callback):
         with open(self.server.get_config_dir(self.REMINDERF), "w") as f:
             json.dump(self.reminders, f)
 
-        return "user=%(user)s, after=%(after)s, text=%(text)s, method=%(method)s, repeat=%(repeat)s, cancel=%(cancel)s" % locals()
+        when = "in %s" % from_now(after) if after else "next time I see them"
+        return "03│ Okay, I'll tell %s %s" % (user, when)
 
     def privmsg_check(self, server, line) -> "privmsg":
         msg = Message(line)
