@@ -98,6 +98,10 @@ class Weather(Callback):
                 settings["ip"] = self.server.iptracker.known[user]
         return settings
 
+    @staticmethod
+    def get_location(location):
+        return requests.get("http://autocomplete.wunderground.com/aq", params={"query":location}).json()["RESULTS"][0]
+
     @command("weather", "(.*)")
     def get_weatherdata(self, server, message, location):
         user = message.address.nick
@@ -105,9 +109,12 @@ class Weather(Callback):
           userinfo = self.getusersettings(user)
           if not userinfo:
               return "04│ ☀ │ I don't know where you live! Set your location with .set location \x02city\x02 or specify it manually."
-          location = userinfo["location"] + ".json" if "location" in userinfo else "autoip.json?geo_ip=" + userinfo["ip"]
+          if "location" in userinfo:
+              location = "zmw:%s.json" % self.get_location(userinfo["location"])["zmw"]
+          else:
+              location = "autoip.json?geo_ip=" + userinfo["ip"]
         else:
-          location = location + ".json"
+          location = "zmw:%s.json" % self.get_location(location)["zmw"]
         
         data = "http://api.wunderground.com/api/%s/conditions/q/%s" % (apikey, location)
         data = requests.get(data).json()
