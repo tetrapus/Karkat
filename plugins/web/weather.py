@@ -105,16 +105,26 @@ class Weather(Callback):
     @command("weather", "(.*)")
     def get_weatherdata(self, server, message, location):
         user = message.address.nick
+        # TODO: refactor
         if not location:
-          userinfo = self.getusersettings(user)
-          if not userinfo:
-              return "04│ ☀ │ I don't know where you live! Set your location with .set location \x02city\x02 or specify it manually."
-          if "location" in userinfo:
-              location = "zmw:%s.json" % self.get_location(userinfo["location"])["zmw"]
-          else:
-              location = "autoip.json?geo_ip=" + userinfo["ip"]
+            userinfo = self.getusersettings(user)
+            if not userinfo:
+                return "04│ ☀ │ I don't know where you live! Set your location with .set location \x02city\x02 or specify it manually."
+    
+            if "location" in userinfo:
+                try:
+                    loc_data = self.get_location(userinfo["location"])["zmw"]
+                except:
+                    return "04│ ☀ │ No weather information for your location."
+                location = "zmw:%s.json" % loc_data
+            else:
+                location = "autoip.json?geo_ip=" + userinfo["ip"]
         else:
-          location = "zmw:%s.json" % self.get_location(location)["zmw"]
+            try:
+                loc_data = self.get_location(location)["zmw"]
+            except:
+                return "04│ ☀ │ No weather information for that location."
+            location = "zmw:%s.json" % loc_data
         
         data = "http://api.wunderground.com/api/%s/conditions/q/%s" % (apikey, location)
         data = requests.get(data).json()
