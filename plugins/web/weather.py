@@ -105,7 +105,7 @@ class Weather(Callback):
     def get_location(location):
         return requests.get("http://autocomplete.wunderground.com/aq", params={"query":location}).json()["RESULTS"][0]
 
-    @command("time", r"(.+)")
+    @command("time", r"(.*)")
     def get_time(self, server, message, location):
         user = message.address.nick
         if not location:
