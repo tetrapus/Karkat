@@ -146,7 +146,7 @@ class Weather(Callback):
             astro = astro["moon_phase"]
         except:
             return "04│ ☀ │ No timezone data."
-        sunrise, now, sunset = (astro["sunrise"]["hour"], astro["sunrise"]["minute"]), (astro["current_time"]["hour"], astro["current_time"]["minute"]), (astro["sunset"]["hour"], astro["sunset"]["minute"])
+        sunrise, now, sunset = (int(astro["sunrise"]["hour"]), int(astro["sunrise"]["minute"])), (int(astro["current_time"]["hour"]), int(astro["current_time"]["minute"])), (int(astro["sunset"]["hour"]), int(astro["sunset"]["minute"]))
         if sunrise < now < sunset:
             sigil = "\x0307☀\x03"
         else:
