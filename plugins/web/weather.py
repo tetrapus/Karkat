@@ -158,7 +158,7 @@ class Weather(Callback):
         localtime = localtime + offset if polarity == "+" else localtime - offset
         localtime = datetime.datetime.utcfromtimestamp(localtime)
         date = "%(weekday)s, %(month)s %(day)s, %(year)s" % {"weekday": weekdays[localtime.weekday()], "month": months[localtime.month-1], "day": localtime.day, "year": localtime.year}
-        return "2│ %(sigil)s %(hour)s:%(minute)s:%(second)s %(ampm)s \x0315%(timezone)s\x03 · %(date)s" % {"timezone": weather["local_tz_short"], "sigil":sigil, "hour": localtime.hour % 12, "minute": localtime.hour, "second": localtime.second, "date": date, "ampm": "am" if localtime.hour < 12 else "pm"}
+        return "2│ %(sigil)s %(hour).2d:%(minute).2d:%(second).2d %(ampm)s \x0315%(timezone)s\x03 · %(date)s" % {"timezone": weather["local_tz_short"], "sigil":sigil, "hour": localtime.hour % 12, "minute": localtime.minute, "second": localtime.second, "date": date, "ampm": "am" if localtime.hour < 12 else "pm"}
 
     @command("weather", "(.*)")
     def get_weatherdata(self, server, message, location):
