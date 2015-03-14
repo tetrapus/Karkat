@@ -49,10 +49,12 @@ class Weather(object):
 '''
 import sys
 import json
+import datetime
 
 import requests
 import yaml
 
+import util
 from bot.events import Callback, command
 from util.text import pretty_date
 
@@ -63,7 +65,8 @@ except:
     print("Error: invalid or nonexistant wunderground api key.", file=sys.stderr)
     raise ImportError("Could not load module.")
 
-
+weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 icons = {"flurries": "❄", "rain": "☔", "sleet": "⛆", "snow": "☃", "tstorms": "⛈", "clear": "☀", "cloudy": "☁", "fog": "🌁", "hazy": "🌁", "unknown": "?"}
 
 def icon_to_unicode(icon):
@@ -101,6 +104,61 @@ class Weather(Callback):
     @staticmethod
     def get_location(location):
         return requests.get("http://autocomplete.wunderground.com/aq", params={"query":location}).json()["RESULTS"][0]
+
+    @command("time", r"(.+)")
+    def get_time(self, server, message, location):
+        user = message.address.nick
+        if not location:
+            userinfo = self.getusersettings(user)
+            if not userinfo:
+                return "04│ ☀ │ I don't know where you live! Set your location with .set location \x02city\x02 or specify it manually."
+    
+            if "location" in userinfo:
+                try:
+                    loc_data = self.get_location(userinfo["location"])["zmw"]
+                except:
+                    return "04│ ☀ │ No timezone information for your location."
+                location = "zmw:%s.json" % loc_data
+            else:
+                location = "autoip.json?geo_ip=" + userinfo["ip"]
+        else:
+            userinfo = self.getusersettings(location)
+            if not userinfo:
+                location = "zmw:%s.json" % self.get_location(location)["zmw"]
+    
+            elif "location" in userinfo:
+                try:
+                    loc_data = self.get_location(userinfo["location"])["zmw"]
+                except:
+                    try:
+                        loc_data = self.get_location(location)["zmw"]
+                    except:
+                        return "04│ ☀ │ No timezone information for that location."
+                location = "zmw:%s.json" % loc_data
+            else:
+                location = "autoip.json?geo_ip=" + userinfo["ip"]
+            
+        wurl = "http://api.wunderground.com/api/%s/conditions/q/%s" % (apikey, location)
+        lurl = "http://api.wunderground.com/api/%s/astronomy/q/%s" % (apikey, location)
+        weather, astro = util.parallelise([lambda: requests.get(wurl).json(), lambda: requests.get(lurl).json()])
+        try:
+            weather = weather["current_observation"]
+            astro = astro["moon_phase"]
+        except:
+            return "04│ ☀ │ No timezone data."
+        sunrise, now, sunset = (astro["sunrise"]["hour"], astro["sunrise"]["minute"]), (astro["current_time"]["hour"], astro["current_time"]["minute"]), (astro["sunset"]["hour"], astro["sunset"]["minute"])
+        if sunrise < now < sunset:
+            sigil = "\x0307☀\x03"
+        else:
+            sigil = "\x032🌙\x03"
+        localtime = int(weather["local_epoch"])
+        timezone = weather["local_tz_offset"]
+        polarity, hours, mins = timezone[0], int(timezone[1:3]), (timezone[3:5])
+        offset = hours * 60 * 60 + mins * 60
+        localtime = localtime + offset if polarity == "+" else localtime - offset
+        localtime = datetime.datetime.utcfromtimestamp(localtime)
+        date = "%(weekday)s, %(month)s %(day)s, %(year)s" % {"weekday": weekdays[localtime.weekday()], "month": months[localtime.month-1], "day": localtime.day, "year": localtime.year}
+        return "2│ %(sigil)s %(hour)s:%(minute)s:%(second)s %(ampm)s \x0315%(timezone)s\x03 · %(date)s" % {"timezone": weather["local_tz_short"], "sigil":sigil, "hour": localtime.hour % 12, "minute": localtime.hour, "second": localtime.second, "date": date, "ampm": "am" if localtime.hour < 12 else "pm"}
 
     @command("weather", "(.*)")
     def get_weatherdata(self, server, message, location):
