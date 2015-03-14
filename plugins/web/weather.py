@@ -153,7 +153,7 @@ class Weather(Callback):
             sigil = "\x032🌙\x03"
         localtime = int(weather["local_epoch"])
         timezone = weather["local_tz_offset"]
-        polarity, hours, mins = timezone[0], int(timezone[1:3]), (timezone[3:5])
+        polarity, hours, mins = timezone[0], int(timezone[1:3]), int(timezone[3:5])
         offset = hours * 60 * 60 + mins * 60
         localtime = localtime + offset if polarity == "+" else localtime - offset
         localtime = datetime.datetime.utcfromtimestamp(localtime)
