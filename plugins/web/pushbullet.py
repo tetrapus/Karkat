@@ -116,7 +116,10 @@ class PushBullet(Callback):
                 if message_field:
                     fields.append(" ".join(message_field))
                 if "url" in push:
-                    fields.append(url.format(url.shorten(push["url"])))
+                    try:
+                        fields.append(url.format(url.shorten(push["url"])))
+                    except:
+                        fields.append(url.format(push["url"]))
             elif push["type"] == "address":
                 if "name" in push:
                     fields.append("\x0303 📍 %s\x03" % push["name"])
@@ -139,6 +142,11 @@ class PushBullet(Callback):
             fields.append("\u231a " + pretty_date(time.time() - push["modified"]))
 
             self.server.message("03│ ⁍ │ " + " · ".join(fields), account)
+            @command("reply", r"(?:(https?://\S+|:.+?:))?(?:\s+(.+))?")
+            def pushreply(self, server, message, link, text):
+                user = push["sender_email"]
+                return self.send_push.funct(self, server, message, user, link, text)
+            self.server.reply_hook = pushreply
 
             acc["last"] = max(push["modified"], acc["last"])
         self.save(account, acc)
@@ -209,6 +217,8 @@ class PushBullet(Callback):
         if user is None:
             return "03│ ⁍ │ %s has not associated their pushbullet." % user
 
+        push["body"] = " · from " + msg.address.nick
+
         if link:
             if link.startswith(":"):
                 link = image_search(link[1:-1])[0]["url"] 
@@ -219,7 +229,7 @@ class PushBullet(Callback):
         if text:
             if ": " in text:
                 push["title"], text = text.split(": ", 1)
-            push["body"] = text
+            push["body"] = text + push["body"]
         push["email"] = user
         self.push(push, acc["token"])
 
