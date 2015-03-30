@@ -17,4 +17,5 @@ __modules__ = ["games",
                "queue",
                "inspire",
                "topic",
+               "reply",
                "balance"]

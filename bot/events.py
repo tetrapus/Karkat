@@ -185,7 +185,6 @@ def command(name=None,
                                 else:
                                     fargs.extend(re.match(args, arg, flags=re.IGNORECASE).groups())
                         except (AttributeError, IndexError):
-                            print(errors.keys())
                             raise Callback.InvalidUsage(msg)
                         else:
                             # TODO: implement templates

@@ -496,9 +496,9 @@ class CAHBot(object):
                             if all((bet + args).count(i) == 1 and 1 <= i <= len(player.hand) for i in bet + args) and (len(args) == game.numcards() and len(bet) in [game.numcards(), 0]):
                                 player.setResponses(args)
                                 player.setBet(bet)
-                                printer.message(CAHPREFIX + "00,01 Response 01,00 %s " % game.substitute(player.responses), nick, "NOTICE")
+                                printer.message(CAHPREFIX + "00,01 Response 01,00 %s " % game.substitute(player.responses), nick, "NOTICE")
                                 if bet:
-                                    printer.message(CAHPREFIX + "01,00 Backup   01,00 %s " % game.substitute(player.bets), nick, "NOTICE")
+                                    printer.message(CAHPREFIX + "01,00 Backup   01,00 %s " % game.substitute(player.bets), nick, "NOTICE")
                             else:
                                 printer.message(CAHPREFIX + "Invalid arguments.", nick, "NOTICE")
                             if not [i for i in game.players if i.responses is None and i != game.czar]:

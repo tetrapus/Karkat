@@ -20,7 +20,7 @@ class Tox(Callback):
             return "11│ %s 11│ %s" % (user, self.users[server.lower(user)])
         return "11│ 🔒 │ %s has no associated tox ID." % (user)
 
-    @command("settox", "([A-F0-9]+)")
+    @command("settox", "([A-F0-9]{76})", templates={Callback.USAGE: "04│ 🔒 │ Please supply a valid public key."})
     def settox(self, server, message, token):
         self.users[server.lower(message.address.nick)] = token
         self.save()

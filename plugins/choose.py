@@ -12,6 +12,7 @@ def strip(x):
     return "".join(i for i in ircstrip(x.strip()) 
                      if not unicodedata.category(i).startswith("C"))
 
+
 class Aggregator(Callback):
     def __init__(self, server):
         self.decision = {}

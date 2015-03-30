@@ -98,7 +98,7 @@ is quite bitter""".split("\n")
             wyp = self.wyps.setdefault("%s but %s" % (cond, res), {})
             self.save()
         # Reduce probability of already-answered buttons
-        buttons = [i for i in self.wyps if (server.lower(nick) not in self.wyps[i] and i != self.active) or random.random() < 0.025]
+        buttons = [i for i in self.wyps if (server.lower(nick) not in self.wyps[i] and i != self.active)]
         self.active[server.lower(msg.context)] = random.choice(buttons)
         return self.display(server.lower(msg.context))
 

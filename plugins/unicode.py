@@ -55,7 +55,7 @@ def search(server, message, data):
         results = [i for i in database.values() if any(data == x for x in i)]
         results += [i for i in database.values() 
                       if any(data in x for x in i) and not any(data == x 
-                                                                for x in i)]
+                                                               for x in i)]
         if not results:
             # If we can't find it, see if unicodedata has it
             results = [getdata(unicodedata.lookup(data))]
