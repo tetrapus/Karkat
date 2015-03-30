@@ -142,7 +142,7 @@ class PushBullet(Callback):
             fields.append("\u231a " + pretty_date(time.time() - push["modified"]))
 
             self.server.message("03│ ⁍ │ " + " · ".join(fields), account)
-            @command("reply", r"(?:(https?://\S+|:.+?:))?(?:\s+(.+))?")
+            @command("reply", r"(?:(https?://\S+|:.+?:))?\s*(.*)")
             def pushreply(server, message, link, text):
                 user = push["sender_email"]
                 return self.send_push.funct(self, server, message, user, link, text)
