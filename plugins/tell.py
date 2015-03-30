@@ -143,7 +143,7 @@ class Reminder(Callback):
                          "notice": (user, "NOTICE")}[i["method"]]
                 self.server.message("03│ ✉ │ %s: %s · from %s · ⌚ %s" % (user, i["message"], i["sender"], pretty_date(time.time() - i["time"])), *method)
                 @command("reply", r"(.+)")
-                def tellreply(self, server, message, text):
+                def tellreply(server, message, text):
                     return self.reminder.funct(self, server, message, i["sender"], "", text, "", i["method"], "", "")
                 self.server.reply_hook = tellreply
                 popindices.append(i)

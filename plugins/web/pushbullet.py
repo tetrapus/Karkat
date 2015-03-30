@@ -143,7 +143,7 @@ class PushBullet(Callback):
 
             self.server.message("03│ ⁍ │ " + " · ".join(fields), account)
             @command("reply", r"(?:(https?://\S+|:.+?:))?(?:\s+(.+))?")
-            def pushreply(self, server, message, link, text):
+            def pushreply(server, message, link, text):
                 user = push["sender_email"]
                 return self.send_push.funct(self, server, message, user, link, text)
             self.server.reply_hook = pushreply
