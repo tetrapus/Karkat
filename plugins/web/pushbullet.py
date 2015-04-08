@@ -148,12 +148,13 @@ class PushBullet(Callback):
             if push["iden"] in self.skip:
                 self.skip.remove(push["iden"])
             else:
+                if push["iden"] not in self.sent:
+                    @command("reply", r"(?:(https?://\S+|:.+?:))?\s*(.*)")
+                    def pushreply(server, message, link, text, push=push):
+                        user = push["sender_email"]
+                        return self.send_push.funct(self, server, message, user, link, text)
+                    self.server.reply_hook = pushreply
                 self.server.message(push_format(push, self.sent, self.config["users"]), account)
-                @command("reply", r"(?:(https?://\S+|:.+?:))?\s*(.*)")
-                def pushreply(server, message, link, text, push=push):
-                    user = push["sender_email"]
-                    return self.send_push.funct(self, server, message, user, link, text)
-                self.server.reply_hook = pushreply
 
             acc["last"] = max(push["modified"], acc["last"])
         self.save(account, acc)
