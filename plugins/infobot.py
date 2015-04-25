@@ -29,7 +29,7 @@ def setinfo(server, msg, info):
         yield "│ Your information has been deleted."
     else:
         data[luser] = info
-        if msg.prefix == "!":
+        if msg.prefix != "!":
             yield "│ Your information has been updated."
     json.dump(data, open(server.get_config_dir(infofile), "w"))
 
