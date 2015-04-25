@@ -18,4 +18,5 @@ __modules__ = ["games",
                "inspire",
                "topic",
                "reply",
-               "balance"]
+               "balance",
+               "infonot"]
