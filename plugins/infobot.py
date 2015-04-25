@@ -39,6 +39,7 @@ def toggle_protection(server, msg, state):
     else:
         protected[luser] = not protected.get(luser, False)
     json.dump(protected, open(server.get_config_dir(protectionfile), "w"))
+    return "│ Account protection for %s is %s" %(user, "CLEARED" if luser not in protected else ["OFF", "ON"][protected[luser]])
     
 
 @command("info", r"(.*)", prefixes=("", "."))
