@@ -13,4 +13,5 @@ __modules__ = ["autojoin",
                "ctcp",
                "iptracker",
                "restart",
-               "watchdog"]
+               "watchdog",
+               "nickserv"]
