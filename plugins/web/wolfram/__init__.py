@@ -24,6 +24,25 @@ except:
     print("Request an apikey at https://developer.wolframalpha.com/portal/apisignup.html and place in apikeys.conf as wolfram.key.<key>", file=sys.stderr)
     raise ImportError("Module not loaded.")
 
+protectionfile = "users.json"
+
+def isprotected(server, user):
+    try:
+        protected = json.load(open(server.get_config_dir(protectionfile)))
+    except:
+        protected = {}
+    return server.lower(user) in protected and protected[server.lower(user)]
+
+def set_protected(server, user):
+    """ Add protection if not defined """
+    try:
+        protected = json.load(open(server.get_config_dir(protectionfile)))
+    except:
+        protected = {}
+    if server.lower(user) not in protected:
+        protected[server.lower(user)] = True
+    json.dump(protected, open(server.get_config_dir(protectionfile), "w"))
+
 
 class WolframAlpha(Callback):
 
@@ -203,6 +222,10 @@ class WolframAlpha(Callback):
     def update_settings(self, server, msg, varname, value):
         var = varname.lower()
         nick = server.lower(msg.address.nick) 
+        protected = isprotected(server, nick)
+        registered = server.registered.get(nick, False)
+        if protected and not registered:
+            return "05Settings04⎟ This nickname is protected by the owner. Please identify with NickServ to update your info."
         if varname not in ("location", "ip"):
             return "05Settings04⎟ No such setting."
         elif value is None:
@@ -217,6 +240,7 @@ class WolframAlpha(Callback):
             else:
                 self.settings[nick] = {var: value}
             json.dump(self.settings, open(self.settingsf, "w"))
+            set_protected(server, nick)
             return "05Settings05⎟ Your %s has been set to %r." % (var, value)
 
 

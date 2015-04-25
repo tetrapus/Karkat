@@ -69,7 +69,7 @@ def setinfo(server, msg, info):
     protected = isprotected(server, user)
     registered = server.registered.get(luser, False)
 
-    if protected and registered:
+    if protected and not registered:
         if msg.prefix != "!":
             yield "│ This nickname is protected by the owner. Please identify with NickServ to update your info."
         return
