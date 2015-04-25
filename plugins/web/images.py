@@ -1,3 +1,4 @@
+import random
 import requests
 import re
 from PIL import Image
@@ -271,4 +272,19 @@ def urlcache(server, msg):
     if urls:
         server.lasturl = urls[-1]
 
-__callbacks__ = {"privmsg": [image, gif, face, photo, clipart, lineart, asciiart, urlcache, render, show, trace]}
+@command("mean")
+def mean_girls(server, msg):
+    params = {
+        "start": random.randrange(1,75),
+        "safe": "off",
+        "v": "1.0",
+        "rsz": 1,
+        "q": "mean girls quotes"
+    }
+    pic = requests.get(
+          "https://ajax.googleapis.com/ajax/services/search/images",
+          params=params
+        ).json()["responseData"]["results"][0]["url"]
+    return url.format(url.shorten(pic))
+
+__callbacks__ = {"privmsg": [image, gif, face, photo, clipart, lineart, asciiart, urlcache, render, show, trace, mean_girls]}
