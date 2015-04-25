@@ -86,4 +86,4 @@ def setinfo(server, msg, info):
 
     json.dump(data, open(server.get_config_dir(infofile), "w"))
 
-__callbacks__ = {"privmsg": [info, setinfo]}
+__callbacks__ = {"privmsg": [info, setinfo, toggle_protection]}
