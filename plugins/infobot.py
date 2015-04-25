@@ -49,8 +49,11 @@ def info(server, msg, user):
         data = {}
     user = user or msg.address.nick
     luser = server.lower(user)
+    protected = isprotected(server, user)
     if luser not in data:
         return "I don't have info about %s. %s can use \x0312!setinfo \x1fblurb\x0f to add their info, or try !info %s if another bot provides this service." % (user, user, user)
+    elif protected:
+        return "\x0312%s\x03: %s" % (user, data[luser])
     else:
         return "%s: %s" % (user, data[luser])
 
