@@ -34,7 +34,7 @@ def toggle_protection(server, msg, state):
         protected[luser] = True
     elif state == "off":
         protected[luser] = False
-    elif state == None:
+    elif state == "none":
         del protected[luser]
     else:
         protected[luser] = not protected.get(luser, False)
