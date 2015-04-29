@@ -35,7 +35,7 @@ class Registration(Callback):
     def nick(self, server, line):
         words = line.split()
         del server.registered[server.lower(Address(words[0]).nick)]
-        server.registered[words[2]] = False        
+        server.registered[server.lower(words[2][1:])] = False        
         server.printer.raw_message("WHOIS %s" % words[2])
 
 
