@@ -6,6 +6,7 @@ protectionfile = "users.json"
 
 def check_whois(gen, server, msg, user):
     server.whois_waiting[server.lower(msg.address.nick)] = (gen, msg)
+    server.printer.raw_message("WHOIS :%s" % msg.address.nick)
 
 def finish_whois(server, line):
     words = line.split()
