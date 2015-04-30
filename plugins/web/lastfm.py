@@ -172,7 +172,9 @@ class LastFM(Callback):
                username: "Your Last.FM username"):
         """
         Associates a nickname with a Last.FM account.
-        The stored nickname will be used as an alias for your username in all Last.FM requests, and is the default username if omitted.
+        The stored nickname will be used as an alias for your username in all Last.FM requests.
+
+        If [username] is not specified, your current nick is used.
         """
         nick = server.lower(message.address.nick)
         if not username:
@@ -373,7 +375,7 @@ class LastFM(Callback):
             json.dump({}, compfile)
 
     def compare_rand(self, server, line) -> "ALL":
-        if time.time() - self.lastcompare > max(300, 604800/len(self.users)**2):
+        if self.users and time.time() - self.lastcompare > max(300, 604800/len(self.users)**2):
             user1 = random.choice(list(self.users.values()))
             user2 = random.choice(list(self.users.values()))
             self.cached_compare(user1, user2)
