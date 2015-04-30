@@ -190,8 +190,14 @@ def command(name=None,
                             # TODO: implement templates
                             if inspect.isgeneratorfunction(funct):
                                 with output as out:
-                                    for line in funct(*fargs):
-                                        out += line
+                                    generator = funct(*fargs)
+                                    for line in generator:
+                                        if callable(line):
+                                            # save state and break
+                                            line(generator, *fargs)
+                                            break
+                                        else:
+                                            out += line
                             else:
                                 rval = funct(*fargs)
                                 if rval is not None:

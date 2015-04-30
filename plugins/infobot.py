@@ -4,6 +4,20 @@ import json
 infofile = "info.json"
 protectionfile = "users.json"
 
+def check_whois(gen, server, msg, user):
+    server.whois_waiting[server.lower(msg.address.nick)] = (gen, msg)
+
+def finish_whois(server, line):
+    words = line.split()
+    nick = server.lower(words[3])
+    if nick in server.whois_waiting:
+        gen, msg = server.whois_waiting[nick]
+        del server.whois_waiting[nick]
+        output = server.printer.buffer(msg.context, "PRIVMSG")
+        with output as out:
+            for i in gen:
+                out += i
+
 def isprotected(server, user):
     try:
         protected = json.load(open(server.get_config_dir(protectionfile)))
@@ -70,13 +84,16 @@ def setinfo(server, msg, info):
     registered = server.registered.get(luser, False)
 
     if protected and not registered:
-        if msg.prefix != "!":
-            yield "│ This nickname is protected by the owner. Please identify with NickServ to update your info."
-        return
+        yield check_whois
+        if not registered:
+            if msg.prefix != "!":
+                yield "│ This nickname is protected by the owner. Please identify with NickServ to update your info."
+            return
 
     if not info:
         del data[luser]
-        yield "│ Your information has been deleted."
+        if msg.prefix != "!":
+            yield "│ Your information has been deleted."
     else:
         data[luser] = info
         if msg.prefix != "!":
@@ -87,4 +104,7 @@ def setinfo(server, msg, info):
 
     json.dump(data, open(server.get_config_dir(infofile), "w"))
 
-__callbacks__ = {"privmsg": [info, setinfo, toggle_protection]}
+__callbacks__ = {"privmsg": [info, setinfo, toggle_protection], "318": [finish_whois]}
+
+def __initialise__(server):
+    server.whois_waiting = {}
