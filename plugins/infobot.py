@@ -1,4 +1,4 @@
-from bot.events import command
+from bot.events import command, Callback
 import json
 
 infofile = "info.json"
@@ -8,6 +8,7 @@ def check_whois(gen, server, msg, user):
     server.whois_waiting[server.lower(msg.address.nick)] = (gen, msg)
     server.printer.raw_message("WHOIS :%s" % msg.address.nick)
 
+@Callback.inline
 def finish_whois(server, line):
     words = line.split()
     nick = server.lower(words[3])
