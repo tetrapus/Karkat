@@ -1,0 +1,6 @@
+docopt
+requests
+pyyaml
+pylast
+pyenchant
+pillow
