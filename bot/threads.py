@@ -373,10 +373,11 @@ class Connection(threading.Thread, object):
         config = yaml.safe_load(open(conf))
         self.sock = None
         self.server = tuple(config["Server"])
-        self.username = config["Username"]
+        self.ident = config["Username"]
         self.realname = config["Real Name"]
         self.mode = config.get("Mode", 0)
         self.ssl = config.get("SSL", False)
+        self.password = config.get("Password", None)
         
         self.nick = None
         self.nicks = config["Nick"]
@@ -406,9 +407,11 @@ class Connection(threading.Thread, object):
         # Try our first nickname.
         nicks = collections.deque(self.nicks)
         self.nick = nicks.popleft()
-        self.sendline("USER %s %s * :%s\r\n" % (self.username, 
+        self.sendline("USER %s %s * :%s\r\n" % (self.ident, 
                                                 self.mode, 
                                                 self.realname))
+        if self.password:
+            self.sendline("PASS %s" % (self.password))
         print("Connected. Trying %s" % self.nick)
         self.sendline("NICK %s" % self.nick)
         # Find a working nickname
