@@ -76,6 +76,7 @@ def info(server, msg, user):
 
 @command("setinfo", r"(.*)", prefixes=("!", "."))
 def setinfo(server, msg, info):
+    yield check_whois
     try:
         data = json.load(open(server.get_config_dir(infofile)))
     except:
@@ -86,11 +87,9 @@ def setinfo(server, msg, info):
     registered = server.registered.get(luser, False)
 
     if protected and not registered:
-        yield check_whois
-        if not registered:
-            if msg.prefix != "!":
-                yield "│ This nickname is protected by the owner. Please identify with NickServ to update your info."
-            return
+        if msg.prefix != "!":
+            yield "│ This nickname is protected by the owner. Please identify with NickServ to update your info."
+        return
 
     if not info:
         del data[luser]
