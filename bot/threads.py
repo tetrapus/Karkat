@@ -718,7 +718,6 @@ class StatefulBot(SelectiveBot):
         self.listbuffer = {}
         self.topic = {}
         self.hostmask = None
-        self.username = None
         self.rawmap = {346:"I", 348:"e", 367:"b", 386:"q", 388:"a"} # TODO: parse these.
         self.register_all({"quit" : [self.user_quit],
                            "part" : [self.user_left],
