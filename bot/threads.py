@@ -377,6 +377,7 @@ class Connection(threading.Thread, object):
         self.realname = config["Real Name"]
         self.mode = config.get("Mode", 0)
         self.ssl = config.get("SSL", False)
+        self.password = config.get("Password", None)
         
         self.nick = None
         self.nicks = config["Nick"]
@@ -409,6 +410,8 @@ class Connection(threading.Thread, object):
         self.sendline("USER %s %s * :%s\r\n" % (self.username, 
                                                 self.mode, 
                                                 self.realname))
+        if self.password is not None:
+            self.sendline("PASS %s" % (self.password))
         print("Connected. Trying %s" % self.nick)
         self.sendline("NICK %s" % self.nick)
         # Find a working nickname
