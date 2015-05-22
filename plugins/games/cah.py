@@ -46,8 +46,8 @@ def defaultdeck(black, white):
 def cardcast(cardset):
     questions = requests.get("https://api.cardcastgame.com/v1/decks/%s/calls" % cardset).json()
     answers = requests.get("https://api.cardcastgame.com/v1/decks/%s/responses" % cardset).json()
-    questions = ["_".join(i["text"]) for i in questions]
-    answers = ["_".join(i["text"]) for i in answers]
+    questions = ["__________".join(i["text"]) for i in questions]
+    answers = ["__________".join(i["text"]) for i in answers]
     deck = requests.get("https://api.cardcastgame.com/v1/decks/%s" % cardset).json()["name"]
     return questions, answers, deck
 
