@@ -18,45 +18,65 @@ CAHPREFIX = "01│14│15│ "
 datadir = "data/CardsAgainstHumanity"
 CONFIG_FILE = "cahsettings.json"
 
+def defaultdeck(black, white):
+    questions = [i.strip() for i in open(datadir + "/black.txt").read().split("\n")] + black
+    answers = [i.strip() for i in open(datadir + "/white.txt").read().split("\n")] + white
+    # Get questions from reddit
+    reddit = requests.get("http://www.reddit.com/r/AskReddit/hot.json", headers={"User-Agent": "Karkat-CardsAgainstHumanity-Scraper"}).json()
+    reddit = reddit["data"]["children"]
+    titles = [i["data"]["title"] for i in reddit if i["data"]["title"].endswith("?")]
+    # 5% of cards max should be reddit cards
+    questions.extend(titles)
+
+    # Get trends from Know Your Meme
+    memes = requests.get("http://knowyourmeme.com/").text
+    memes = re.findall("<h5 class='left'>Also Trending:</h5>(.+?)</div>", memes)
+    memes = re.findall(">(.+?)</a>", memes[0])
+
+    answers.extend([unescape(i) + "." for i in memes])
+
+    ud = requests.get("http://urbandictionary.com/").text
+    ud = re.findall(r"define\.php.*?>(.+?)<", ud)[1:]
+    ud = [unescape(i) for i in ud]
+    ud = [i[0].upper() + i[1:] + ("." * i[-1].isalpha()) for i in ud]
+    answers.extend(ud)
+
+    return questions, answers
+
+def cardcast(cardset):
+    questions = requests.get("https://api.cardcastgame.com/v1/decks/%s/calls" % cardset).json()
+    answers = requests.get("https://api.cardcastgame.com/v1/decks/%s/responses" % cardset).json()
+    questions = ["_".join(i["text"]) for i in questions]
+    answers = ["_".join(i["text"]) for i in answers]
+    deck = requests.get("https://api.cardcastgame.com/v1/decks/%s" % cardset).json()["name"]
+    return questions, answers, deck
+
+def find_deck(query):
+    res = requests.get("https://api.cardcastgame.com/v1/decks", data={"limit": 1, "search": query, "sort": "rating"}).json()
+    return res["results"]["data"][0]["name"]
 
 # Dynamic cards:
 # Black: Askreddit, yahoo answers
 # White: Random username, google trends, random player, random song, twitter trending
 
 class CardsAgainstHumanity(object):
-    black = [i.strip() for i in open(datadir + "/black.txt").read().split("\n")]
-    white = [i.strip() for i in open(datadir + "/white.txt").read().split("\n")]
 
-    def __init__(self, printer, channel, rounds=None, black=[], white=[], rando=False, numcards=10, minplayers=3, bets=True, firstto=None, ranked=False, democracy=False, compact=True):
+    def __init__(self, printer, channel, rounds=None, black=[], white=[], rando=False, numcards=10, minplayers=3, bets=True, firstto=None, ranked=False, democracy=False, compact=True, cardset=None):
         self.printer = printer
 
         self.lock = threading.Lock()
-        self.questions = self.black[:] + black[:]
 
-        # Get questions from reddit
-        reddit = requests.get("http://www.reddit.com/r/AskReddit/hot.json", headers={"User-Agent": "Karkat-CardsAgainstHumanity-Scraper"}).json()
-        reddit = reddit["data"]["children"]
-        titles = [i["data"]["title"] for i in reddit if i["data"]["title"].endswith("?")]
-        # 5% of cards max should be reddit cards
-        self.questions.extend(titles)
+        self.deck = None
+
+        if cardset is not None:
+            try:
+                self.questions, self.answers, self.deck = cardcast(cardset)
+            except:
+                self.questions, self.answers = defaultdeck(black, white)
+        else:
+            self.questions, self.answers = defaultdeck(black, white)
 
         random.shuffle(self.questions)
-        
-        self.answers = self.white[:] + white[:]
-
-        # Get trends from Know Your Meme
-        memes = requests.get("http://knowyourmeme.com/").text
-        memes = re.findall("<h5 class='left'>Also Trending:</h5>(.+?)</div>", memes)
-        memes = re.findall(">(.+?)</a>", memes[0])
-
-        self.answers.extend([unescape(i) + "." for i in memes])
-
-        ud = requests.get("http://urbandictionary.com/").text
-        ud = re.findall(r"define\.php.*?>(.+?)<", ud)[1:]
-        ud = [unescape(i) for i in ud]
-        ud = [i[0].upper() + i[1:] + ("." * i[-1].isalpha()) for i in ud]
-        self.answers.extend(ud)
-
         random.shuffle(self.answers)
         
         self.usedanswers = []
@@ -351,7 +371,8 @@ class CardsAgainstHumanity(object):
                 self.printer.message("01│00,01 Cards Against Humanity  has failed to gather enough interest.", self.channel)
             else:
                 self.state = "started"
-                self.printer.message("01│00,01 Cards Against Humanity  begins!", self.channel)
+                deck = ("(%s) " % self.deck) if self.deck is not None else ""
+                self.printer.message("01│00,01 Cards Against Humanity %s begins!" % deck, self.channel)
                 self.next()
         
     def failed(self): 
@@ -551,11 +572,19 @@ class CAHBot(object):
     def parseSettings(args):
         kwargs = {}
         words = args.split()
-        rounds, cards, firstto = re.search(r"\b([1-9]\d*) rounds\b", args), re.search(r"\b([5-9]|[1-9]\d+) cards\b", args), re.search(r"\bfirst to ([1-9]\d*)\b", args)
+        rounds, cards, firstto, deck = re.search(r"\b([1-9]\d*) rounds\b", args), re.search(r"\b([5-9]|[1-9]\d+) cards\b", args), re.search(r"\bfirst to ([1-9]\d*)\b", args), re.search("\bwith (#?)(.+)\b", args)
 
         if  rounds: kwargs["rounds"]  = int(rounds.group(1))
         if   cards: kwargs["numcards"]   = int(cards.group(1))
         if firstto: kwargs["firstto"] = int(firstto.group(1))
+        if deck:
+            if deck.group(1):
+                kwargs["cardset"] = deck.group(2)
+            else:
+                try:
+                    kwargs["cardset"] = find_deck(deck.group(2))
+                except:
+                    pass
         if "rando"       in words: kwargs["rando"]  = True
         if "ranked"      in words: kwargs["ranked"] = True
         if "betless" not in words: kwargs["bets"]   = False
