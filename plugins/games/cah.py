@@ -53,7 +53,7 @@ def cardcast(cardset):
 
 def find_deck(query):
     res = requests.get("https://api.cardcastgame.com/v1/decks", data={"limit": 1, "search": query, "sort": "rating"}).json()
-    return res["results"]["data"][0]["name"]
+    return res["results"]["data"][0]["code"]
 
 # Dynamic cards:
 # Black: Askreddit, yahoo answers
