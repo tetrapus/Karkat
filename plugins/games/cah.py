@@ -572,7 +572,7 @@ class CAHBot(object):
     def parseSettings(args):
         kwargs = {}
         words = args.split()
-        rounds, cards, firstto, deck = re.search(r"\b([1-9]\d*) rounds\b", args), re.search(r"\b([5-9]|[1-9]\d+) cards\b", args), re.search(r"\bfirst to ([1-9]\d*)\b", args), re.search("\bwith (#?)(.+)\b", args)
+        rounds, cards, firstto, deck = re.search(r"\b([1-9]\d*) rounds\b", args), re.search(r"\b([5-9]|[1-9]\d+) cards\b", args), re.search(r"\bfirst to ([1-9]\d*)\b", args), re.search(r"\bwith (#?)(.+)\b", args)
 
         if  rounds: kwargs["rounds"]  = int(rounds.group(1))
         if   cards: kwargs["numcards"]   = int(cards.group(1))
