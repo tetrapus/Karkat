@@ -52,7 +52,7 @@ def cardcast(cardset):
     return questions, answers, deck
 
 def find_deck(query):
-    res = requests.get("https://api.cardcastgame.com/v1/decks", data={"limit": 1, "search": query, "sort": "rating"}).json()
+    res = requests.get("https://api.cardcastgame.com/v1/decks", params={"limit": "1", "search": query, "sort": "rating"}).json()
     return res["results"]["data"][0]["code"]
 
 # Dynamic cards:
@@ -371,8 +371,7 @@ class CardsAgainstHumanity(object):
                 self.printer.message("01│00,01 Cards Against Humanity  has failed to gather enough interest.", self.channel)
             else:
                 self.state = "started"
-                deck = ("(%s) " % self.deck) if self.deck is not None else ""
-                self.printer.message("01│00,01 Cards Against Humanity %s begins!" % deck, self.channel)
+                self.printer.message("01│00,01 Cards Against Humanity  begins!", self.channel)
                 self.next()
         
     def failed(self): 
@@ -565,7 +564,8 @@ class CAHBot(object):
         elif x[3].lower() in [":!cah", ":!cards"]:
             args = self.parseSettings(line.split(" ", 4)[-1])
             self.games[channel] = CardsAgainstHumanity(printer, channel, **args)
-            printer.message("01│00,01 Cards Against Humanity  will begin in a minute. Want to !join us?", channel)
+            deck = ("(%s) " % self.games[channel].deck) if self.games[channel].deck is not None else ""
+            printer.message("01│00,01 Cards Against Humanity %s will begin in a minute. Want to !join us?" % deck, channel)
             threading.Timer(150, self.games[channel].start).start()
 
     @staticmethod
