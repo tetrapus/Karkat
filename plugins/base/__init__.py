@@ -14,4 +14,5 @@ __modules__ = ["autojoin",
                "iptracker",
                "restart",
                "watchdog",
-               "nickserv"]
+               "nickserv",
+               "users"]
