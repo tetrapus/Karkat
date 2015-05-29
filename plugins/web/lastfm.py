@@ -35,6 +35,8 @@ except:
     print("Error: invalid or nonexistant last.fm api key.", file=sys.stderr)
     raise ImportError("Could not load module.")
 
+def nohl(s): return s[0] + "\u200b" + s[1:]
+
 class YTFallback(object):
     API_URL = "https://gdata.youtube.com/feeds/api/videos?q=%s&alt=json"
 
@@ -394,7 +396,6 @@ class LastFM(Callback):
             dname = sorted(candidates, key=len)[0]
         else:
             dname = username
-        dname = dname[0] + "\x03" + dname[1:]
         return dname
 
     @command("besties", "(.*)")
@@ -406,8 +407,10 @@ class LastFM(Callback):
         if lowername in self.users:
             username = self.users[lowername]
 
+        active_users = server.channels[server.lower(message.context)]
+
         # Figure out who username is
-        dname = self.closest_nick(username, server.channels[server.lower(message.context)])
+        dname = self.closest_nick(username, active_users)
 
         luser = username.lower()
 
@@ -419,33 +422,35 @@ class LastFM(Callback):
             users = users.split(" ", 1)
             if luser in users:
                 users.remove(luser)
-                if users[0] != username.lower():
-                    matches[users[0]] = similarity
+                if users[0] == username.lower():
+                    continue
+                nick = self.closest_nick(users[0], active_users)
+                if server.isIn(nick, active_users):
+                    matches[nick] = similarity
         users = sorted(matches.items(), key=lambda x: -x[1][0])
         if message.prefix == ".":
             similar_to = ""
             rlen = 0
             while users:
-                user, similarity = users.pop(0)
-                nick = self.closest_nick(user, server.channels[server.lower(message.context)])
+                nick, similarity = users.pop(0)
                 tasteometer = similarity[0]
-                similar_to += nick + " %.2d%.1f 4· " % ([15, 14, 11, 10, 3][int(tasteometer * 4.95)], tasteometer * 100)
+                similar_to += nohl(nick) + " %.2d%.1f 4· " % ([15, 14, 11, 10, 3][int(tasteometer * 4.95)], tasteometer * 100)
                 rlen += len(nick) + 9 - (tasteometer < 0.1)
-                if rlen > 40: break
+                if rlen > 50: 
+                    break
             unknown = len(self.users) - len(matches)
             yield "4│ %s%s" % (similar_to, ("%d ᴜɴᴋɴᴏᴡɴ" % (unknown)) * (unknown > 0))
         else:
-            for user, similarity in users[:4]:
-                nick = self.closest_nick(user, server.channels[server.lower(message.context)])
+            for nick, similarity in users[:4]:
                 tasteometer = similarity[0]
                 common = []
                 clen = len(nick) + 9 - (tasteometer < 0.1)
-                while clen < 40:
+                while clen < 50:
                     artist = similarity[1].pop(0)
                     common.append(artist)
                     clen += len(artist) + 2
                 common = ", ".join(common) + ("..." * (similarity[1] != []))
-                yield "04│ ♫ │%.2d %.1f 4· %s 4· %s" % ([15, 14, 11, 10, 3][int(tasteometer * 4.95)], tasteometer * 100, nick, common)
+                yield "04│ ♫ │%.2d %.1f 4· %s 4· %s" % ([15, 14, 11, 10, 3][int(tasteometer * 4.95)], tasteometer * 100, nohl(nick), common)
             yield "04│ ♫ │ Best %d of %d matches for %s shown." % (len(users[:4]), len(users), dname)
 
     @command("lastfm", "(\S*)", templates={Callback.USAGE: "04│ ♫ │ Usage: [.@]lastfm nick"})
