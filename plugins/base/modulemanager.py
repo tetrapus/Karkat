@@ -37,28 +37,28 @@ class ModManager(Callback):
 
     @Callback.inline
     @command("disable", "([^ ]+)", prefixes=("", ":"), admin=True,
-                templates={Callback.USAGE: "12Module Manager│ Usage: :disable <modname>"})
+                templates={Callback.USAGE: "12🔌 │ Usage: :disable <modname>"})
     def disable_module(self, server, message, mod):
         blacklisted = server.blacklist.setdefault(server.lower(message.context), 
                                                   list(server.blacklist[None]))
         if mod not in blacklisted:
             blacklisted.append(mod)
-            return "12Module Manager│ Module %s disabled." % mod
+            return "12🔌 │ Module %s disabled." % mod
         else:
-            return "12Module Manager│ %s is already blacklisted." % mod
+            return "12🔌 │ %s is already blacklisted." % mod
         self.sync(server)
 
     @Callback.inline
     @command("enable", "([^ ]+)", prefixes=("",":"), admin=True,
-                templates={Callback.USAGE: "12Module Manager│ Usage: :enable <modname>"})
+                templates={Callback.USAGE: "12🔌 │ Usage: :enable <modname>"})
     def enable_module(self, server, message, mod):
         blacklisted = server.blacklist.setdefault(server.lower(message.context), 
                                                   list(server.blacklist[None]))
         if mod in blacklisted:
             blacklisted.remove(mod)
-            return "12Module Manager│ Module %s re-enabled." % mod
+            return "12🔌 │ Module %s re-enabled." % mod
         else:
-            return "12Module Manager│ %s is not blacklisted." % mod
+            return "12🔌 │ %s is not blacklisted." % mod
         self.sync(server)
 
     @command("disabled")
@@ -69,7 +69,7 @@ class ModManager(Callback):
             for i in table:
                 yield i
         else:
-            yield "12Module Manager│ Blacklist is empty."
+            yield "12🔌 │ Blacklist is empty."
 
     # Module management plugins
 
@@ -104,13 +104,13 @@ class ModManager(Callback):
     @Callback.inline
     @command("unload", "(.+)", prefixes=("",":"),
                 admin=True, 
-                templates={Callback.USAGE: "12Module Manager│ Usage: [!@]unload <module>"})
+                templates={Callback.USAGE: "12🔌 │ Usage: [!@]unload <module>"})
     def unregister_modules(self, server, message, module):
         removed = {x.module.__name__ for x in self.remove_modules(server, module)}
         if not removed:
-            yield "05Module Manager│ Module not found."
+            yield "05🔌 │ Module not found."
         elif len(removed) == 1:
-            yield "12Module Manager│ %s unloaded." % (list(removed)[0])
+            yield "12🔌 │ %s unloaded." % (list(removed)[0])
         else:
             table = namedtable(removed,
                                size=72,
@@ -121,8 +121,8 @@ class ModManager(Callback):
     @Callback.inline
     @command("reload", "(.+)", prefixes=("",":"),
                 admin=True, 
-                templates={ Callback.USAGE: "12Module Manager│ Usage: [!@]reload <module>",
-                            Callback.ERROR: "12Module Manager│ Module failed to load."})
+                templates={ Callback.USAGE: "12🔌 │ Usage: [!@]reload <module>",
+                            Callback.ERROR: "12🔌 │ Module failed to load."})
     def reload_modules(self, server, message, module):
         # Find and remove all callbacks
         removed = self.remove_modules(server, module)
@@ -139,7 +139,7 @@ class ModManager(Callback):
                 server.loadplugin(mod)
                 reloaded.append(mod.__name__)
             if len(reloaded) == 1:
-                yield "12Module Manager│ %s reloaded." % (reloaded[0])
+                yield "12🔌 │ %s reloaded." % (reloaded[0])
             else:
                 table = namedtable(reloaded,
                                    size=72,
@@ -147,13 +147,13 @@ class ModManager(Callback):
                 for i in table:
                     yield i
         else:
-            yield "05Module Manager│ Module not found."
+            yield "05🔌 │ Module not found."
 
     @Callback.inline
     @command("load", "(.+)", prefixes=("",":"),
                 admin=True, 
-                templates={ Callback.USAGE: "12Module Manager│ Usage: [!@]load <module>",
-                            Callback.ERROR: "05Module Manager│ Module failed to load."})
+                templates={ Callback.USAGE: "12🔌 │ Usage: [!@]load <module>",
+                            Callback.ERROR: "05🔌 │ Module failed to load."})
     def load_modules(self, server, message, module):
         path = module.split(".")
         try:
@@ -163,10 +163,10 @@ class ModManager(Callback):
             for i in path[1:]:
                 module = module.__dict__[i]
         except:
-            return "05Module Manager│ Module failed to load."
+            return "05🔌 │ Module failed to load."
         else:
             server.loadplugin(module)
-            return "12Module Manager│ %s loaded." % module.__name__
+            return "12🔌 │ %s loaded." % module.__name__
 
 
 __initialise__ = ModManager
