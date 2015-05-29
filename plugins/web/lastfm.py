@@ -436,7 +436,7 @@ class LastFM(Callback):
                 tasteometer = similarity[0]
                 similar_to += nohl(nick) + " %.2d%.1f 4· " % ([15, 14, 11, 10, 3][int(tasteometer * 4.95)], tasteometer * 100)
                 rlen += len(nick) + 9 - (tasteometer < 0.1)
-                if rlen > 50: 
+                if rlen > 80: 
                     break
             unknown = len(self.users) - len(matches)
             yield "4│ %s%s" % (similar_to, ("%d ᴜɴᴋɴᴏᴡɴ" % (unknown)) * (unknown > 0))
@@ -445,7 +445,7 @@ class LastFM(Callback):
                 tasteometer = similarity[0]
                 common = []
                 clen = len(nick) + 9 - (tasteometer < 0.1)
-                while clen < 50:
+                while clen < 80:
                     artist = similarity[1].pop(0)
                     common.append(artist)
                     clen += len(artist) + 2
