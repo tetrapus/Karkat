@@ -24,7 +24,7 @@ def __initialise__(server):
     def update_settings(server, msg, varname, value):
         var = varname.lower()
         nick = server.lower(msg.address.nick) 
-        protected = server.is_protected(server, nick)
+        protected = server.is_protected(nick)
         registered = server.registered.get(nick, False)
         if protected and not registered:
             return "14⚙ 04⎟ This nickname is protected by the owner. Please identify with NickServ to update your info."
