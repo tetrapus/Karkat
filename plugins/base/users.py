@@ -20,16 +20,16 @@ def __initialise__(server):
         # TODO: make atomic
 
     @command("set", r"(\S+)(?:\s+(.+))?", templates={
-                Callback.USAGE:"14⚙ 04⎟ Usage: [.@](set) 03(ip|location) [value]"})
+                Callback.USAGE:"14⎟ ⚙ ⎟ Usage: [.@](set) 03(ip|location) [value]"})
     def update_settings(server, msg, varname, value):
         var = varname.lower()
         nick = server.lower(msg.address.nick) 
         protected = server.is_protected(nick)
         registered = server.registered.get(nick, False)
         if protected and not registered:
-            return "14⚙ 04⎟ This nickname is protected by the owner. Please identify with NickServ to update your info."
+            return "14⎟ ⚙ ⎟ This nickname is protected by the owner. Please identify with NickServ to update your info."
         if varname not in ("location", "ip"):
-            return "14⚙ 04⎟ No such setting."
+            return "14⎟ ⚙ ⎟ No such setting."
 
         settings = server.get_settings()
 
@@ -38,7 +38,7 @@ def __initialise__(server):
                 value = repr(settings[nick][var])
             except:
                 value = "not set"
-            return "14⚙ 05⎟ Your %s is currently %s." % (var, value) 
+            return "14⎟ ⚙ ⎟ Your %s is currently %s." % (var, value) 
         else:
             if nick in settings:
                 settings[nick][var] = value
@@ -46,7 +46,7 @@ def __initialise__(server):
                 settings[nick] = {var: value}
             server.set_settings(settings)
             server.set_protected(nick)
-            return "14⚙ 05⎟ Your %s has been set to %r." % (var, value)
+            return "14⎟ ⚙ ⎟ Your %s has been set to %r." % (var, value)
 
     def is_protected(user):
         try:
