@@ -6,7 +6,7 @@ SETTINGS_FILE = "wolfram_users.json"
 
 PROTECTION_FILE = "users.json"
 
-def __initialise__(self, server):
+def __initialise__(server):
 
     def get_settings():
         try:
