@@ -21,7 +21,7 @@ def __initialise__(server):
 
     @command("set", r"(\S+)(?:\s+(.+))?", templates={
                 Callback.USAGE:"14⚙ 04⎟ Usage: [.@](set) 03(ip|location) [value]"})
-    def update_settings(self, server, msg, varname, value):
+    def update_settings(server, msg, varname, value):
         var = varname.lower()
         nick = server.lower(msg.address.nick) 
         protected = server.is_protected(server, nick)
