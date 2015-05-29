@@ -24,25 +24,6 @@ except:
     print("Request an apikey at https://developer.wolframalpha.com/portal/apisignup.html and place in apikeys.conf as wolfram.key.<key>", file=sys.stderr)
     raise ImportError("Module not loaded.")
 
-protectionfile = "users.json"
-
-def isprotected(server, user):
-    try:
-        protected = json.load(open(server.get_config_dir(protectionfile)))
-    except:
-        protected = {}
-    return server.lower(user) in protected and protected[server.lower(user)]
-
-def set_protected(server, user):
-    """ Add protection if not defined """
-    try:
-        protected = json.load(open(server.get_config_dir(protectionfile)))
-    except:
-        protected = {}
-    if server.lower(user) not in protected:
-        protected[server.lower(user)] = True
-    json.dump(protected, open(server.get_config_dir(protectionfile), "w"))
-
 
 class WolframAlpha(Callback):
 
@@ -50,8 +31,6 @@ class WolframAlpha(Callback):
     h_max = 7
     t_lines = 12
     timeout = 45
-
-    SETTINGS_FILE = "wolfram_users.json"
 
     results = ["Result", "Response", "Infinite sum", "Decimal approximation", "Decimal form", "Limit", "Definition", "Definitions", "Description", "Balanced equation", "Chemical names and formulas", "Conversions to other units", "Roots", "Root", "Definite integral", "Plot", "Plots"]
     input_categories = ["Input interpretation", "Input"]
@@ -61,14 +40,9 @@ class WolframAlpha(Callback):
         self.printer = server.printer
         self.last = None
         self.cache = {}
-        self.settingsf = server.get_config_dir(self.SETTINGS_FILE)
         self.ips = {}
         if "iptracker" in dir(server):
             self.ips = server.iptracker.known
-        try:
-            self.settings = json.load(open(self.settingsf))
-        except:
-            self.settings = {}
 
         super().__init__(server)
 
@@ -198,17 +172,12 @@ class WolframAlpha(Callback):
             output.append(" 08‣ 05No plaintext results. See " + URL.format(URL.shorten("http://www.wolframalpha.com/input/?i=%s" % urllib.parse.quote_plus(query))))
         return "\n".join(i.rstrip() for i in output)
 
-    def getoutputsettings(self, target):
-        if self.server.isIn(target, self.settings):
-            return self.settings[self.server.lower(target)]["h_max"]
-        else:
-            return self.h_max
-
     def getusersettings(self, user):
         wasettings = {}
         user = self.server.lower(user)
-        if user in self.settings:
-            settings = self.settings[user]
+        settings = self.server.get_settings()
+        if user in settings:
+            settings = settings[user]
             if "location" in settings:
                 wasettings["location"] = settings["location"]
             if "ip" in settings:
@@ -216,32 +185,6 @@ class WolframAlpha(Callback):
             elif "iptracker" in dir(self.server) and user in self.server.iptracker.known:
                 wasettings["ip"] = self.server.iptracker.known[user]
         return wasettings
-
-    @command("waset set", r"(\S+)(?:\s+(.+))?", templates={
-                Callback.USAGE:"05Wolfram Settings04⎟ Usage: [.@](set) 03(ip|location) [value]"})
-    def update_settings(self, server, msg, varname, value):
-        var = varname.lower()
-        nick = server.lower(msg.address.nick) 
-        protected = isprotected(server, nick)
-        registered = server.registered.get(nick, False)
-        if protected and not registered:
-            return "05Settings04⎟ This nickname is protected by the owner. Please identify with NickServ to update your info."
-        if varname not in ("location", "ip"):
-            return "05Settings04⎟ No such setting."
-        elif value is None:
-            try:
-                value = repr(self.settings[nick][var])
-            except:
-                value = "not set"
-            return "05Settings05⎟ Your %s is currently %s." % (var, value) 
-        else:
-            if nick in self.settings:
-                self.settings[nick][var] = value
-            else:
-                self.settings[nick] = {var: value}
-            json.dump(self.settings, open(self.settingsf, "w"))
-            set_protected(server, nick)
-            return "05Settings05⎟ Your %s has been set to %r." % (var, value)
 
 
     @Callback.threadsafe
@@ -259,12 +202,12 @@ class WolframAlpha(Callback):
             elif category and category[-1] == prefix:
                 category = category[:-1]
 
-            return self.wolfram_format(query, category, h_max=self.getoutputsettings(message.context), wasettings=self.getusersettings(user.nick))
+            return self.wolfram_format(query, category, h_max=self.h_max, wasettings=self.getusersettings(user.nick))
 
     @Callback.threadsafe
     @command(["wa", "wolfram"], "(.+)", templates={
                 Callback.USAGE:"05Wolfram08Alpha04⎟ Usage: [.@](wa|wolfram) 03query"})
     def trigger(self, server, message, query):
-        return self.wolfram_format(query, h_max=self.getoutputsettings(message.context), wasettings=self.getusersettings(message.address.nick))
+        return self.wolfram_format(query, h_max=self.h_max, wasettings=self.getusersettings(message.address.nick))
 
 __initialise__ = WolframAlpha
