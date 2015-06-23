@@ -23,7 +23,7 @@ defaults = [[["fiftyfifty"]],
             [["aww"], ["spacedicks"]],
             [["gonewild"], ["mangonewild"]]]
 
-@command("5050 50/50 fiftyfifty", r"(.*)")
+@command("5050 50/50 fiftyfifty reddit", r"(.*)")
 def fiftyfifty(server, message, sublist):
     if not sublist:
         sublist = random.choice(defaults)
@@ -39,6 +39,7 @@ def fiftyfifty(server, message, sublist):
         titles = "%s \x0308│\x03 %s" % ("/".join(["%d"%(100//len(sublist))]*len(sublist)), titles)
     else:
         titles = re.sub(r"^\[50/50\] ", "50/50 \x0308│\x03 ", titles)
-    return "\x0308│\x03 %s · \x0312\x1f%s" % (titles, url.shorten(link))
+    warning = " · \x0304NSFW" if any(i["over_18"] for i in links) else ""
+    return "\x0308│\x03 %s · \x0312\x1f%s\x0f%s" % (titles, url.shorten(link), warning)
 
 __callbacks__ = {"privmsg": [fiftyfifty]}
