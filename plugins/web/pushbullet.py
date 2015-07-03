@@ -184,7 +184,7 @@ class PushBullet(Callback):
         self.channels[channel] = requests.get("https://api.pushbullet.com/v2/users/me", headers={"Authorization": "Bearer " + token}).json()
         return "03│ ⁍ │ Done."
 
-    @command("help", "(.*?)(?: pushbullet)")
+    @command("help", "(.*)(?: pushbullet)?")
     def pushbullet_info(self, server, msg, user):
         try:
             acc = self.config["accounts"][self.lower(msg.context)]
@@ -210,6 +210,7 @@ class PushBullet(Callback):
                        "link" : "https://www.pushbullet.com/add-friend",
                        "email": user}, 
                       acc["token"]))
+            return "03│ ⁍ │ I've sent instructions to %s's pushbullet address." % user
         
         
     @command("send", r"(\S+(?:,\s*\S+)*)(?:\s+(https?://\S+|:.+?:))?(?:\s+(.+))?")
