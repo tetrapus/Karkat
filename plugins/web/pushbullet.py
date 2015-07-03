@@ -81,7 +81,7 @@ def push_format(push, sent, users):
         if "title" in push:
             message_field.append("\x0303%s\x03" % push["title"])
         if "body" in push:
-            message_field.append(push["body"].replace("\n", " ")) # TODO: temporary
+            message_field.append(push["body"].replace("\n", " · ")) # TODO: temporary
         if message_field:
             fields.append(" ".join(message_field))
         if "url" in push:
@@ -184,32 +184,32 @@ class PushBullet(Callback):
         self.channels[channel] = requests.get("https://api.pushbullet.com/v2/users/me", headers={"Authorization": "Bearer " + token}).json()
         return "03│ ⁍ │ Done."
 
-    # @command("pushbullet", "(.*)")
-    # def pushbullet_info(self, server, msg, user):
-    #     try:
-    #         acc = self.config["accounts"][self.lower(msg.context)]
-    #         email = self.channels[self.lower(msg.context)]["email"]
-    #     except KeyError:
-    #         return "04│ ⁍ │ This channel has no associated pushbullet."
+    @command("help", "(.*?)(?: pushbullet)")
+    def pushbullet_info(self, server, msg, user):
+        try:
+            acc = self.config["accounts"][self.lower(msg.context)]
+            email = self.channels[self.lower(msg.context)]["email"]
+        except KeyError:
+            return "04│ ⁍ │ This channel has no associated pushbullet."
 
-    #     steps = ["Go to https://www.pushbullet.com/add-friend", 
-    #              "Add %s (%s) as a friend" % (msg.context, email), 
-    #              "Visit https://www.pushbullet.com/?email=%s and send your first push to the channel!" % email]
-    #     if user:
-    #         email = self.get_user(user)
-    #         if user not in self.config["users"]:
-    #             steps = ["If you don't have an account: Set up an account at http://www.pushbullet.com/ and install pushbullet on your devices", "Type /msg %s .setpush %s" % (server.nick, user)] + steps
-    #     else:
-    #         return "03│ ⁍ │ Type .setpush \x02email\x02, then go to 12https://www.pushbullet.com/add-friend\x0f and add \x0303%s\x03 as a friend." % email            
-    #     if email is None:
-    #         return "03│ ⁍ │ %s: type .setpush \x02email\x02, then go to 12https://www.pushbullet.com/add-friend\x0f and add \x0303%s\x03 as a friend." % (user, email)
-    #     else:
-    #         self.push({"type" : "link", 
-    #                    "title": "Add %s on PushBullet" % msg.context,
-    #                    "body" : "\r\n".join("%d) %s" % (i+1, s) for i, s in enumerate(steps)),
-    #                    "link" : "https://www.pushbullet.com/add-friend",
-    #                    "email": user}, 
-    #                   acc["token"])
+        steps = ["Go to https://www.pushbullet.com/add-friend", 
+                 "Add %s (%s) as a friend" % (msg.context, email), 
+                 "Visit https://www.pushbullet.com/?email=%s and send your first push to the channel!" % email]
+        if user:
+            email = self.get_user(user)
+            if user not in self.config["users"]:
+                steps = ["If you don't have an account: Set up an account at http://www.pushbullet.com/ and install pushbullet on your devices", "Type /msg %s .setpush %s" % (server.nick, user)] + steps
+        else:
+            return "03│ ⁍ │ Type .setpush \x02email\x02, then go to 12https://www.pushbullet.com/add-friend\x0f and add \x0303%s\x03 as a friend." % email            
+        if email is None:
+            return "03│ ⁍ │ %s: type .setpush \x02email\x02, then go to 12https://www.pushbullet.com/add-friend\x0f and add \x0303%s\x03 as a friend." % (user, email)
+        else:
+            self.sent.add(push({"type" : "link", 
+                       "title": "Add %s on PushBullet" % msg.context,
+                       "body" : "\r\n".join("%d) %s" % (i+1, s) for i, s in enumerate(steps)),
+                       "link" : "https://www.pushbullet.com/add-friend",
+                       "email": user}, 
+                      acc["token"]))
         
         
     @command("send", r"(\S+(?:,\s*\S+)*)(?:\s+(https?://\S+|:.+?:))?(?:\s+(.+))?")
