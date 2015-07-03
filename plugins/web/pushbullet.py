@@ -204,7 +204,7 @@ class PushBullet(Callback):
         if email is None:
             return "03│ ⁍ │ %s: type .setpush \x02email\x02, then go to 12https://www.pushbullet.com/add-friend\x0f and add \x0303%s\x03 as a friend." % (user, email)
         else:
-            self.sent.add(push({"type" : "link", 
+            self.sent.add(self.push({"type" : "link", 
                        "title": "Add %s on PushBullet" % msg.context,
                        "body" : "\r\n".join("%d) %s" % (i+1, s) for i, s in enumerate(steps)),
                        "link" : "https://www.pushbullet.com/add-friend",
