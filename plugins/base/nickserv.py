@@ -1,6 +1,10 @@
 from bot.events import Callback
 from util.irc import Address
 
+class Accounts(object):
+    def __init__(self):
+        self.registered = {}
+
 
 class Registration(Callback):
     def __init__(self, server):

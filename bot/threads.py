@@ -125,6 +125,7 @@ class PrinterBuffer(object):
                                 self.recipient,
                                 self.method)
             self.serve_ad()
+            self.buffer = []
 
     def serve_ad(self):
         if len(self.__class__.adpool) and time.time() - self.__class__.lastad > 151200/len(self.__class__.adpool) and random.random() > 0.8:

@@ -184,7 +184,7 @@ class PushBullet(Callback):
         self.channels[channel] = requests.get("https://api.pushbullet.com/v2/users/me", headers={"Authorization": "Bearer " + token}).json()
         return "03│ ⁍ │ Done."
 
-    @command("help", "(.*?)(?: pushbullet)?")
+    @command("help", r"^(.*?(?: |$))(?:pushbullet)?$")
     def pushbullet_info(self, server, msg, user):
         try:
             acc = self.config["accounts"][self.lower(msg.context)]
@@ -208,7 +208,7 @@ class PushBullet(Callback):
                        "title": "Add %s on PushBullet" % msg.context,
                        "body" : "\r\n".join("%d) %s" % (i+1, s) for i, s in enumerate(steps)),
                        "link" : "https://www.pushbullet.com/add-friend",
-                       "email": user_email}, 
+                       "email": user}, 
                       acc["token"]))
             return "03│ ⁍ │ I've sent instructions to %s's pushbullet address." % user
         
@@ -226,7 +226,7 @@ class PushBullet(Callback):
         if user is None:
             return "03│ ⁍ │ %s has not associated their pushbullet." % user
 
-        push["body"] = " · from " + msg.address.nick
+        push["title"] = msg.address.nick + ":"
 
         if link:
             if link.startswith(":"):
@@ -236,9 +236,7 @@ class PushBullet(Callback):
         else:
             push["type"] = "note"
         if text:
-            if ": " in text:
-                push["title"], text = text.split(": ", 1)
-            push["body"] = text + push["body"]
+            push["body"] = text
         push["email"] = user
         self.sent.add(self.push(push, acc["token"]))
 
