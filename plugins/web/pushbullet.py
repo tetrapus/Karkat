@@ -201,14 +201,14 @@ class PushBullet(Callback):
                 steps = ["If you don't have an account: Set up an account at http://www.pushbullet.com/ and install pushbullet on your devices", "Type /msg %s .setpush %s" % (server.nick, user)] + steps
         else:
             return "03│ ⁍ │ Type .setpush \x02email\x02, then go to 12https://www.pushbullet.com/add-friend\x0f and add \x0303%s\x03 as a friend." % email            
-        if email is None:
+        if user_email is None:
             return "03│ ⁍ │ %s: type .setpush \x02email\x02, then go to 12https://www.pushbullet.com/add-friend\x0f and add \x0303%s\x03 as a friend." % (user, email)
         else:
             self.sent.add(self.push({"type" : "link", 
                        "title": "Add %s on PushBullet" % msg.context,
                        "body" : "\r\n".join("%d) %s" % (i+1, s) for i, s in enumerate(steps)),
                        "link" : "https://www.pushbullet.com/add-friend",
-                       "email": user}, 
+                       "email": user_email}, 
                       acc["token"]))
             return "03│ ⁍ │ I've sent instructions to %s's pushbullet address." % user
         
