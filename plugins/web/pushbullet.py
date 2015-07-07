@@ -184,7 +184,7 @@ class PushBullet(Callback):
         self.channels[channel] = requests.get("https://api.pushbullet.com/v2/users/me", headers={"Authorization": "Bearer " + token}).json()
         return "03│ ⁍ │ Done."
 
-    @command("help", r"^(.*?(?: |$))(?:pushbullet)?$")
+    @command("help", r"(?:(\S+)\s+)?pushbullet")
     def pushbullet_info(self, server, msg, user):
         try:
             acc = self.config["accounts"][self.lower(msg.context)]
