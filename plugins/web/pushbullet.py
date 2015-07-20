@@ -268,10 +268,11 @@ class PushBullet(Callback):
         if server.lower(msg.context) in self.watchers:
             acc = self.config["accounts"].get(self.lower(msg.context))
             watchers = self.watchers[server.lower(msg.context)]
+            push = {"type": "note"}
             if msg.text.startswith("\x01ACTION ") and msg.text.endswith("\x01"):
-                push = {"body": "* %s %s" % (msg.address.nick, msg.text)}
+                push["body"] = "* %s %s" % (msg.address.nick, msg.text)
             else:
-                push = {"body": msg.text, "title": msg.address.nick}                
+                push["body"], push["title"] = msg.text, msg.address.nick                
             for email in watchers:
                 push["email"] = email
                 self.skip.add(self.push(push, acc["token"]))
