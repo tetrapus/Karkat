@@ -265,11 +265,10 @@ class PushBullet(Callback):
 
     @msghandler
     def update_watchers(self, server, msg):
-        acc = self.config["accounts"][self.lower(msg.context)]
-
         if server.lower(msg.context) in self.watchers:
+            acc = self.config["accounts"].get(self.lower(msg.context))
             watchers = self.watchers[server.lower(msg.context)]
-            if msg.text.startswith("\x01ACTION " and msg.text.endswith("\x01")):
+            if msg.text.startswith("\x01ACTION ") and msg.text.endswith("\x01"):
                 push = {"body": "* %s %s" % (msg.address.nick, msg.text)}
             else:
                 push = {"body": msg.text, "title": msg.address.nick}                
