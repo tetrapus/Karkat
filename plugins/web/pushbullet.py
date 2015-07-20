@@ -6,7 +6,7 @@ import ssl
 import requests
 from functools import partial
 
-from bot.events import Callback, command
+from bot.events import Callback, command, msghandler
 from util.text import Buffer, pretty_date
 from util.files import Config
 from util.services import url
@@ -132,6 +132,7 @@ class PushBullet(Callback):
         self.listeners = []
         self.skip = set()
         self.sent = set()
+        self.watchers = {}
         self.channels = {}
         self.lower = server.lower
         self.listen()
@@ -159,6 +160,16 @@ class PushBullet(Callback):
         for push in pushes:
             if push["iden"] in self.skip:
                 self.skip.remove(push["iden"])
+            elif push.get("body", "") == ".join":
+                if push["sender_email"].lower() in self.config["users"]:
+                    nick = self.config["users"][push["sender_email"].lower()]
+                    self.server.message("03│ ⁍ │ %s has joined the conversation via pushbullet." % nick, account)
+                    self.watchers.setdefault(self.lower(account), set()).add(push["sender_email"].lower())
+            elif push.get("body", "") == ".part":
+                if push["sender_email"].lower() in self.watchers.get(self.lower(account), set()):
+                    nick = self.config["users"][push["sender_email"].lower()]
+                    self.server.message("03│ ⁍ │ %s has stopped listening to the conversation." % nick, account)
+                    self.watchers[self.lower(account)].remove(push["sender_email"].lower())
             else:
                 if push["iden"] not in self.sent:
                     @command("reply", r"(?:(https?://\S+|:.+?:))?\s*(.*)")
@@ -251,6 +262,20 @@ class PushBullet(Callback):
             push["body"] = text
         push["email"] = user
         self.sent.add(self.push(push, acc["token"]))
+
+    @msghandler
+    def update_watchers(self, server, msg):
+        acc = self.config["accounts"][self.lower(msg.context)]
+
+        if server.lower(msg.context) in self.watchers:
+            watchers = self.watchers[server.lower(msg.context)]
+            if msg.text.startswith("\x01ACTION " and msg.text.endswith("\x01")):
+                push = {"body": "* %s %s" % (msg.address.nick, msg.text)}
+            else:
+                push = {"body": msg.text, "title": msg.address.nick}                
+            for email in watchers:
+                push["email"] = email
+                self.skip.add(self.push(push, acc["token"]))
 
     def push(self, push, token):
         headers = {"Authorization": "Bearer " + token}
