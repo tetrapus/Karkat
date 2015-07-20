@@ -3,6 +3,7 @@ import requests
 import re
 from PIL import Image
 from io import BytesIO
+from urllib.parse import unquote
 
 from bot.events import command, Callback, msghandler
 from util.services import url
@@ -75,7 +76,7 @@ def image(server, msg, flags, query):
     for i, result in enumerate(results):
         server.lasturl = result["url"]
         yield templates[msg.prefix] % {"color" : [12, 5, 8, 3][i % 4],
-                                       "url": url.shorten(result["url"]),
+                                       "url": url.shorten(unquote(result["url"])),
                                        "fullurl": result["visibleUrl"],
                                        "width": result["width"],
                                        "height": result["height"],  
