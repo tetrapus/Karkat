@@ -12,6 +12,12 @@ from util.files import Config
 from util.services import url
 from util.images import image_search
 
+# TODO:
+# digests
+# highlight notifications
+# self-awareness
+# server accounts
+
 HEADERS = ("GET /websocket/%(key)s HTTP/1.1\r\n"
           "Host: stream.pushbullet.com\r\n"
           "User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:34.0) Gecko/20100101 Firefox/34.0\r\n"
@@ -83,6 +89,21 @@ class PushListener(threading.Thread):
             self.update()
         self.last = time.time()
                     
+def push_text(push):
+    text = ""
+    if "title" in push:
+        text += push["title"] + "\n\n"
+    if "url" in push:
+        try:
+            text += url.shorten(push["url"]) + "\n"     
+        except:
+            text += push["url"] + "\n"
+    if "file_url" in push:
+        text += url.shorten(push["file_url"]) + "\n"     
+    if "body" in push:
+        text += push["body"]
+    return text
+
 def push_format(push, sent, users):
     fields = []
     # TODO: shorten long fields
@@ -120,7 +141,9 @@ def push_format(push, sent, users):
         user = "\x0303" + email + "\x03"
 
     fields.append(tag + " " + user)
-    fields.append("\u231a " + pretty_date(time.time() - push["modified"]))
+    timedelta = pretty_date(time.time() - push["modified"])
+    if timedelta != "just now":
+        fields.append("\u231a " + timedelta)
     
     return "03│ ⁍ │ " + " · ".join(fields)
 
@@ -132,6 +155,7 @@ class PushBullet(Callback):
         self.listeners = []
         self.skip = set()
         self.sent = set()
+        self.pushlock = threading.Lock()
         self.watchers = {}
         self.channels = {}
         self.lower = server.lower
@@ -153,31 +177,37 @@ class PushBullet(Callback):
         acc = self.config["accounts"][account]
         params = {"modified_after": acc["last"]}
         headers = {"Authorization": "Bearer " + acc["token"]}
+        watchers = self.watchers.setdefault(self.lower(account), set())
         req = requests.get("https://api.pushbullet.com/v2/pushes", params=params, headers=headers)
         pushes = req.json()["pushes"]
         if not pushes:
             return
         for push in pushes:
-            if push["iden"] in self.skip:
-                self.skip.remove(push["iden"])
-            elif push.get("body", "") == ".join":
-                if push["sender_email"].lower() in self.config["users"]:
-                    nick = self.config["users"][push["sender_email"].lower()]
-                    self.server.message("03│ ⁍ │ %s has joined the conversation via pushbullet." % nick, account)
-                    self.watchers.setdefault(self.lower(account), set()).add(push["sender_email"].lower())
-            elif push.get("body", "") == ".part":
-                if push["sender_email"].lower() in self.watchers.get(self.lower(account), set()):
-                    nick = self.config["users"][push["sender_email"].lower()]
-                    self.server.message("03│ ⁍ │ %s has stopped listening to the conversation." % nick, account)
-                    self.watchers[self.lower(account)].remove(push["sender_email"].lower())
-            else:
-                if push["iden"] not in self.sent:
-                    @command("reply", r"(?:(https?://\S+|:.+?:))?\s*(.*)")
-                    def pushreply(server, message, link, text, push=push):
-                        user = push["sender_email"]
-                        return self.send_push.funct(self, server, message, user, link, text)
-                    self.server.reply_hook = pushreply
-                self.server.message(push_format(push, self.sent, self.config["users"]), account)
+            with self.pushlock:
+                if push["iden"] in self.skip:
+                    self.skip.remove(push["iden"])
+                elif push.get("body", "") == ".join":
+                    if push["sender_email"].lower() in self.config["users"]:
+                        nick = self.config["users"][push["sender_email"].lower()]
+                        self.server.message("03│ ⁍ │ %s has joined the conversation via pushbullet." % nick, account)
+                        watchers.add(push["sender_email"].lower())
+                elif push.get("body", "") == ".part":
+                    if push["sender_email"].lower() in watchers:
+                        nick = self.config["users"][push["sender_email"].lower()]
+                        self.server.message("03│ ⁍ │ %s has stopped listening to the conversation." % nick, account)
+                        watchers.remove(push["sender_email"].lower())
+                else:
+                    display_sender = self.config["users"].get(push["sender_email"].lower(), push["sender_email"])
+                    for email in watchers:
+                        if email.lower() != push["sender_email"].lower():
+                            self.skip.add(self.push({"email":email, "type":"note", "title": "%s via PushBullet" % display_sender, "body": push_text(push)}, acc["token"]))
+                    if push["iden"] not in self.sent:
+                        @command("reply", r"(?:(https?://\S+|:.+?:))?\s*(.*)")
+                        def pushreply(server, message, link, text, push=push):
+                            user = push["sender_email"]
+                            return self.send_push.funct(self, server, message, user, link, text)
+                        self.server.reply_hook = pushreply
+                    self.server.message(push_format(push, self.sent, self.config["users"]), account)
 
             acc["last"] = max(push["modified"], acc["last"])
         self.save(account, acc)
@@ -227,12 +257,13 @@ class PushBullet(Callback):
         if user_email is None:
             return "03│ ⁍ │ %s: type .setpush \x02email\x02, then go to 12https://www.pushbullet.com/add-friend\x0f and add \x0303%s\x03 as a friend." % (user, email)
         else:
-            self.sent.add(self.push({"type" : "link", 
-                       "title": "Add %s on PushBullet" % msg.context,
-                       "body" : "\r\n".join("%d) %s" % (i+1, s) for i, s in enumerate(steps)),
-                       "link" : "https://www.pushbullet.com/add-friend",
-                       "email": user_email}, 
-                      acc["token"]))
+            with self.pushlock:
+                self.sent.add(self.push({"type" : "link", 
+                           "title": "Add %s on PushBullet" % msg.context,
+                           "body" : "\r\n".join("%d) %s" % (i+1, s) for i, s in enumerate(steps)),
+                           "link" : "https://www.pushbullet.com/add-friend",
+                           "email": user_email}, 
+                          acc["token"]))
             return "03│ ⁍ │ I've sent instructions to %s's pushbullet address." % user
         
         
@@ -261,7 +292,8 @@ class PushBullet(Callback):
         if text:
             push["body"] = text
         push["email"] = user
-        self.sent.add(self.push(push, acc["token"]))
+        with self.pushlock:
+            self.sent.add(self.push(push, acc["token"]))
 
     @msghandler
     def update_watchers(self, server, msg):
@@ -275,7 +307,8 @@ class PushBullet(Callback):
                 push["body"], push["title"] = ircstrip(msg.text), msg.address.nick              
             for email in watchers:
                 push["email"] = email
-                self.skip.add(self.push(push, acc["token"]))
+                with self.pushlock:
+                    self.skip.add(self.push(push, acc["token"]))
 
     def push(self, push, token):
         headers = {"Authorization": "Bearer " + token}
