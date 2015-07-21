@@ -216,7 +216,7 @@ class PushBullet(Callback):
             return
         for push in pushes:
             sender_email = push["sender_email"].lower()
-            hlmatch = re.match(HLCMD, push.get("body", ""))
+            hlmatch = re.match(self.HLCMD, push.get("body", ""))
             with self.pushlock:
                 if push["iden"] in self.skip:
                     self.skip.remove(push["iden"])
