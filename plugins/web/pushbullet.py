@@ -369,8 +369,9 @@ class PushBullet(Callback):
         user = server.lower(msg.address.nick)
         self.active.setdefault(ctx, {})[user] = time.time()
         highlighted = []
-        if ctx in self.watchers and ctx in self.config["accounts"]:
-            acc = self.config["accounts"][ctx]
+        if ctx not in self.config["accounts"]: return
+        acc = self.config["accounts"][ctx]
+        if ctx in self.watchers:
             watchers = self.watchers[ctx]
             push = {"type": "note"}
             if msg.text.startswith("\x01ACTION ") and msg.text.endswith("\x01"):
