@@ -175,7 +175,7 @@ class PushBullet(Callback):
         self.server = server
         self.configf = server.get_config_dir("pushbullet.json")
         self.config = Config(self.configf, default={"accounts":{}, "users":{}})
-        self.bouncefmt = "\x0303· \x02%(nick)s\x0f\x0f: %(body)s"
+        self.bouncefmt = "\x0303· \x02%(nick)s\x0f\x0f: %(body)s \x0315· via mobile"
         self.listeners = []
         self.skip = set()
         self.sent = set()
