@@ -3,6 +3,7 @@ import json
 import time
 import threading
 import ssl
+import re
 import requests
 from functools import partial
 
@@ -172,6 +173,8 @@ def push_format(push, sent, users):
     return "03│ ⁍ │ " + " · ".join(fields)
 
 class PushBullet(Callback):
+    HLCMD = r"\.highlight(?: (always|inactive \d+|offline|remove))?(?: (.+))?"
+
     def __init__(self, server):
         self.server = server
         self.configf = server.get_config_dir("pushbullet.json")
@@ -213,24 +216,30 @@ class PushBullet(Callback):
             return
         for push in pushes:
             sender_email = push["sender_email"].lower()
+            hlmatch = re.match(HLCMD, push.get("body", ""))
             with self.pushlock:
                 if push["iden"] in self.skip:
                     self.skip.remove(push["iden"])
-                elif push.get("body", "").startswith(".highlight"):
+                elif hlmatch:
+                    when, word = hlmatch.groups()
                     if sender_email in self.config["users"]:
                         nick = self.config["users"][sender_email]
                         settings = self.usersettings.get(self.lower(account), [])
-                        if " " in push["body"]: word = push["body"].split(" ", 1)[-1]
-                        else: word = nick
-                        pattern = [word, sender_email]
-                        if pattern in settings:
+                        if word is None: word = nick
+                        if when is None: when = "offline"
+                        pattern = [word, sender_email, when]
+                        matches = [i for i, x in enumerate(settings) if x[0:2] == pattern[0:2]]
+                        if matches and (pattern in settings or when == "remove"):
                             settings.remove(pattern)
                             hlconfirm = {"type": "note", "email": sender_email, "title": "* %r removed from alerts." % word}
-                            self.skip.add(self.push(hlconfirm, acc["token"]))
+                        elif matches:
+                            for i in matches:
+                                settings[i] = pattern
+                            hlconfirm = {"type": "note", "email": sender_email, "title": "* Alert for %r changed to %r." % (word, when)}
                         else:
                             settings.append(pattern)
                             hlconfirm = {"type": "note", "email": sender_email, "title": "* %r added to alerts." % word}
-                            self.skip.add(self.push(hlconfirm, acc["token"]))
+                        self.skip.add(self.push(hlconfirm, acc["token"]))
                         self.usersettings[self.lower(account)] = settings
                 # Handle user joins
                 elif push.get("body", "") == ".join":
@@ -380,7 +389,7 @@ class PushBullet(Callback):
                 push["body"], push["title"] = ircstrip(msg.text), msg.address.nick
             for email in watchers:
                 if any(email == target and word.lower() in ircstrip(msg.text)
-                       for word, target in self.usersettings.get(ctx, [])):
+                       for word, target, _ in self.usersettings.get(ctx, [])):
                     hlpush = {"type": "note", "email": email, "body": push["body"]}
                     if "title" in push:
                         hlpush["title"] = "🔔 " + push["title"]
@@ -393,11 +402,17 @@ class PushBullet(Callback):
                     push["email"] = email
                     with self.pushlock:
                         self.skip.add(self.push(push, acc["token"]))
-        for word, email in self.usersettings.get(ctx, []):
+        for word, email, when in self.usersettings.get(ctx, []):
+            nick = server.lower(self.config["users"][email])
+            if when.startswith("inactive"):
+                timeout = 60 * int(inactive.split(" ")[-1])
             if email not in highlighted and word.lower() in ircstrip(msg.text):
-                push = {"type": "note", "title": "🔔 Highlight from %s" % msg.address.nick, "body": ircstrip(msg.text), "email":email}
-                with self.pushlock:
-                    self.skip.add(self.push(push, acc["token"]))
+                if (when == "always"
+                    or (when == "offline" and server.isIn(ctx, server.channels) and not server.isIn(nick, server.channels[ctx]))
+                    or (when.startswith("inactive") and server.isIn(nick, self.active) and time.time() - self.active[nick] < timeout)):
+                    push = {"type": "note", "title": "🔔 Highlight from %s" % msg.address.nick, "body": ircstrip(msg.text), "email":email}
+                    with self.pushlock:
+                        self.skip.add(self.push(push, acc["token"]))
 
     ## Channel state tracking
 
