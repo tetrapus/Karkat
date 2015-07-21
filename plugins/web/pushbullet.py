@@ -388,7 +388,7 @@ class PushBullet(Callback):
             else:
                 push["body"], push["title"] = ircstrip(msg.text), msg.address.nick
             for email in watchers:
-                if any(email == target and word.lower() in ircstrip(msg.text)
+                if any(email == target and word.lower() in ircstrip(msg.text.lower())
                        for word, target, _ in self.usersettings.get(ctx, [])):
                     hlpush = {"type": "note", "email": email, "body": push["body"]}
                     if "title" in push:
