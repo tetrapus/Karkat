@@ -11,12 +11,15 @@ from util.text import Buffer, pretty_date, ircstrip
 from util.files import Config
 from util.services import url
 from util.images import image_search
+from util.irc import Address
 
 # TODO:
 # digests
 # highlight notifications
 # self-awareness
 # server accounts
+
+ACTIVITY_TIMEOUT = 60*5
 
 HEADERS = ("GET /websocket/%(key)s HTTP/1.1\r\n"
           "Host: stream.pushbullet.com\r\n"
@@ -31,6 +34,10 @@ HEADERS = ("GET /websocket/%(key)s HTTP/1.1\r\n"
           "Cache-Control: no-cache\r\n"
           "Upgrade: websocket\r\n"
           "\r\n")
+
+def cstrip(text):
+    if text.startswith(":"): return text[1:]
+    return text
 
 class WebSocket(object):
     def __init__(self, sock, buff=b''):
@@ -63,6 +70,7 @@ class PushListener(threading.Thread):
         self.update = update_hook
         self.buffer = Buffer()
         self.ws = None
+        self.retries = 0
         self.connect()
         self.decapitate()
         super().__init__()
@@ -79,34 +87,45 @@ class PushListener(threading.Thread):
                     return
 
     def run(self):
-        for evt in self.ws:
-            if not self.listening:
-                break
-            self.dispatch(evt)
+        try:
+            for evt in self.ws:
+                if not self.listening:
+                    break
+                self.dispatch(evt)
+        except:
+            # exponential backoff
+            time.sleep(2**self.retries)
+            self.retries += 1
+            self.connect()
+            self.decapitate()
+            self.run()
 
     def dispatch(self, evt):
         if evt["type"] == "tickle":
             self.update()
         self.last = time.time()
                     
-def push_text(push):
-    text = ""
-    if "title" in push:
-        text += push["title"] + "\n\n"
-    if "url" in push:
-        try:
-            text += url.shorten(push["url"]) + "\n"     
-        except:
-            text += push["url"] + "\n"
-    if "file_url" in push:
-        text += url.shorten(push["file_url"]) + "\n"     
-    if "body" in push:
-        text += push["body"]
-    return text
+def push_bounce(push, sender, email):
+    new_push = dict([(k,v) for k, v in push.items() if k in ["file_name", "file_type", "file_url", "title", "body", "type"]])
+    body = []
+    if new_push["type"] == "file":
+        if "title" in new_push:
+            new_push["title"] = "%s via PushBullet: %s" % (sender, new_push["title"])
+        else:
+            new_push["title"] = "%s via PushBullet" % sender
 
-def push_format(push, sent, users):
+    if "title" in new_push: body.append(new_push["title"])
+    if "body" in new_push: body.append(new_push["body"])
+
+    if new_push["type"] != "file":
+        new_push["title"] = "%s via PushBullet" % sender
+    if body: new_push["body"] = "\n\n".join(body) 
+    new_push["email"] = email
+    return new_push
+
+
+def push_text(push):
     fields = []
-    # TODO: shorten long fields
     if push["type"] in ["note", "link", "file"]:
         message_field = []
         if "file_url" in push:
@@ -127,8 +146,12 @@ def push_format(push, sent, users):
             fields.append("\x0303 📍 %s\x03" % push["name"])
         if "address" in push:
             fields.append(push["address"])
-#    elif push["type"] == "checklist":
-#        self.queue(push)
+    return " · ".join(fields)
+
+def push_format(push, sent, users):
+    fields = []
+    body = push_text(push)
+    if body: fields.append(body)
 
     if push["iden"] in sent:
         sent.remove(push["iden"])
@@ -152,12 +175,15 @@ class PushBullet(Callback):
         self.server = server
         self.configf = server.get_config_dir("pushbullet.json")
         self.config = Config(self.configf, default={"accounts":{}, "users":{}})
+        self.bouncefmt = "\x0303%(nick)s\x03 ⁍ %(body)s"
         self.listeners = []
         self.skip = set()
         self.sent = set()
         self.pushlock = threading.Lock()
         self.watchers = {}
         self.channels = {}
+        self.active = {}
+        self.rejoin_ignore = {}
         self.lower = server.lower
         self.listen()
         for channel, account in self.config["accounts"].items():
@@ -186,28 +212,49 @@ class PushBullet(Callback):
             with self.pushlock:
                 if push["iden"] in self.skip:
                     self.skip.remove(push["iden"])
+                # Handle user joins
                 elif push.get("body", "") == ".join":
                     if push["sender_email"].lower() in self.config["users"]:
                         nick = self.config["users"][push["sender_email"].lower()]
                         self.server.message("03│ ⁍ │ %s has joined the conversation via pushbullet." % nick, account)
                         watchers.add(push["sender_email"].lower())
+                        push_join = {"type": "note", "title": "* %s has joined via PushBullet" % nick}
+                        actives = {"type": "note", "email": push["sender_email"], "title": "* Now listening to %s" % account}
+                        ausers = [k for k, v in self.active.setdefault(self.lower(account), {}).items() if time.time() - v < ACTIVITY_TIMEOUT]
+                        if ausers:
+                            actives["body"] = "Active users:\n%s" % (", ".join(ausers))
+                        for email in watchers:
+                            if email.lower() != push["sender_email"].lower():
+                                push_join["email"] = email
+                                self.skip.add(self.push(push_join, acc["token"]))
+                        self.skip.add(self.push(actives, acc["token"]))
                 elif push.get("body", "") == ".part":
                     if push["sender_email"].lower() in watchers:
                         nick = self.config["users"][push["sender_email"].lower()]
                         self.server.message("03│ ⁍ │ %s has stopped listening to the conversation." % nick, account)
                         watchers.remove(push["sender_email"].lower())
+                        push_part = {"type": "note", "title": "* %s is no longer receiving updates via PushBullet" % nick}
+                        partconfirm = {"type": "note", "email": push["sender_email"], "title": "* No longer listening to %s" % account}
+                        for email in watchers:
+                            if email.lower() != push["sender_email"].lower():
+                                push_part["email"] = email
+                                self.skip.add(self.push(push_part, acc["token"]))
+                        self.skip.add(self.push(partconfirm, acc["token"]))
                 else:
                     display_sender = self.config["users"].get(push["sender_email"].lower(), push["sender_email"])
                     for email in watchers:
                         if email.lower() != push["sender_email"].lower():
-                            self.skip.add(self.push({"email":email, "type":"note", "title": "%s via PushBullet" % display_sender, "body": push_text(push)}, acc["token"]))
+                            self.skip.add(self.push(push_bounce(push, display_sender, email), acc["token"]))
                     if push["iden"] not in self.sent:
                         @command("reply", r"(?:(https?://\S+|:.+?:))?\s*(.*)")
                         def pushreply(server, message, link, text, push=push):
                             user = push["sender_email"]
                             return self.send_push.funct(self, server, message, user, link, text)
                         self.server.reply_hook = pushreply
-                    self.server.message(push_format(push, self.sent, self.config["users"]), account)
+                    if push["sender_email"].lower() in watchers:
+                        self.server.message(self.bouncefmt % {"nick": display_sender, "body": push_text(push)}, account)
+                    else:
+                        self.server.message(push_format(push, self.sent, self.config["users"]), account)
 
             acc["last"] = max(push["modified"], acc["last"])
         self.save(account, acc)
@@ -297,9 +344,13 @@ class PushBullet(Callback):
 
     @msghandler
     def update_watchers(self, server, msg):
-        if server.lower(msg.context) in self.watchers:
-            acc = self.config["accounts"].get(self.lower(msg.context))
-            watchers = self.watchers[server.lower(msg.context)]
+        ctx = server.lower(msg.context)
+        # update 
+        user = server.lower(msg.address.nick)
+        self.active.setdefault(ctx, {})[user] = time.time()
+        if ctx in self.watchers and ctx in self.config["accounts"]:
+            acc = self.config["accounts"][ctx]
+            watchers = self.watchers[ctx]
             push = {"type": "note"}
             if msg.text.startswith("\x01ACTION ") and msg.text.endswith("\x01"):
                 push["body"] = "* %s %s" % (msg.address.nick, ircstrip(msg.text[8:-1]))
@@ -309,6 +360,117 @@ class PushBullet(Callback):
                 push["email"] = email
                 with self.pushlock:
                     self.skip.add(self.push(push, acc["token"]))
+
+    ## Channel state tracking
+
+    def update_active_quit(self, server, line) -> "quit":
+        words = line.split(" ", 2)
+        nick = Address(words[0]).nick
+        lnick = server.lower(nick)
+        requires_updates = []
+        for channel in self.active:
+            if lnick in self.active[channel]:
+                if time.time() - self.active[channel][lnick] < ACTIVITY_TIMEOUT:
+                    requires_updates.append(channel)
+                else:
+                    self.rejoin_ignore.setdefault(channel, {})[lnick] = time.time()
+                del self.active[channel][lnick]
+        # Update watchers
+        push = {"type": "note", "title": "* %s has disconnected" % nick, "body": cstrip(words[-1])}
+        for channel in requires_updates:
+            ctx = server.lower(channel)
+            if ctx in self.watchers and ctx in self.config["accounts"]:
+                acc = self.config["accounts"][ctx]
+                watchers = self.watchers[ctx]
+                for email in watchers:
+                    push["email"] = email
+                    with self.pushlock:
+                        self.skip.add(self.push(push, acc["token"]))
+
+
+    def update_active_part(self, server, line) -> "part":
+        words = line.split(" ", 3)
+        nick = Address(words[0]).nick
+        lnick = server.lower(nick)
+        channel = server.lower(words[2])
+        push = {"type": "note", "title": "* %s has left the channel" % nick, "body": cstrip(words[-1])}
+        if lnick in self.active[channel]:
+            if (time.time() - self.active[channel][lnick] < ACTIVITY_TIMEOUT
+                and channel in self.watchers 
+                and channel in self.config["accounts"]):
+                # Update watchers
+                acc = self.config["accounts"][channel]
+                watchers = self.watchers[channel]
+                for email in watchers:
+                    push["email"] = email
+                    with self.pushlock:
+                        self.skip.add(self.push(push, acc["token"]))
+            del self.active[channel][lnick]
+
+    def update_active_nick(self, server, line) -> "nick":
+        words = line.split(" ", 2)
+        nick = Address(words[0]).nick
+        lnick = server.lower(nick)
+        newnick = words[2]
+        requires_updates = []
+        for channel in self.active:
+            if lnick in self.active[channel]:
+                if time.time() - self.active[channel][lnick] < ACTIVITY_TIMEOUT:
+                    requires_updates.append(channel)
+                del self.active[channel][lnick]
+                self.active[channel][server.lower(newnick)] = time.time()
+        # Update watchers
+        push = {"type": "note", "title": "* %s is now known as %s" % (nick, newnick)}
+        for channel in requires_updates:
+            ctx = server.lower(channel)
+            if ctx in self.watchers and ctx in self.config["accounts"]:
+                acc = self.config["accounts"][ctx]
+                watchers = self.watchers[ctx]
+                for email in watchers:
+                    push["email"] = email
+                    with self.pushlock:
+                        self.skip.add(self.push(push, acc["token"]))
+
+    def update_active_join(self, server, line) -> "join":
+        words = line.split(" ", 3)
+        nick = Address(words[0]).nick
+        lnick = server.lower(nick)
+        channel = server.lower(words[2])
+        push = {"type": "note", "title": "* %s has joined the channel" % nick}
+        if ((lnick not in self.rejoin_ignore.setdefault(channel, {})
+            or (time.time() - self.rejoin_ignore[channel][lnick]) > ACTIVITY_TIMEOUT)
+            and channel in self.watchers 
+            and channel in self.config["accounts"]):
+            # Update watchers
+            acc = self.config["accounts"][channel]
+            watchers = self.watchers[channel]
+            for email in watchers:
+                push["email"] = email
+                with self.pushlock:
+                    self.skip.add(self.push(push, acc["token"]))
+        if lnick in self.rejoin_ignore[channel]:
+            del self.rejoin_ignore[channel][lnick]
+        self.active[channel][lnick] = time.time()
+
+    def update_active_kick(self, server, line) -> "kick":
+        words = line.split(" ", 4)
+        kicker = Address(words[0]).nick
+        nick = words[3]
+        lnick = server.lower(nick)
+        channel = server.lower(words[2])
+        push = {"type": "note", "title": "* %s has kicked %s from %s" % (kicker, nick, words[2]), "body": cstrip(words[-1])}
+        if (channel in self.watchers 
+            and channel in self.config["accounts"]):
+            # Update watchers
+            acc = self.config["accounts"][channel]
+            watchers = self.watchers[channel]
+            for email in watchers:
+                push["email"] = email
+                with self.pushlock:
+                    self.skip.add(self.push(push, acc["token"]))
+        if lnick in self.active[channel]:
+            del self.active[channel][lnick]
+
 
     def push(self, push, token):
         headers = {"Authorization": "Bearer " + token}
@@ -328,5 +490,18 @@ class PushBullet(Callback):
     def __destroy__(self, server):
         for listener in self.listeners:
             listener.listening = False
+
+    @command("pbflush", admin=True)
+    def pbflush(self, server, msg):
+        for channel, account in self.config["accounts"].items():
+            self.update(channel)
+        return "03│ ⁍ │ Manually tickled all pushbullet connections."        
+
+    @command("pbrestart", admin=True)
+    def pbrestart(self, server, msg):
+        for listener in self.listeners:
+            listener.listening = False     
+        self.listen()
+        return "03│ ⁍ │ Restarted all tickle threads."
 
 __initialise__ = PushBullet
