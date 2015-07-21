@@ -96,6 +96,7 @@ class PushListener(threading.Thread):
             # exponential backoff
             time.sleep(2**self.retries)
             self.retries += 1
+            self.sock = ssl.wrap_socket(socket.socket())
             self.connect()
             self.decapitate()
             self.run()
