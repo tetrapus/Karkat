@@ -222,7 +222,7 @@ class PushBullet(Callback):
                         settings = self.usersettings.get(self.lower(account), [])
                         if " " in push["body"]: word = push["body"].split(" ", 1)[-1]
                         else: word = nick
-                        pattern = (word, sender_email)
+                        pattern = [word, sender_email]
                         if pattern in settings:
                             settings.remove(pattern)
                             hlconfirm = {"type": "note", "email": sender_email, "title": "* %r removed from alerts." % word}
