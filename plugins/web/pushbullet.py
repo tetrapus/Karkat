@@ -175,7 +175,7 @@ class PushBullet(Callback):
         self.server = server
         self.configf = server.get_config_dir("pushbullet.json")
         self.config = Config(self.configf, default={"accounts":{}, "users":{}})
-        self.bouncefmt = "\x0303%(nick)s\x03 ⁍ %(body)s"
+        self.bouncefmt = "\x02\x0303%(nick)s\x0f\x0f: %(body)s"
         self.listeners = []
         self.skip = set()
         self.sent = set()
@@ -212,6 +212,9 @@ class PushBullet(Callback):
             with self.pushlock:
                 if push["iden"] in self.skip:
                     self.skip.remove(push["iden"])
+                elif push.get("body", "") == ".highlight":
+                    if push["sender_email"].lower() in self.config["users"]:
+                        pass
                 # Handle user joins
                 elif push.get("body", "") == ".join":
                     if push["sender_email"].lower() in self.config["users"]:
@@ -435,7 +438,7 @@ class PushBullet(Callback):
         words = line.split(" ", 3)
         nick = Address(words[0]).nick
         lnick = server.lower(nick)
-        channel = server.lower(words[2])
+        channel = server.lower(cstrip(words[2]))
         push = {"type": "note", "title": "* %s has joined the channel" % nick}
         if ((lnick not in self.rejoin_ignore.setdefault(channel, {})
             or (time.time() - self.rejoin_ignore[channel][lnick]) > ACTIVITY_TIMEOUT)

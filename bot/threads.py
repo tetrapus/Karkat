@@ -143,6 +143,8 @@ class Printer(WorkerThread):
     FULL_MESSAGE = 2
     TYPE_ONLY = 4
 
+    class PRINTERMSG: pass
+
     def __init__(self, connection):
         WorkerThread.__init__(self)
         self.flush = False
@@ -150,6 +152,7 @@ class Printer(WorkerThread):
         self.verbosity = self.TYPE_ONLY | self.QUEUE_STATE
         self.servername = connection.server[0]
         self.history = {}
+        self.callbacks = []
         if hasattr(connection, "lower"):
             self.lower = connection.lower
         else:
@@ -260,6 +263,7 @@ class ColourPrinter(Printer):
                               lambda x: (("\x03%s" % (color)) + (x.group(1) or "")),
                               line)
                 line = line.replace("\x0f", "\x0f\x03%s" % (color))
+                line = line.replace("\x0f\x03%s\x0f\x03%s" % (color, color), "\x0f")
                 value.append("\x03%s%s" % (color, line))
         return ("\n".join(value)) # TODO: Minify.
 
