@@ -454,7 +454,7 @@ class PushBullet(Callback):
                     self.skip.add(self.push(push, acc["token"]))
         if lnick in self.rejoin_ignore[channel]:
             del self.rejoin_ignore[channel][lnick]
-        self.active[channel][lnick] = time.time()
+        self.active.setdefault(channel, {})[lnick] = time.time()
 
     def update_active_kick(self, server, line) -> "kick":
         words = line.split(" ", 4)
