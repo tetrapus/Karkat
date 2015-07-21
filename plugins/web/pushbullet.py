@@ -405,7 +405,7 @@ class PushBullet(Callback):
         for word, email, when in self.usersettings.get(ctx, []):
             nick = server.lower(self.config["users"][email])
             if when.startswith("inactive"):
-                timeout = 60 * int(inactive.split(" ")[-1])
+                timeout = 60 * int(when.split(" ")[-1])
             if email not in highlighted and word.lower() in ircstrip(msg.text):
                 if (when == "always"
                     or (when == "offline" and server.isIn(ctx, server.channels) and not server.isIn(nick, server.channels[ctx]))
