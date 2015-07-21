@@ -34,7 +34,7 @@ class Config(object):
 
     def save(self):
         with self.mutex:
-            self.save()
+            self._save()
 
     def __enter__(self):
         self.mutex.acquire()

@@ -177,7 +177,7 @@ class PushBullet(Callback):
         self.configf = server.get_config_dir("pushbullet.json")
         self.config = Config(self.configf, default={"accounts":{}, "users":{}})
         self.usersettingsf = server.get_config_dir("pushbullet_settings.json")
-        self.usersettings = Config(self.usersettingsf, default={"highlights":{}})
+        self.usersettings = Config(self.usersettingsf, default={})
         self.bouncefmt = "\x0303· \x02%(nick)s\x0f\x0f: %(body)s \x0315· via mobile"
         self.listeners = []
         self.skip = set()
@@ -231,8 +231,7 @@ class PushBullet(Callback):
                             settings.append(pattern)
                             hlconfirm = {"type": "note", "email": sender_email, "title": "* %r added to alerts." % word}
                             self.skip.add(self.push(hlconfirm, acc["token"]))
-                        self.savesettings(account, settings)
-
+                        self.usersettings[self.lower(account)] = settings
                 # Handle user joins
                 elif push.get("body", "") == ".join":
                     if sender_email in self.config["users"]:
@@ -284,10 +283,6 @@ class PushBullet(Callback):
     def save(self, channel, account):
         with self.config as conf:
             conf["accounts"][channel] = account
-
-    def savesettings(self, channel, settings):
-        with self.usersettings as conf:
-            conf[channel] = settings
 
     def queue(self, push):
         pass
@@ -399,7 +394,7 @@ class PushBullet(Callback):
                         self.skip.add(self.push(push, acc["token"]))
         for word, email in self.usersettings.get(ctx, []):
             if email not in highlighted and word.lower() in ircstrip(msg.text):
-                push = {"type": "note", "title": "🔔 Highlight from %s" % msg.address.nick, "body": ircstrip(msg.text), email:email}
+                push = {"type": "note", "title": "🔔 Highlight from %s" % msg.address.nick, "body": ircstrip(msg.text), "email":email}
                 with self.pushlock:
                     self.skip.add(self.push(push, acc["token"]))
 
