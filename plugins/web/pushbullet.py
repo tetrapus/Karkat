@@ -409,7 +409,7 @@ class PushBullet(Callback):
             if email not in highlighted and word.lower() in ircstrip(msg.text):
                 if (when == "always"
                     or (when == "offline" and server.isIn(ctx, server.channels) and not server.isIn(nick, server.channels[ctx]))
-                    or (when.startswith("inactive") and server.isIn(nick, self.active) and time.time() - self.active[nick] < timeout)):
+                    or (when.startswith("inactive") and (not server.isIn(nick, self.active) or time.time() - self.active[nick] >= timeout))):
                     push = {"type": "note", "title": "🔔 Highlight from %s" % msg.address.nick, "body": ircstrip(msg.text), "email":email}
                     with self.pushlock:
                         self.skip.add(self.push(push, acc["token"]))
