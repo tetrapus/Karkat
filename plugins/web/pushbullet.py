@@ -176,6 +176,8 @@ class PushBullet(Callback):
         self.server = server
         self.configf = server.get_config_dir("pushbullet.json")
         self.config = Config(self.configf, default={"accounts":{}, "users":{}})
+        self.usersettingsf = server.get_config_dir("pushbullet_settings.json")
+        self.usersettings = Config(self.usersettingsf, default={"highlights":{}})
         self.bouncefmt = "\x0303· \x02%(nick)s\x0f\x0f: %(body)s \x0315· via mobile"
         self.listeners = []
         self.skip = set()
@@ -210,44 +212,59 @@ class PushBullet(Callback):
         if not pushes:
             return
         for push in pushes:
+            sender_email = push["sender_email"].lower()
             with self.pushlock:
                 if push["iden"] in self.skip:
                     self.skip.remove(push["iden"])
-                elif push.get("body", "") == ".highlight":
-                    if push["sender_email"].lower() in self.config["users"]:
-                        pass
+                elif push.get("body", "").startswith(".highlight"):
+                    if sender_email in self.config["users"]:
+                        nick = self.config["users"][sender_email]
+                        settings = self.usersettings.get(self.lower(account), [])
+                        if " " in push["body"]: word = push["body"].split(" ", 1)[-1]
+                        else: word = nick
+                        pattern = (word, sender_email)
+                        if pattern in settings:
+                            settings.remove(pattern)
+                            hlconfirm = {"type": "note", "email": sender_email, "title": "* %r removed from alerts." % word}
+                            self.skip.add(self.push(hlconfirm, acc["token"]))
+                        else:
+                            settings.append(pattern)
+                            hlconfirm = {"type": "note", "email": sender_email, "title": "* %r added to alerts." % word}
+                            self.skip.add(self.push(hlconfirm, acc["token"]))
+                        self.savesettings(account, settings)
+
                 # Handle user joins
                 elif push.get("body", "") == ".join":
-                    if push["sender_email"].lower() in self.config["users"]:
-                        nick = self.config["users"][push["sender_email"].lower()]
+                    if sender_email in self.config["users"]:
+                        nick = self.config["users"][sender_email]
                         self.server.message("03│ ⁍ │ %s has joined the conversation via pushbullet." % nick, account)
-                        watchers.add(push["sender_email"].lower())
+                        watchers.add(sender_email)
                         push_join = {"type": "note", "title": "* %s has joined via PushBullet" % nick}
                         actives = {"type": "note", "email": push["sender_email"], "title": "* Now listening to %s" % account}
                         ausers = [k for k, v in self.active.setdefault(self.lower(account), {}).items() if time.time() - v < ACTIVITY_TIMEOUT]
                         if ausers:
                             actives["body"] = "Active users:\n%s" % (", ".join(ausers))
                         for email in watchers:
-                            if email.lower() != push["sender_email"].lower():
+                            if email.lower() != sender_email:
                                 push_join["email"] = email
                                 self.skip.add(self.push(push_join, acc["token"]))
                         self.skip.add(self.push(actives, acc["token"]))
                 elif push.get("body", "") == ".part":
-                    if push["sender_email"].lower() in watchers:
-                        nick = self.config["users"][push["sender_email"].lower()]
+                    if sender_email in watchers:
+                        nick = self.config["users"][sender_email]
                         self.server.message("03│ ⁍ │ %s has stopped listening to the conversation." % nick, account)
-                        watchers.remove(push["sender_email"].lower())
+                        watchers.remove(sender_email)
                         push_part = {"type": "note", "title": "* %s is no longer receiving updates via PushBullet" % nick}
                         partconfirm = {"type": "note", "email": push["sender_email"], "title": "* No longer listening to %s" % account}
                         for email in watchers:
-                            if email.lower() != push["sender_email"].lower():
+                            if email.lower() != sender_email:
                                 push_part["email"] = email
                                 self.skip.add(self.push(push_part, acc["token"]))
                         self.skip.add(self.push(partconfirm, acc["token"]))
                 else:
-                    display_sender = self.config["users"].get(push["sender_email"].lower(), push["sender_email"])
+                    display_sender = self.config["users"].get(sender_email, push["sender_email"])
                     for email in watchers:
-                        if email.lower() != push["sender_email"].lower():
+                        if email.lower() != sender_email:
                             self.skip.add(self.push(push_bounce(push, display_sender, email), acc["token"]))
                     if push["iden"] not in self.sent:
                         @command("reply", r"(?:(https?://\S+|:.+?:))?\s*(.*)")
@@ -255,7 +272,7 @@ class PushBullet(Callback):
                             user = push["sender_email"]
                             return self.send_push.funct(self, server, message, user, link, text)
                         self.server.reply_hook = pushreply
-                    if push["sender_email"].lower() in watchers:
+                    if sender_email in watchers:
                         self.server.message(self.bouncefmt % {"nick": display_sender, "body": push_text(push)}, account)
                     else:
                         self.server.message(push_format(push, self.sent, self.config["users"]), account)
@@ -267,6 +284,10 @@ class PushBullet(Callback):
     def save(self, channel, account):
         with self.config as conf:
             conf["accounts"][channel] = account
+
+    def savesettings(self, channel, settings):
+        with self.usersettings as conf:
+            conf[channel] = settings
 
     def queue(self, push):
         pass
@@ -352,6 +373,7 @@ class PushBullet(Callback):
         # update 
         user = server.lower(msg.address.nick)
         self.active.setdefault(ctx, {})[user] = time.time()
+        highlighted = []
         if ctx in self.watchers and ctx in self.config["accounts"]:
             acc = self.config["accounts"][ctx]
             watchers = self.watchers[ctx]
@@ -359,9 +381,25 @@ class PushBullet(Callback):
             if msg.text.startswith("\x01ACTION ") and msg.text.endswith("\x01"):
                 push["body"] = "* %s %s" % (msg.address.nick, ircstrip(msg.text[8:-1]))
             else:
-                push["body"], push["title"] = ircstrip(msg.text), msg.address.nick              
+                push["body"], push["title"] = ircstrip(msg.text), msg.address.nick
             for email in watchers:
-                push["email"] = email
+                if any(email == target and word.lower() in ircstrip(msg.text)
+                       for word, target in self.usersettings.get(ctx, [])):
+                    hlpush = {"type": "note", "email": email, "body": push["body"]}
+                    if "title" in push:
+                        hlpush["title"] = "🔔 " + push["title"]
+                    else:
+                        hlpush["title"] = "🔔 Highlight from " + msg.address.nick
+                    with self.pushlock:
+                        self.skip.add(self.push(hlpush, acc["token"]))
+                    highlighted.append(email)
+                else:
+                    push["email"] = email
+                    with self.pushlock:
+                        self.skip.add(self.push(push, acc["token"]))
+        for word, email in self.usersettings.get(ctx, []):
+            if email not in highlighted and word.lower() in ircstrip(msg.text):
+                push = {"type": "note", "title": "🔔 Highlight from %s" % msg.address.nick, "body": ircstrip(msg.text), email:email}
                 with self.pushlock:
                     self.skip.add(self.push(push, acc["token"]))
 
