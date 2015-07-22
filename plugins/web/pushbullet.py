@@ -224,6 +224,7 @@ class PushBullet(Callback):
         pushes = req.json()["pushes"]
         if not pushes:
             return
+        pushes.reverse()
         for push in pushes:
             sender_email = push["sender_email"].lower()
             hlmatch = re.match(self.HLCMD, push.get("body", ""))
