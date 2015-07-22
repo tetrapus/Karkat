@@ -424,10 +424,10 @@ class PushBullet(Callback):
             if inactive_match:
                 who, timeout = inactive_match.groups()
                 if who is None: who = [nick]
-                else: who = re.split(r",\s*", who)
+                else: who = re.split(r",\s*", who.strip())
                 if timeout is None:
-                    timeout = 15
-                timeout = 60 * int(timeout)
+                    timeout = "15"
+                timeout = 60 * int(timeout.strip())
                 when = "inactive"
             elif offline_match:
                 who, = offline_match.groups()
