@@ -440,9 +440,11 @@ class PushBullet(Callback):
                                                                  or time.time() - self.active[self.lower(i)] >= timeout))
                                                                  for i in who)):
                     push = {"type": "note", "title": "🔔 Highlight from %s" % msg.address.nick, "body": ircstrip(msg.text), "email":email}
+                    if msg.text.startswith("\x01ACTION ") and msg.text.endswith("\x01"):
+                        push["body"] = "* %s %s" % (msg.address.nick, ircstrip(msg.text[8:-1]))
                     with self.pushlock:
                         self.skip.add(self.push(push, acc["token"]))
-                highlight.append(email)
+                highlighted.append(email)
 
     ## Channel state tracking
 
