@@ -429,7 +429,7 @@ class PushBullet(Callback):
                     timeout = 15
                 timeout = 60 * int(timeout)
             elif offline_match:
-                who, = inactive_match.groups()
+                who, = offline_match.groups()
                 if who is None: who = [nick]
                 else: who = re.split(r",\s*", who)            
             if email not in highlighted and hl_match(word, msg.text):
