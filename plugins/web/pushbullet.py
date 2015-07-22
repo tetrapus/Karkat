@@ -428,17 +428,19 @@ class PushBullet(Callback):
                 if timeout is None:
                     timeout = 15
                 timeout = 60 * int(timeout)
+                when = "inactive"
             elif offline_match:
                 who, = offline_match.groups()
                 if who is None: who = [nick]
-                else: who = re.split(r",\s*", who)            
+                else: who = re.split(r",\s*", who)
+                when = "offline"
             if email not in highlighted and hl_match(word, msg.text):
                 if (when == "always"
                     or (when == "offline" and server.isIn(ctx, server.channels) and not any(server.isIn(i, server.channels[ctx])
                                                                                             for i in who))
-                    or (when.startswith("inactive") and all(not server.isIn(i, self.active) 
-                                                            or time.time() - self.active[self.lower(i)] >= timeout)
-                                                            for i in who)):
+                    or (when =="inactive" and all(not server.isIn(i, self.active) 
+                                                  or time.time() - self.active[self.lower(i)] >= timeout)
+                                                  for i in who)):
                     push = {"type": "note", "title": "🔔 Highlight from %s" % msg.address.nick, "body": ircstrip(msg.text), "email":email}
                     if msg.text.startswith("\x01ACTION ") and msg.text.endswith("\x01"):
                         push["body"] = "* %s %s" % (msg.address.nick, ircstrip(msg.text[8:-1]))
