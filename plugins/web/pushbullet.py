@@ -439,8 +439,8 @@ class PushBullet(Callback):
                     or (when == "offline" and server.isIn(ctx, server.channels) and not any(server.isIn(i, server.channels[ctx])
                                                                                             for i in who))
                     or (when =="inactive" and all(not server.isIn(i, self.active[ctx]) 
-                                                  or time.time() - self.active[ctx][self.lower(i)] >= timeout)
-                                                  for i in who)):
+                                                  or time.time() - self.active[ctx][self.lower(i)] >= timeout
+                                                  for i in who))):
                     push = {"type": "note", "title": "🔔 Highlight from %s" % msg.address.nick, "body": ircstrip(msg.text), "email":email}
                     if msg.text.startswith("\x01ACTION ") and msg.text.endswith("\x01"):
                         push["body"] = "* %s %s" % (msg.address.nick, ircstrip(msg.text[8:-1]))
