@@ -40,6 +40,16 @@ def cstrip(text):
     if text.startswith(":"): return text[1:]
     return text
 
+def hl_match(pattern, text):
+    if pattern.startswith("/") and pattern.endswith("/") and len(pattern) > 1:
+        try:
+            return re.match(pattern[1:-1], text, flags=re.IGNORECASE)
+        except:
+            return False
+    else:
+        return pattern.lower() in ircstrip(text.lower())
+
+
 class WebSocket(object):
     def __init__(self, sock, buff=b''):
         self.buff = buff
@@ -388,7 +398,7 @@ class PushBullet(Callback):
             else:
                 push["body"], push["title"] = ircstrip(msg.text), msg.address.nick
             for email in watchers:
-                if any(email == target and word.lower() in ircstrip(msg.text.lower())
+                if any(email == target and hl_match(word, msg.text)
                        for word, target, _ in self.usersettings.get(ctx, [])):
                     hlpush = {"type": "note", "email": email, "body": push["body"]}
                     if "title" in push:
@@ -406,7 +416,7 @@ class PushBullet(Callback):
             nick = server.lower(self.config["users"][email])
             if when.startswith("inactive"):
                 timeout = 60 * int(when.split(" ")[-1])
-            if email not in highlighted and word.lower() in ircstrip(msg.text):
+            if email not in highlighted and hl_match(word, msg.text):
                 if (when == "always"
                     or (when == "offline" and server.isIn(ctx, server.channels) and not server.isIn(nick, server.channels[ctx]))
                     or (when.startswith("inactive") and (not server.isIn(nick, self.active) or time.time() - self.active[nick] >= timeout))):
