@@ -239,7 +239,10 @@ class PushBullet(Callback):
                         if when is None: when = "offline"
                         pattern = [word, sender_email, when]
                         matches = [i for i, x in enumerate(settings) if x[0:2] == pattern[0:2]]
-                        if matches and (pattern in settings or when == "remove"):
+                        if when == "remove":
+                            settings = [i for i in settings if i[0:2] != pattern[0:2]]
+                            hlconfirm = {"type": "note", "email": sender_email, "title": "* %r removed from alerts." % word}                            
+                        elif matches and pattern in settings:
                             settings.remove(pattern)
                             hlconfirm = {"type": "note", "email": sender_email, "title": "* %r removed from alerts." % word}
                         elif matches:
@@ -438,6 +441,7 @@ class PushBullet(Callback):
                     push = {"type": "note", "title": "🔔 Highlight from %s" % msg.address.nick, "body": ircstrip(msg.text), "email":email}
                     with self.pushlock:
                         self.skip.add(self.push(push, acc["token"]))
+                highlight.append(email)
 
     ## Channel state tracking
 
