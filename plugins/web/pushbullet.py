@@ -183,7 +183,7 @@ def push_format(push, sent, users):
     return "03│ ⁍ │ " + " · ".join(fields)
 
 class PushBullet(Callback):
-    HLCMD = r"\.highlight(?: (always|inactive \d+|offline|remove))?(?: (.+))?"
+    HLCMD = r"\.highlight(?: (always|(?:\S+(?:,\s*\S+)* )?inactive(?: \d+)?|(?:\S+(?:,\s*\S+)* )?offline|remove))?(?: (.+))?"
 
     def __init__(self, server):
         self.server = server
@@ -191,7 +191,7 @@ class PushBullet(Callback):
         self.config = Config(self.configf, default={"accounts":{}, "users":{}})
         self.usersettingsf = server.get_config_dir("pushbullet_settings.json")
         self.usersettings = Config(self.usersettingsf, default={})
-        self.bouncefmt = "\x0303· \x02%(nick)s\x0f\x0f: %(body)s \x0315· via mobile"
+        self.bouncefmt = "\x0303· \x02%(nick)s\x0f\x0f: %(body)s"
         self.listeners = []
         self.skip = set()
         self.sent = set()
@@ -414,12 +414,27 @@ class PushBullet(Callback):
                         self.skip.add(self.push(push, acc["token"]))
         for word, email, when in self.usersettings.get(ctx, []):
             nick = server.lower(self.config["users"][email])
-            if when.startswith("inactive"):
-                timeout = 60 * int(when.split(" ")[-1])
+            # Parse when
+            inactive_match = re.match(r"(\S+(?:,\s*\S+)* )?inactive( \d+)?", when)
+            offline_match = re.match(r"(\S+(?:,\s*\S+)* )?offline", when)
+            if inactive_match:
+                who, timeout = inactive_match.groups()
+                if who is None: who = [nick]
+                else: who = re.split(r",\s*", who)
+                if timeout is None:
+                    timeout = 15
+                timeout = 60 * int(timeout)
+            elif offline_match:
+                who, = inactive_match.groups()
+                if who is None: who = [nick]
+                else: who = re.split(r",\s*", who)            
             if email not in highlighted and hl_match(word, msg.text):
                 if (when == "always"
-                    or (when == "offline" and server.isIn(ctx, server.channels) and not server.isIn(nick, server.channels[ctx]))
-                    or (when.startswith("inactive") and (not server.isIn(nick, self.active) or time.time() - self.active[nick] >= timeout))):
+                    or (when == "offline" and server.isIn(ctx, server.channels) and not any(server.isIn(i, server.channels[ctx])
+                                                                                            for i in who))
+                    or (when.startswith("inactive") and (not any(server.isIn(i, self.active) 
+                                                                 or time.time() - self.active[self.lower(i)] >= timeout))
+                                                                 for i in who)):
                     push = {"type": "note", "title": "🔔 Highlight from %s" % msg.address.nick, "body": ircstrip(msg.text), "email":email}
                     with self.pushlock:
                         self.skip.add(self.push(push, acc["token"]))
