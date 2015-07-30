@@ -34,4 +34,4 @@ def age(server, msg, url):
     ages = [i["attributes"] for i in sorted(ages, key=lambda x:x['faceRectangle']['left'])]
     return "07│\x03 "+ (" · ".join(format_result(i) for i in ages))
 
-__callbacks__ = {"privmsg": age}
+__callbacks__ = {"privmsg":[age]}
