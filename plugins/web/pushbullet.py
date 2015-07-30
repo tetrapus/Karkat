@@ -587,7 +587,8 @@ class PushBullet(Callback):
     @command("pbrestart", admin=True)
     def pbrestart(self, server, msg):
         for listener in self.listeners:
-            listener.listening = False     
+            listener.listening = False  
+        self.listeners = []   
         self.listen()
         return "03│ ⁍ │ Restarted all tickle threads."
 
