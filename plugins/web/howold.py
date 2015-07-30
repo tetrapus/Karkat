@@ -3,8 +3,8 @@ import requests
 
 from bot.events import command
 
-display_attrs = {"male": (12, "👶👦👨👴"),
-                 "female": (13, "👶👧👩👵")}
+display_attrs = {"Male": (12, "👶👦👨👴"),
+                 "Female": (13, "👶👧👩👵")}
 
 def how_old(url): 
     string = requests.post("http://how-old.net/Home/Analyze", params={"faceUrl": url, "faceName": "null", "isTest": "False"}).json()
