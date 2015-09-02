@@ -33,7 +33,7 @@ def defaultdeck(black, white):
     #memes = re.findall("<h5 class='left'>Also Trending:</h5>(.+?)</div>", memes)
     #memes = re.findall(">(.+?)</a>", memes[0])
 
-    answers.extend([unescape(i) + "." for i in memes])
+    #answers.extend([unescape(i) + "." for i in memes])
 
     ud = requests.get("http://urbandictionary.com/").text
     ud = re.findall(r"define\.php.*?>(.+?)<", ud)[1:]
