@@ -29,9 +29,9 @@ def defaultdeck(black, white):
     questions.extend(titles)
 
     # Get trends from Know Your Meme
-    memes = requests.get("http://knowyourmeme.com/").text
-    memes = re.findall("<h5 class='left'>Also Trending:</h5>(.+?)</div>", memes)
-    memes = re.findall(">(.+?)</a>", memes[0])
+    #memes = requests.get("http://knowyourmeme.com/").text
+    #memes = re.findall("<h5 class='left'>Also Trending:</h5>(.+?)</div>", memes)
+    #memes = re.findall(">(.+?)</a>", memes[0])
 
     answers.extend([unescape(i) + "." for i in memes])
 
