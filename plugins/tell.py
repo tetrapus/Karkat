@@ -87,6 +87,7 @@ class Reminder(Callback):
         text = re.sub("\bs?he|they\b\s+(\S+)s", r"you \1", text, flags=re.IGNORECASE)
         if user.lower() in ["me", "self"]:
             user = msg.address.nick
+        user = user.lstrip("@")
         if method == "snapchat":
             return "Snapchat not yet implemented."
         if re.match(r"what\s+to\s+\S+|(again\s+)later", text, re.IGNORECASE):
