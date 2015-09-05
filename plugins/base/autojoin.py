@@ -43,10 +43,10 @@ class AutoJoin(object):
         if server.is_admin(words[0]) or server.isIn(words[3][1:], self.chans):
             server.sendline("JOIN %s" % words[3])
 
-    @command("autojoin", public=":", private="")
-    def trigger(self, server, msg):
+    @command("autojoin", "(.+)?", public=":", private="")
+    def trigger(self, server, msg, nick):
         """ Alters saved channel list. """
-        if msg.context.startswith("#"):
+        if msg.context.startswith("#") and (not nick or server.eq(nick, server.nick)):
             if server.isIn(msg.context, self.chans):
                 self.chans.remove(server.lower(msg.context))
                 self.sync()
