@@ -3,7 +3,7 @@ from util.services.youtube import youtube as yt
 from util.irc import Callback, command
 
 templates = {"@": "04│ ▶ │ %(title)s\n04│ ▶ │ 15by %(channel)s 12↗ http://youtu.be/%(url)s",
-             ".": "04│ %(title)s 12↗ http://youtu.be/%(url)s",
+             ".": "04│ %(title)s · by %(channel)s 12↗ http://youtu.be/%(url)s",
              "!": "04│ ▶ │ %(title)s\n04│ ▶ │ 15by %(channel)s 12↗ http://youtu.be/%(url)s"}
 
 lines = {"@": 1,
