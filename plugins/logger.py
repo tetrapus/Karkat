@@ -8,6 +8,8 @@ class Logger(Callback):
     def __init__(self, server):
         self.logs = []
         self.logpath = server.get_config_dir("log.txt")
+        try: open(self.logpath, "x")
+        except FileExistsError: pass
         with open(self.logpath) as logfile:
             for line in logfile:
                 try:
