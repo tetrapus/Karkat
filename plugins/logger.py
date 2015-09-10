@@ -106,7 +106,7 @@ class Logger(Callback):
     
     @command("seen lastseen", r"(\S+)")
     def seen(self, server, msg, user):
-        if server.eq(user, evt.sender.nick):
+        if server.eq(user, msg.address.nick):
             return "04⎟ You're right there!" % user
         types = ['NICK', 'QUIT', 'PART', 'NOTICE', 'PRIVMSG', 'JOIN']
         for timestamp, line in reversed(self.logs):
@@ -124,7 +124,7 @@ class Logger(Callback):
 
     @command("last lastspoke lastmsg", r"(\S)+")
     def lastspoke(self, server, msg, user):
-        if server.eq(user, evt.sender.nick):
+        if server.eq(user, msg.address.nick):
             return "04⎟ You just spoke!" % user
         for timestamp, line in reversed(self.logs):
             try:
