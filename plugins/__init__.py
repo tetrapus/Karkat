@@ -19,4 +19,5 @@ __modules__ = ["games",
                "topic",
                "reply",
                "balance",
+               "logger",
                "infobot"]
