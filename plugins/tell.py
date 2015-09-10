@@ -82,7 +82,10 @@ class Reminder(Callback):
         # TODO: print reminders in last-spoke channel
         after = parse_time(after or after2)
         repeat = parse_time(repeat)
-        method = (method or "channel message").lower()
+        if msg.context.startswith("#"):
+            method = (method or "channel message").lower()
+        else:
+            method = (method or "private message").lower()
         text = re.sub("\bs?he's\b", "you're", text, flags=re.IGNORECASE)
         text = re.sub("\bs?he|they\b\s+(\S+)s", r"you \1", text, flags=re.IGNORECASE)
         if user.lower() in ["me", "self"]:
