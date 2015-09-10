@@ -23,10 +23,10 @@ def timefmt(timestamp):
     minutes, seconds = divmod(timediff, 60)
     if not minutes:
         return "%d seconds ago" % seconds
-    hours, minutes = divmod(timediff, 60)
+    hours, minutes = divmod(minutes, 60)
     if not hours:
         return "%d minutes ago" % minutes
-    days, hours = divmod(timediff, 24)
+    days, hours = divmod(hours, 24)
     if not days:
         if minutes > (5 + hours):
             return "%d hours %d mins ago" % (hours, minutes)
