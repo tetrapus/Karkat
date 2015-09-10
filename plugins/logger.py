@@ -106,6 +106,8 @@ class Logger(Callback):
     
     @command("seen lastseen", r"(\S+)")
     def seen(self, server, msg, user):
+        if server.eq(user, evt.sender.nick):
+            return "04⎟ You're right there!" % user
         types = ['NICK', 'QUIT', 'PART', 'NOTICE', 'PRIVMSG', 'JOIN']
         for timestamp, line in reversed(self.logs):
             try:
@@ -115,20 +117,22 @@ class Logger(Callback):
                 if evt.type in ["PART", "NOTICE", "PRIVMSG", "JOIN"] and not server.eq(evt.args[0], msg.context):
                     continue
                 if server.eq(evt.sender.nick, user):
-                    return "%s · \x1d15%s" % (self.formatters[evt.type](evt), timefmt(timestamp))
+                    return "%s · \x1d%s" % (self.formatters[evt.type](evt), timefmt(timestamp))
             except:
                 print("[Logger] Warning: Could not parse %s" % line)
         return "04⎟ I haven't seen %s yet." % user
 
     @command("last lastspoke lastmsg", r"(\S)+")
     def lastspoke(self, server, msg, user):
+        if server.eq(user, evt.sender.nick):
+            return "04⎟ You just spoke!" % user
         for timestamp, line in reversed(self.logs):
             try:
                 evt = IRCEvent(line)
                 if evt.type != "PRIVMSG" or not server.eq(evt.args[0], msg.context):
                     continue
                 if server.eq(evt.sender.nick, user):
-                    return "%s · \x1d15%s" % (msgfmt(evt), timefmt(timestamp))
+                    return "%s · \x1d%s" % (msgfmt(evt), timefmt(timestamp))
             except:
                 print("[Logger] Warning: Could not parse %s" % line)
         return "04⎟ I haven't seen %s speak yet." % user
