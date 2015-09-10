@@ -33,13 +33,18 @@ class Message(object):
 
 class IRCEvent(object):
     def __init__(self, raw_message):
-        self.sender, self.type, raw_message = raw_message.split(" ", 2)
-        if "@" not in self.sender:
-            self.sender = self.sender.lstrip(":")
+        if not raw_message.startswith(":"):
+            # Assume it is a special message
+            self.sender = None
+            self.type, args = raw_message.split(" ", 1)
         else:
-            self.sender = Address(self.sender)
+            self.sender, self.type, raw_message = raw_message.split(" ", 2)
+            if "@" not in self.sender:
+                self.sender = self.sender.lstrip(":")
+            else:
+                self.sender = Address(self.sender)
 
-        args = raw_message.split(":", 1)
+            args = raw_message.split(":", 1)
         self.args = args[0].split()
         if len(args) == 2:
             self.args.append(args[1])
