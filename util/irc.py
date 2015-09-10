@@ -31,6 +31,18 @@ class Message(object):
         self.words = message.split(" ")
         self.message = raw_message
 
+class IRCEvent(object):
+    def __init__(self, raw_message):
+        self.sender, self.type, raw_message = raw_message.split(" ", 2)
+        if "@" not in self.sender:
+            self.sender = self.sender.lstrip(":")
+        else:
+            self.sender = Address(self.sender)
+
+        args = raw_message.split(":", 1)
+        self.args = args[0].split()
+        if len(args) == 2:
+            self.args.append(args[1])
 
 class Command(Message):
     def __init__(self, raw_message, prefixes=None):
