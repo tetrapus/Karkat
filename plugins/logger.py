@@ -92,7 +92,7 @@ class Logger(Callback):
             for line in logfile:
                 try:
                     timestamp, text = line.split(" ", 1)
-                    self.logs.append(float(timestamp), text.rstrip("\n"))
+                    self.logs.append((float(timestamp), text.rstrip("\n")))
                 except:
                     print("[Logger] Warning: Could not parse %s" % line)
         super().__init__(server)
