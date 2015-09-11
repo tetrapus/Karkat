@@ -2,6 +2,7 @@ from bot.events import command, Callback
 import json
 
 infofile = "info.json"
+undofile = "undo.json"
 protectionfile = "users.json"
 
 def check_whois(gen, server, msg, user):
@@ -79,8 +80,10 @@ def setinfo(server, msg, info):
     yield check_whois
     try:
         data = json.load(open(server.get_config_dir(infofile)))
+        undo = json.load(open(server.get_config_dir(undofile)))
     except:
         data = {}
+        undo = {}
     user = msg.address.nick
     luser = server.lower(user)
     protected = isprotected(server, user)
@@ -90,6 +93,8 @@ def setinfo(server, msg, info):
         if msg.prefix != "!":
             yield "│ This nickname is protected by the owner. Please identify with NickServ to update your info."
         return
+
+    undo[luser] = data[luser]
 
     if not info:
         del data[luser]
@@ -104,8 +109,46 @@ def setinfo(server, msg, info):
         set_protected(server, user)
 
     json.dump(data, open(server.get_config_dir(infofile), "w"))
+    json.dump(data, open(server.get_config_dir(undofile), "w"))
 
-__callbacks__ = {"privmsg": [info, setinfo, toggle_protection], "318": [finish_whois]}
+@command("undo", prefixes=("!", "."))
+def undoinfo(server, msg):
+    yield check_whois
+    try:
+        data = json.load(open(server.get_config_dir(infofile)))
+        undo = json.load(open(server.get_config_dir(undofile)))
+    except:
+        data = {}
+        undo = {}
+    user = msg.address.nick
+    luser = server.lower(user)
+    protected = isprotected(server, user)
+    registered = server.registered.get(luser, False)
+
+    if protected and not registered:
+        if msg.prefix != "!":
+            yield "│ This nickname is protected by the owner. Please identify with NickServ to update your info."
+        return
+
+    if luser not in undo or luser not in data:
+        yield "│ I have no history recorded for your username."
+        return
+    undo[luser], data[luser] = data[luser], undo[luser]
+
+    if not data[luser]:
+        if msg.prefix != "!":
+            yield "│ Your information has been deleted."
+    else:
+        if msg.prefix != "!":
+            yield "│ Your information has been updated."
+
+    if registered:
+        set_protected(server, user)
+
+    json.dump(data, open(server.get_config_dir(infofile), "w"))
+    json.dump(data, open(server.get_config_dir(undofile), "w"))
+
+__callbacks__ = {"privmsg": [info, setinfo, toggle_protection, undoinfo], "318": [finish_whois]}
 
 def __initialise__(server):
     server.whois_waiting = {}
