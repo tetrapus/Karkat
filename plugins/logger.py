@@ -135,7 +135,7 @@ class Logger(Callback):
                     continue
                 if evt.type in ["PART", "NOTICE", "PRIVMSG", "JOIN"] and not server.eq(evt.args[0], msg.context):
                     continue
-                if server.eq(evt.sender.nick, user):
+                if server.eq(evt.sender.nick, user) or (evt.type == "NICK" and server.eq(evt.args[0], user)):
                     if server.isIn(user, server.channels.get(server.lower(msg.context))):
                         status = " · \x0312online now"
                     else:
