@@ -9,9 +9,6 @@ def check_whois(gen, server, msg, user):
     server.whois_waiting[server.lower(msg.address.nick)] = (gen, msg)
     server.printer.raw_message("WHOIS :%s" % msg.address.nick)
 
-def check_whois_partial():
-    return lambda x, y, z: check_whois(x, y, z, user)
-
 @Callback.inline
 def finish_whois(server, line):
     words = line.split()
@@ -115,7 +112,7 @@ def setinfo(server, msg, info):
         set_protected(server, user)
 
     json.dump(data, open(server.get_config_dir(infofile), "w"))
-    json.dump(data, open(server.get_config_dir(undofile), "w"))
+    json.dump(undo, open(server.get_config_dir(undofile), "w"))
 
 @command("undo", prefixes=("!", "."))
 def undoinfo(server, msg):
@@ -154,7 +151,7 @@ def undoinfo(server, msg):
         set_protected(server, user)
 
     json.dump(data, open(server.get_config_dir(infofile), "w"))
-    json.dump(data, open(server.get_config_dir(undofile), "w"))
+    json.dump(undo, open(server.get_config_dir(undofile), "w"))
 
 __callbacks__ = {"privmsg": [getinfo, setinfo, toggle_protection, undoinfo], "318": [finish_whois]}
 
