@@ -164,9 +164,25 @@ class Logger(Callback):
             except:
                 print("[Logger] Warning: Could not parse %s" % line)
         return "04⎟ I haven't seen %s speak yet." % user
-"""
+
     @msghandler
     def substitute(self, server, msg):
-        if re.match(r"^s(\W)(.*?)\1(.*?)(\1[gi]*)? $")
-"""
+        match = re.match(r"^(\S+:\s+)?s(\W)(.*?)\1(.*?)(\1g?)?$", msg.text)
+        if match:
+            target, sep, pattern, sub, flags = match.groups()
+            if target is not None: target = target.rstrip(": ")
+            if flags is not None: flags = set(flags[1:])
+            pattern = re.escape(pattern)
+            for timestamp, line in reversed(self.logs):
+                # TODO: implement real regular expressions
+                # also self-regex
+                try:
+                    evt = IRCEvent(line)
+                    if (evt.type == "PRIVMSG" 
+                        and server.eq(msg.context, evt.args[0])
+                        and (target is None or server.eq(target, evt.sender.nick))
+                        and re.match(pattern, evt.args[1], flags=re.IGNORECASE)):
+                        return msgfmt(re.sub(pattern, sub, evt.args[1], count=0 if 'g' in flags else 1, flags=re.IGNORECASE))
+                except:
+                    print("[Logger] Warning: Could not parse %s" % line)
 __initialise__ = Logger
