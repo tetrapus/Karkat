@@ -145,7 +145,7 @@ def undoinfo(server, msg):
             yield "│ Your information has been deleted."
     else:
         if msg.prefix != "!":
-            yield "│ Your information has been updated."
+            yield "│ Your information has been reverted."
 
     if registered:
         set_protected(server, user)
