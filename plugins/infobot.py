@@ -119,6 +119,7 @@ def setinfo(server, msg, info):
 @command("undo", prefixes=("!", "."))
 def undoinfo(server, msg):
     yield lambda x, y, z: check_whois(x, y, z, "")
+    try:
         data = json.load(open(server.get_config_dir(infofile)))
     except:
         data = {}
