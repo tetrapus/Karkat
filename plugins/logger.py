@@ -75,6 +75,23 @@ def partfmt(evt):
 def joinfmt(evt):
     return "\x0303•\x03 %s joined %s" % (evt.sender.nick, evt.args[0])
 
+def traceuser(address, logs, lower):
+    userinf = {(address.nick, address.ident, address.mask)}
+    for ts, line in logs:
+        try:
+            evt = IRCEvent(line)
+        except:
+            print("[Logger] Warning: Could not parse %s" % line)
+            continue
+        if evt.type == "NICK" and (evt.sender.nick, evt.sender.ident, evt.sender.mask) in userinf:
+            userinf.add((evt.args[0], evt.sender.ident, evt.sender.mask))
+        elif evt.type == "JOIN" and any(lower(evt.sender.nick) == lower(nick)
+                                     or (evt.sender.ident, evt.sender.mask)  == (ident, mask)
+                                     for nick, ident, mask in userinf):
+            userinf.add((evt.sender.nick, evt.sender.ident, evt.sender.mask))
+    return userinf
+            
+
 class Logger(Callback):
     formatters = {"NICK": nickfmt,
                   "QUIT": quitfmt,
@@ -120,7 +137,12 @@ class Logger(Callback):
                     if server.isIn(user, server.channels.get(server.lower(msg.context))):
                         status = " · \x0312online now"
                     else:
-                        status = ""
+                        for nick, _, _ in traceuser(evt.sender, filter(timestamp.__lt__, self.logs), server.lower):
+                            if server.isIn(nick, server.channels.get(server.lower(msg.context))):
+                                status = " · \x0312online as %s" % nick
+                                break
+                        else:
+                            status = ""
                     return "%s · \x1d%s%s" % (self.formatters[evt.type](evt), timefmt(timestamp), status)
             except:
                 print("[Logger] Warning: Could not parse %s" % line)
