@@ -2,7 +2,7 @@ import time
 import datetime
 import re
 
-from bot.events import Callback, command
+from bot.events import Callback, command, msghandler
 from util.irc import IRCEvent
 
 # TODO: Caching
@@ -182,7 +182,8 @@ class Logger(Callback):
                         and server.eq(msg.context, evt.args[0])
                         and (target is None or server.eq(target, evt.sender.nick))
                         and re.match(pattern, evt.args[1], flags=re.IGNORECASE)):
-                        return msgfmt(re.sub(pattern, sub, evt.args[1], count=0 if 'g' in flags else 1, flags=re.IGNORECASE))
+                        return msgfmt(re.sub(pattern, "\x1f%s\x1f" % sub, evt.args[1], count=0 if 'g' in flags else 1, flags=re.IGNORECASE))
                 except:
                     print("[Logger] Warning: Could not parse %s" % line)
+            return "04⎟ No matches found."
 __initialise__ = Logger
