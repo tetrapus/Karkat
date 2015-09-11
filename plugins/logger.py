@@ -181,7 +181,7 @@ class Logger(Callback):
                     if (evt.type == "PRIVMSG" 
                         and server.eq(msg.context, evt.args[0])
                         and (target is None or server.eq(target, evt.sender.nick))
-                        and re.match(pattern, evt.args[1], flags=re.IGNORECASE)):
+                        and re.search(pattern, evt.args[1], flags=re.IGNORECASE)):
                         return msgfmt(re.sub(pattern, "\x1f%s\x1f" % sub, evt.args[1], count=0 if 'g' in flags else 1, flags=re.IGNORECASE))
                 except:
                     print("[Logger] Warning: Could not parse %s" % line)
