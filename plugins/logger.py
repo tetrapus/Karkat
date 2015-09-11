@@ -117,7 +117,11 @@ class Logger(Callback):
                 if evt.type in ["PART", "NOTICE", "PRIVMSG", "JOIN"] and not server.eq(evt.args[0], msg.context):
                     continue
                 if server.eq(evt.sender.nick, user):
-                    return "%s · \x1d%s" % (self.formatters[evt.type](evt), timefmt(timestamp))
+                    if server.isIn(user, self.channels.get(self.lower(msg.context))):
+                        status = " · \x0312online now"
+                    else:
+                        status = ""
+                    return "%s · \x1d%s%s" % (self.formatters[evt.type](evt), timefmt(timestamp), status)
             except:
                 print("[Logger] Warning: Could not parse %s" % line)
         return "04⎟ I haven't seen %s yet." % user
