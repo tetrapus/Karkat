@@ -167,7 +167,7 @@ class Logger(Callback):
 
     @msghandler
     def substitute(self, server, msg):
-        match = re.match(r"^(\S+:\s+)?s(\W)(.*?)\1(.*?)(\1g?)?$", msg.text)
+        match = re.match(r"^(\S+:\s+)?s(\W)(.*?)\2(.*?)(\2g?)?$", msg.text)
         if match:
             target, sep, pattern, sub, flags = match.groups()
             if target is not None: target = target.rstrip(": ")
