@@ -60,7 +60,7 @@ def toggle_protection(server, msg, state):
     
 
 @command("info", r"(.*)", prefixes=("", "."))
-def info(server, msg, user):
+def getinfo(server, msg, user):
     try:
         data = json.load(open(server.get_config_dir(infofile)))
     except:
@@ -148,7 +148,7 @@ def undoinfo(server, msg):
     json.dump(data, open(server.get_config_dir(infofile), "w"))
     json.dump(data, open(server.get_config_dir(undofile), "w"))
 
-__callbacks__ = {"privmsg": [info, setinfo, toggle_protection, undoinfo], "318": [finish_whois]}
+__callbacks__ = {"privmsg": [getinfo, setinfo, toggle_protection, undoinfo], "318": [finish_whois]}
 
 def __initialise__(server):
     server.whois_waiting = {}
