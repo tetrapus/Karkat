@@ -1,5 +1,6 @@
 import time
 import datetime
+import re
 
 from bot.events import Callback, command
 from util.irc import IRCEvent
@@ -103,6 +104,7 @@ class Logger(Callback):
     def __init__(self, server):
         self.logs = []
         self.logpath = server.get_config_dir("log.txt")
+        self.sedchans = []
         try: open(self.logpath, "x")
         except FileExistsError: pass
         with open(self.logpath) as logfile:
@@ -124,7 +126,7 @@ class Logger(Callback):
     @command("seen lastseen", r"(\S+)")
     def seen(self, server, msg, user):
         if server.eq(user, msg.address.nick):
-            return "04⎟ You're right there!" % user
+            return "04⎟ You're right there!"
         types = ['NICK', 'QUIT', 'PART', 'NOTICE', 'PRIVMSG', 'JOIN']
         for timestamp, line in reversed(self.logs):
             try:
@@ -151,7 +153,7 @@ class Logger(Callback):
     @command("last lastspoke lastmsg", r"(\S)+")
     def lastspoke(self, server, msg, user):
         if server.eq(user, msg.address.nick):
-            return "04⎟ You just spoke!" % user
+            return "04⎟ You just spoke!"
         for timestamp, line in reversed(self.logs):
             try:
                 evt = IRCEvent(line)
@@ -162,6 +164,9 @@ class Logger(Callback):
             except:
                 print("[Logger] Warning: Could not parse %s" % line)
         return "04⎟ I haven't seen %s speak yet." % user
-            
-
+"""
+    @msghandler
+    def substitute(self, server, msg):
+        if re.match(r"^s(\W)(.*?)\1(.*?)(\1[gi]*)? $")
+"""
 __initialise__ = Logger
