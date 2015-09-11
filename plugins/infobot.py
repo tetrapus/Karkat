@@ -99,7 +99,8 @@ def setinfo(server, msg, info):
             yield "│ This nickname is protected by the owner. Please identify with NickServ to update your info."
         return
 
-    undo[luser] = data[luser]
+    if luser in data:
+        undo[luser] = data[luser]
 
     if not info:
         del data[luser]
