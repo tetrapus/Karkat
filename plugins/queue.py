@@ -285,7 +285,7 @@ class Queue(Callback):
 
         return self.display(*q[0])
         
-    @command("next promote prefer", r"(.+)")
+    @command("promote prefer", r"(.+)")
     def promote(self, server, msg, query):
         nick = server.lower(msg.address.nick)
         queue = self.queues.setdefault(nick, [])
@@ -309,7 +309,7 @@ class Queue(Callback):
 
         self.save()
             
-    @command("last demote defer", r"(.+)")
+    @command("demote defer", r"(.+)")
     def demote(self, server, msg, query):
         nick = server.lower(msg.address.nick)
         queue = self.queues.setdefault(nick, [])
