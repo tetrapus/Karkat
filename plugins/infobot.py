@@ -9,7 +9,7 @@ def check_whois(gen, server, msg, user):
     server.whois_waiting[server.lower(msg.address.nick)] = (gen, msg)
     server.printer.raw_message("WHOIS :%s" % msg.address.nick)
 
-def check_whois_partial(user):
+def check_whois_partial():
     return lambda x, y, z: check_whois(x, y, z, user)
 
 @Callback.inline
@@ -118,8 +118,7 @@ def setinfo(server, msg, info):
 
 @command("undo", prefixes=("!", "."))
 def undoinfo(server, msg):
-    yield check_whois_partial
-    try:
+    yield lambda x, y, z: check_whois(x, y, z, "")
         data = json.load(open(server.get_config_dir(infofile)))
     except:
         data = {}
