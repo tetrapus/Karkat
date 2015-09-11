@@ -80,9 +80,11 @@ def setinfo(server, msg, info):
     yield check_whois
     try:
         data = json.load(open(server.get_config_dir(infofile)))
-        undo = json.load(open(server.get_config_dir(undofile)))
     except:
         data = {}
+    try:
+        undo = json.load(open(server.get_config_dir(undofile)))
+    except:
         undo = {}
     user = msg.address.nick
     luser = server.lower(user)
@@ -116,9 +118,11 @@ def undoinfo(server, msg):
     yield check_whois
     try:
         data = json.load(open(server.get_config_dir(infofile)))
-        undo = json.load(open(server.get_config_dir(undofile)))
     except:
         data = {}
+    try:
+        undo = json.load(open(server.get_config_dir(undofile)))
+    except:
         undo = {}
     user = msg.address.nick
     luser = server.lower(user)
