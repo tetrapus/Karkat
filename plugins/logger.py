@@ -104,7 +104,7 @@ class Logger(Callback):
     def __init__(self, server):
         self.logs = []
         self.logpath = server.get_config_dir("log.txt")
-        self.sedchans = []
+        self.sedchans = set()
         try: open(self.logpath, "x")
         except FileExistsError: pass
         with open(self.logpath) as logfile:
@@ -165,8 +165,20 @@ class Logger(Callback):
                 print("[Logger] Warning: Could not parse %s" % line)
         return "04⎟ I haven't seen %s speak yet." % user
 
+    @command("sedon", rank="@")
+    def sedon(self, server, msg):
+        self.sedchans.add(server.lower(msg.context))
+        return "04⎟ Turned on sed."
+
+    @command("sedoff", rank="@")
+    def sedoff(self, server, msg):
+        self.sedchans.remove(server.lower(msg.context))
+        return "04⎟ Turned off sed."
+
     @msghandler
     def substitute(self, server, msg):
+        if not server.isIn(msg.context, self.sedchans):
+            return
         match = re.match(r"^(\S+:\s+)?s(\W)(.*?)\2(.*?)(\2g?)?$", msg.text)
         if match:
             target, sep, pattern, sub, flags = match.groups()
