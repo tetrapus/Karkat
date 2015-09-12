@@ -53,6 +53,7 @@ import datetime
 
 import requests
 import yaml
+import xml.etree.ElementTree as xml
 
 import util
 from bot.events import Callback, command
@@ -210,5 +211,21 @@ class Weather(Callback):
         pieces.append("%s humidity" % data["relative_humidity"])
         pieces.append("⌚ " + pretty_date(int(data["local_epoch"]) - int(data["observation_epoch"])))
         return "2│ %s 2│ %s" % (data["display_location"]["full"], " · ".join(pieces))
+
+    @command("metar", r"(\w\w\w\w)")
+    def metar(self, server, msg, station):
+        station = station.upper()
+        airports = json.load(open("data/airports.json"))
+        station_name = airports.get(station, station)
+        params = {"dataSource":"metars",
+                  "requestType": "retrieve",
+                  "format": "xml",
+                  "hoursBeforeNow": "3",
+                  "mostRecent": "true",
+                  "stationString": station}
+        query = requests.get("https://www.aviationweather.gov/adds/dataserver_current/httpparam", params=params)
+        data = xml.fromstring(query.content)
+        metar = data.find("data").find("METAR").find("raw_text").text
+        return "2│ %s 2│ %s" % (station_name, metar)
 
 __initialise__ = Weather
