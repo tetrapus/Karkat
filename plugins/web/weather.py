@@ -212,7 +212,8 @@ class Weather(Callback):
         pieces.append("⌚ " + pretty_date(int(data["local_epoch"]) - int(data["observation_epoch"])))
         return "2│ %s 2│ %s" % (data["display_location"]["full"], " · ".join(pieces))
 
-    @command("metar", r"(\w\w\w\w)")
+    @command("metar", r"(\w\w\w\w)", templates={Callback.ERROR: "4│ METAR resolution failed.",
+                                                Callback.USAGE: "4│ Please supply a valid 4 character ICAO airport code."})
     def metar(self, server, msg, station):
         station = station.upper()
         airports = json.load(open("data/airports.json"))
