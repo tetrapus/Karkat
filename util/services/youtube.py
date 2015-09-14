@@ -8,6 +8,7 @@ import requests
 import time
 import sys
 import re
+import threading
 
 from util.irc import Message
 
@@ -21,8 +22,9 @@ except:
 def apimethod(funct):
     @functools.wraps(funct)
     def wrapper(self, *args, **kwargs):
-        if self.tokensExpired():
-            self.refresh_tokens()
+        with self.keylock:
+            if self.tokensExpired():
+                self.refresh_tokens()
         return funct(self, *args, **kwargs)
     return wrapper
 
@@ -33,6 +35,7 @@ class Youtube(object):
 
     def __init__(self):
         self.refresh_tokens()
+        self.keylock = threading.Lock()
 
     def request_auth(self):
         import webbrowser
