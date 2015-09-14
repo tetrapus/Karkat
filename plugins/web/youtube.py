@@ -49,7 +49,7 @@ def youtube(server, message, nresults, query):
             channelinfo, stats = parallelise([lambda: yt.get_channel_info(i["snippet"]["channelId"]),
                                               lambda: yt.stats(i["id"]["videoId"])])
             data["likebar"] = likebar(int(stats["likeCount"]), int(stats["dislikeCount"]))
-            data["views"] = "{:,}".format(stats["viewCount"])
+            data["views"] = "{:,}".format(int(stats["viewCount"]))
             data["channel"] = channelinfo["title"]
         else:
             channelinfo = yt.get_channel_info(i["snippet"]["channelId"])
