@@ -114,9 +114,15 @@ class Youtube(object):
         return answer["items"]
 
     @apimethod
+    def get_channel_info(self, channelid):
+        p = {"part": "snippet", "access_token": self.token, "maxResults":1, "id": channelid}
+        answer = requests.get("https://www.googleapis.com/youtube/v3/channels", params=p).json()
+        return answer["items"][0]["snippet"]   
+
+    @apimethod
     def stats(self, video):
         p = {"part": "statistics", "access_token": self.token, "id":video}
-        answer = requests.get("https://www.googleapis.com/youtube/v3/search", params=p).json()
+        answer = requests.get("https://www.googleapis.com/youtube/v3/videos", params=p).json()
         return answer["items"][0]["statistics"]
 
     def trigger(self, words, line):
