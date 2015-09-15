@@ -6,6 +6,7 @@ from . import text
 from . import dcc
 from . import images
 from . import files
+from . import throttle
 
 # Taken straight from the xchat source. Thanks, xchat!
 rfc_tolowertab = [
@@ -68,4 +69,4 @@ def parallelise(jobs):
 
 def average(x): return float(sum(x))/len(x) if x else 0.00
 
-__all__ = ["services", "irc", "text", "parallelise", "cmp", "rfc_nickkey", "average", "dcc", "images", "files"]
+__all__ = ["services", "irc", "text", "parallelise", "cmp", "rfc_nickkey", "average", "dcc", "images", "files", "throttle"]
