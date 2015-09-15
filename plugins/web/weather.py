@@ -9,6 +9,7 @@ import xml.etree.ElementTree as xml
 import util
 from bot.events import Callback, command
 from util.text import pretty_date
+from util.throttle import ThrottledResource
 
 
 try:
@@ -33,6 +34,7 @@ def icon_to_unicode(icon):
 class Weather(Callback):
     countryformats = ["%(city)s, %(region_name)s", "%(city)s, %(country_name)s"]
     SETTINGS_FILE = "wolfram_users.json"
+    throttle = ThrottledResource(10)
 
     def __init__(self, server):
         self.settingsf = server.get_config_dir(self.SETTINGS_FILE)
@@ -95,10 +97,11 @@ class Weather(Callback):
                     return "04│ ☀ │ I don't know where you live! Set your location with .set location \x02city\x02 or specify it manually."
         except LookupError:
             return "04│ ☀ │ No timezone information for your location."
-
             
         wurl = "http://api.wunderground.com/api/%s/conditions/q/%s" % (apikey, location)
         lurl = "http://api.wunderground.com/api/%s/astronomy/q/%s" % (apikey, location)
+        self.throttle.acquire()
+        self.throttle.acquire()
         weather, astro = util.parallelise([lambda: requests.get(wurl).json(), lambda: requests.get(lurl).json()])
         try:
             weather = weather["current_observation"]
@@ -130,6 +133,7 @@ class Weather(Callback):
         except LookupError:
             return "04│ ☀ │ Location not recognised."
 
+        self.throttle.acquire()
         data = "http://api.wunderground.com/api/%s/conditions/q/%s" % (apikey, loc_id)
         data = requests.get(data).json()
         try:
@@ -156,6 +160,9 @@ class Weather(Callback):
         pieces.append("%s humidity" % data["relative_humidity"])
         pieces.append("⌚ " + pretty_date(int(data["local_epoch"]) - int(data["observation_epoch"])))
         return "2│ %s 2│ %s" % (data["display_location"]["full"], " · ".join(pieces))
+
+    def get_extended_weather(self, server, message, location):
+        pass
 
     @command("metar", r"(\w\w\w\w)", templates={Callback.ERROR: "4│ METAR resolution failed.",
                                                 Callback.USAGE: "4│ Please supply a valid 4 character ICAO airport code."})
