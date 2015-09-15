@@ -1,52 +1,3 @@
-'''
-import shelve
-
-class Weather(object):
-
-    locationdata = shelve.open("weather/defaults", writeback=True)
-    locationhistory = shelve.open("weather/history", writeback=True)
-    countryformats = ["%(city)s, %(region_name)s", "%(city)s, %(country_name)s"]
-
-    api_key = apikeys["wunderground"]["key"]
-
-    @classmethod
-    def guess_location(cls, user):
-        if user in cls.locationdata:
-            return cls.locationdata["user"]
-        elif user in cls.locationhistory:
-            return max(cls.locationhistory[user], key=list.count) + ".json"
-        elif user in ipscan.known:
-            return "autoip.json?geo_ip=" + ipscan.known[user]
-
-    def get_weatherdata(self, user):
-        location = self.guess_location(user)
-        if location:
-            data = "http://api.wunderground.com/api/%s/conditions/q/%s" % (self.api_key, location)
-            data = json.loads(urllib.urlopen(data).read())
-            data = data["current_observation"]
-            station = data["station_id"]
-            # Store history.
-            self.locationhistory.setdefault("user", []).append(station)
-            conditions = {"location"     : data["display_location"]["full"],
-                          "time"         : pretty_date(int(data["local_epoch"]) - int(data["observation_epoch"])),
-                          "weather"      : data["weather"],
-                          "temperature"  : data["temperature_string"],
-                          "feels_like"   : data["feelslike_string"],
-                          "wind"         : data["wind_string"],
-                          "windchill"    : data["windchill_string"],
-                          "humidity"     : data["relative_humidity"],
-                          "visibility"   : data["visibility_km"],
-                          "precipitation": data["precip_today_metric"],
-                          "UV"           : data["UV"]
-                          }
-            format = u"""12%(location)s (%(time)s)                  Wunderground
-⎜%(weather)s, %(temperature)s                   Feels like %(feels_like)s⎟
-⎜%(wind)s                                       Wind chill %(windchill)s⎟
-⎜%(humidity)s humidity, visibility %(visibility)skm, %(precipitation)smm of precipitation. UV Index %(UV)s⎟
-⎜Monday:       ⎟""" % conditions
-        return format"
-
-'''
 import sys
 import json
 import datetime
@@ -106,38 +57,45 @@ class Weather(Callback):
     def get_location(location):
         return requests.get("http://autocomplete.wunderground.com/aq", params={"query":location}).json()["RESULTS"][0]
 
-    @command("time", r"(.*)")
-    def get_time(self, server, message, location):
-        user = message.address.nick
-        if not location:
-            userinfo = self.getusersettings(user)
-            if not userinfo:
-                return "04│ ☀ │ I don't know where you live! Set your location with .set location \x02city\x02 or specify it manually."
-    
-            if "location" in userinfo:
-                try:
-                    loc_data = self.get_location(userinfo["location"])["zmw"]
-                except:
-                    return "04│ ☀ │ No timezone information for your location."
-                location = "zmw:%s.json" % loc_data
-            else:
-                location = "autoip.json?geo_ip=" + userinfo["ip"]
+    def get_locid(self, location):
+        try:
+            return "zmw:%s.json" % (self.get_location(location)["zmw"])
+        except:
+            raise LookupError("Location unrecognised")
+
+    def get_user_locid(self, user):
+        userinfo = self.getusersettings(user)
+        if "location" in userinfo:
+            return self.get_locid(userinfo["location"])
+        elif "ip" in userinfo:
+            return "autoip.json?geo_ip=" + userinfo["ip"]
         else:
-            userinfo = self.getusersettings(location)
-            if not userinfo:
-                location = "zmw:%s.json" % self.get_location(location)["zmw"]
-    
-            elif "location" in userinfo:
+            raise KeyError("User info not found.")
+
+    def guess_locid(self, user, location):
+        if location:
+            return self.get_locid(location)
+        else:
+            return self.get_user_locid(user)
+
+    @command("time", r"(.*)")
+    def get_time(self, server, message, user):
+        if not user:
+            user = message.address.nick
+            # No arguments, get sender's time
+        try:
+            try:
+                location = self.get_user_locid(user)
+                # Try treating the argument as a user
+            except KeyError:
                 try:
-                    loc_data = self.get_location(userinfo["location"])["zmw"]
-                except:
-                    try:
-                        loc_data = self.get_location(location)["zmw"]
-                    except:
-                        return "04│ ☀ │ No timezone information for that location."
-                location = "zmw:%s.json" % loc_data
-            else:
-                location = "autoip.json?geo_ip=" + userinfo["ip"]
+                    location = self.get_locid(user)
+                    # Try treating argument as a location
+                except KeyError:
+                    return "04│ ☀ │ I don't know where you live! Set your location with .set location \x02city\x02 or specify it manually."
+        except LookupError:
+            return "04│ ☀ │ No timezone information for your location."
+
             
         wurl = "http://api.wunderground.com/api/%s/conditions/q/%s" % (apikey, location)
         lurl = "http://api.wunderground.com/api/%s/astronomy/q/%s" % (apikey, location)
@@ -164,28 +122,15 @@ class Weather(Callback):
     @command("weather", "(.*)")
     def get_weatherdata(self, server, message, location):
         user = message.address.nick
-        # TODO: refactor
-        if not location:
-            userinfo = self.getusersettings(user)
-            if not userinfo:
-                return "04│ ☀ │ I don't know where you live! Set your location with .set location \x02city\x02 or specify it manually."
-    
-            if "location" in userinfo:
-                try:
-                    loc_data = self.get_location(userinfo["location"])["zmw"]
-                except:
-                    return "04│ ☀ │ No weather information for your location."
-                location = "zmw:%s.json" % loc_data
-            else:
-                location = "autoip.json?geo_ip=" + userinfo["ip"]
-        else:
-            try:
-                loc_data = self.get_location(location)["zmw"]
-            except:
-                return "04│ ☀ │ No weather information for that location."
-            location = "zmw:%s.json" % loc_data
-        
-        data = "http://api.wunderground.com/api/%s/conditions/q/%s" % (apikey, location)
+
+        try:
+            loc_id = self.guess_locid(user, location)
+        except KeyError:
+            return "04│ ☀ │ I don't know where you live! Set your location with .set location \x02city\x02 or specify it manually."
+        except LookupError:
+            return "04│ ☀ │ Location not recognised."
+
+        data = "http://api.wunderground.com/api/%s/conditions/q/%s" % (apikey, loc_id)
         data = requests.get(data).json()
         try:
             data = data["current_observation"]
@@ -228,5 +173,7 @@ class Weather(Callback):
         data = xml.fromstring(query.content)
         metar = data.find("data").find("METAR").find("raw_text").text
         return "2│ %s 2│ %s" % (station_name, metar)
+
+
 
 __initialise__ = Weather
