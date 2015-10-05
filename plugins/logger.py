@@ -150,7 +150,7 @@ class Logger(Callback):
                 print("[Logger] Warning: Could not parse %s" % line)
         return "04⎟ I haven't seen %s yet." % user
 
-    @command("last lastspoke lastmsg", r"(\S)+")
+    @command("last lastspoke lastmsg", r"(\S+)")
     def lastspoke(self, server, msg, user):
         if server.eq(user, msg.address.nick):
             return "04⎟ You just spoke!"
