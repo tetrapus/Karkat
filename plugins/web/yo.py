@@ -19,7 +19,7 @@ def yo(server, message, username):
     except:
         return "04│🖐│ Yo's fucked up."
     else:
-        if data["success"]:
+        if "success" in data:
            return "13│🖐│ Yo'd at %s" % username
         else:
             return "04│🖐│ " + data["error"]
