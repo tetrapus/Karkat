@@ -13,12 +13,15 @@ except:
 
 @command("yo", r"(\S+)")
 def yo(server, message, username):
-    data = requests.post("http://api.justyo.co/yo/", data={"api_token": list(apikeys.values())[0], 'username':username}).text
-    if data == '{"result": "OK"}': # result is not always json
-        return "13│🖐│ Yo'd at %s" % username
-    elif data == '{"code": 141, "error": "NO SUCH USER"}':
-        return "04│🖐│ I ain't see no %s" % username
-    else:
+    data = requests.post("http://api.justyo.co/yo/", data={"api_token": list(apikeys.values())[0], 'username':username})
+    try:
+        data = data.json()
+    except:
         return "04│🖐│ Yo's fucked up."
+    else:
+        if data["success"]:
+           return "13│🖐│ Yo'd at %s" % username
+        else:
+            return "04│🖐│ " + data["error"]
 
 __callbacks__ = {"privmsg": [yo]}
