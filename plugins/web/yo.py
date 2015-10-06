@@ -24,7 +24,7 @@ class YoCollector(threading.Thread):
     def __init__(self, server, callback):
         self.server = server
         class YoHandler(http.server.BaseHTTPRequestHandler):
-            def do_HEAD(self):
+            def do_GET(self):
                 route, request = self.path.split("?", 1)
                 route = route[1:]
                 request = parse_qs(request)
@@ -69,7 +69,7 @@ class Yo(Callback):
             return "04│🖐│ This channel doesn't have a yo account."
         args = {"api_token": self.keys[ctx], 'username':username}
         if link: args["link"] = link
-        data = requests.post("http://api.justyo.co/yo/", data=link)
+        data = requests.post("http://api.justyo.co/yo/", data=args)
         try:
             data = data.json()
         except:
