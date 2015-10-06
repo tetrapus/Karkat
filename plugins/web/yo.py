@@ -49,7 +49,7 @@ class Yo(Callback):
 
         self.keysf = server.get_config_dir("yo_keys.json")
         self.keys = Config(self.keysf, default={})
-        super().__init__()
+        super().__init__(server)
 
     @command("yoassoc", r"(#\S+)\s+(\S+)\s+(.+)", admin=True)
     def yoassoc(self, server, message, channel, route, apikey):
