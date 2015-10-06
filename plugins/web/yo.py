@@ -96,7 +96,7 @@ class Yo(Callback):
             if "link" in evt:            
                 self.server.message("04│🖐│ Yo, check out \x0312\x1f%s\x1f\x03 · from %s" % (shorten(evt["link"][0]), evt["username"][0]), self.routes[route])
             elif "location" in evt:
-                self.server.message("04│🖐│ Yo, I'm at \x0312\x1f%s\x1f\x03 · from %s" % (self.latlong_to_addr(evt["location"][0]), evt["username"][0]), self.routes[route])
+                self.server.message("04│🖐│ Yo, I'm at %s · from %s" % (self.latlong_to_addr(evt["location"][0]), evt["username"][0]), self.routes[route])
             else:
                 self.server.message("04│🖐│ Yo! · from %s" % evt["username"][0], self.routes[route])
 
