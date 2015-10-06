@@ -62,9 +62,9 @@ class Yo(Callback):
         self.users[server.lower(message.address.nick)] = username
         return "13│🖐│ Associated %s with yo account %s. This currently does nothing." % (message.address.nick, username)
 
-    @command("yo", r"(\S+)(?:\s+(\S+))")
+    @command("yo", r"(\S+)(?:\s+(\S+))?")
     def yo(self, server, message, username, link):
-        ctx = server.lower(message.address.context)
+        ctx = server.lower(message.context)
         if ctx not in self.keys:
             return "04│🖐│ This channel doesn't have a yo account."
         args = {"api_token": self.keys[ctx], 'username':username}
