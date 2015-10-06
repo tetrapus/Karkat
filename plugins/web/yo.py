@@ -85,7 +85,7 @@ class Yo(Callback):
         latlong = latlong.replace(";", ",")
         format_data = "\x0312\x1f%s\x1f\x03" % shorten("https://www.google.com/maps/search/%s" % latlong)
         if "key" in apikeys:
-            data = requests.get("https://maps.googleapis.com/maps/api/geocode/json", params={"latlong": latlong, "key": apikeys["key"]}).json()
+            data = requests.get("https://maps.googleapis.com/maps/api/geocode/json", params={"latlng": latlong, "key": apikeys["key"]}).json()
             try: addr = data["results"][0]["formatted_address"]
             except: pass 
             else: format_data = addr + " · " + format_data
