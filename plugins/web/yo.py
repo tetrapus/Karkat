@@ -19,7 +19,7 @@ except:
 
 
 class YoCollector(threading.Thread):
-    PORT = 7010
+    PORT =0 
 
     def __init__(self, server, callback):
         self.server = server
