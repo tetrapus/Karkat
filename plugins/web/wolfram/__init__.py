@@ -27,9 +27,9 @@ except:
 
 class WolframAlpha(Callback):
 
-    t_max = 64
-    h_max = 7
-    t_lines = 12
+    t_max = 80
+    h_max = 4
+    t_lines = 5
     timeout = 45
 
     results = ["Result", "Response", "Infinite sum", "Decimal approximation", "Decimal form", "Limit", "Definition", "Definitions", "Description", "Balanced equation", "Chemical names and formulas", "Conversions to other units", "Roots", "Root", "Definite integral", "Plot", "Plots"]
@@ -208,6 +208,6 @@ class WolframAlpha(Callback):
     @command(["wa", "wolfram"], "(.+)", templates={
                 Callback.USAGE:"05Wolfram08Alpha04⎟ Usage: [.@](wa|wolfram) 03query"})
     def trigger(self, server, message, query):
-        return self.wolfram_format(query, h_max=self.h_max, wasettings=self.getusersettings(message.address.nick))
+        return self.wolfram_format(query, "", h_max=self.h_max, wasettings=self.getusersettings(message.address.nick))
 
 __initialise__ = WolframAlpha
