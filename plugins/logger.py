@@ -102,18 +102,18 @@ class Logger(Callback):
                   "JOIN": joinfmt}
 
     def __init__(self, server):
-        self.logs = []
+#        self.logs = []
         self.logpath = server.get_config_dir("log.txt")
         self.sedchans = set()
         try: open(self.logpath, "x")
         except FileExistsError: pass
-        with open(self.logpath) as logfile:
-            for line in logfile:
-                try:
-                    timestamp, text = line.split(" ", 1)
-                    self.logs.append((float(timestamp), text.rstrip("\n")))
-                except:
-                    print("[Logger] Warning: Could not parse %s" % line)
+#        with open(self.logpath) as logfile:
+#            for line in logfile:
+#                try:
+#                    timestamp, text = line.split(" ", 1)
+#                    self.logs.append((float(timestamp), text.rstrip("\n")))
+#                except:
+#                    print("[Logger] Warning: Could not parse %s" % line)
         super().__init__(server)
 
     @Callback.inline
@@ -121,9 +121,9 @@ class Logger(Callback):
         timestamp = time.time()
         with open(self.logpath, "a") as logfile:
             logfile.write("%f %s\n" % (timestamp, line))
-        self.logs.append((timestamp, line))
+#        self.logs.append((timestamp, line))
     
-    @command("seen lastseen", r"(\S+)")
+#    @command("seen lastseen", r"(\S+)")
     def seen(self, server, msg, user):
         if server.eq(user, msg.address.nick):
             return "04⎟ You're right there!"
@@ -150,7 +150,7 @@ class Logger(Callback):
                 print("[Logger] Warning: Could not parse %s" % line)
         return "04⎟ I haven't seen %s yet." % user
 
-    @command("last lastspoke lastmsg", r"(\S+)")
+#    @command("last lastspoke lastmsg", r"(\S+)")
     def lastspoke(self, server, msg, user):
         if server.eq(user, msg.address.nick):
             return "04⎟ You just spoke!"
@@ -165,17 +165,17 @@ class Logger(Callback):
                 print("[Logger] Warning: Could not parse %s" % line)
         return "04⎟ I haven't seen %s speak yet." % user
 
-    @command("sedon", rank="@")
+#    @command("sedon", rank="@")
     def sedon(self, server, msg):
         self.sedchans.add(server.lower(msg.context))
         return "04⎟ Turned on sed."
 
-    @command("sedoff", rank="@")
+#    @command("sedoff", rank="@")
     def sedoff(self, server, msg):
         self.sedchans.remove(server.lower(msg.context))
         return "04⎟ Turned off sed."
 
-    @msghandler
+#    @msghandler
     def substitute(self, server, msg):
         if not server.isIn(msg.context, self.sedchans):
             return
