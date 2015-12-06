@@ -36,7 +36,6 @@ blends.update({(159, 57, 89): '\x032,4░', (180, 56, 146): '\x034,13░', (71, 
 
 try:
     cfg = yaml.safe_load(open("config/apikeys.conf"))["google"]
-    key, engine = cfg["key"], cfg["img"]
 except:
     raise ImportError("Google search requires api keys.")
 
@@ -53,7 +52,7 @@ def image(server, msg, flags, query):
     """
 
     params = {
-            "cx": cfg["engine"],
+            "cx": cfg["img"],
             "key": cfg["key"],
             "searchType": "image",
             "safe": "off",
@@ -83,7 +82,7 @@ def image(server, msg, flags, query):
     results = r.get("items", [])
 
     for i, result in enumerate(results):
-        server.lasturl = result["url"]
+        server.lasturl = result["link"]
         yield templates[msg.prefix] % {"color" : [12, 5, 8, 3][i % 4],
                                        "url": url.shorten(unquote(result["link"])),
                                        "fullurl": result["displayLink"],
