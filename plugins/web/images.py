@@ -52,13 +52,13 @@ def image(server, msg, flags, query):
     """
 
     params = {
-            "cx": cfg["img"],
-            "key": cfg["key"],
-            "searchType": "image",
-            "safe": "off",
-            "num": deflines[msg.prefix],
-            "q": query
-        }
+        "cx": cfg["img"],
+        "key": cfg["key"],
+        "searchType": "image",
+        "safe": "off",
+        "num": deflines[msg.prefix],
+        "q": query
+    }
 
     if flags:
         for i in flags[1:].strip():
@@ -89,9 +89,9 @@ def image(server, msg, flags, query):
                                        "width": result["image"]["width"],
                                        "height": result["image"]["height"],  
                                        "content": unescape(re.sub("</?b>", "", 
-                                                    result["content"])),
+                                                    result["htmlSnippet"])),
                                        "title": unescape(re.sub("</?b>", "", 
-                                                    result["title"]))}
+                                                    result["htmlTitle"]))}
     if not results:
         yield "12Google Images│ No results."
 
