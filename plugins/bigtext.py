@@ -85,7 +85,7 @@ def subs(g):
     elif key == "INSULT":
         return generate_vulgarity().upper()
     else:
-        return "$" + key
+        return "\\" + key
 
 def thicken(text):
     return "".join(thicker.get(i, i) for i in text)
@@ -139,7 +139,7 @@ def bigvars(server, message):
 
 def smallvars(server, line):
     msg = Message(line)
-    text = re.sub(r"\$[a-z]+", subs, msg.text, flags=re.IGNORECASE)
+    text = re.sub(r"\\[a-z]+", subs, msg.text, flags=re.IGNORECASE)
     if text != msg.text and msg.text[0] not in ".!@:":
         server.message("│ "+text, msg.context)
 
