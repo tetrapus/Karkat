@@ -249,17 +249,22 @@ class Logger(Callback):
         if logpath is None:
             logpath = self.logpath
         with open(logpath) as logfile:
-            with self.db() as session:
-                for line in logfile:
-                    try:
-                        line = line.rstrip("\n").rstrip("\r")
-                        timestamp, text = line.split(" ", 1)
-                        event = make_event(text, timestamp=datetime.utcfromtimestamp(float(timestamp)))
-                        session.add(event)
-                        self.cache_event(session, event)
-                    except:
-                        print("[Logger] Warning: Could not parse %s" % line)
-                        raise
+            while True:
+                with self.db() as session:
+                    finished = True
+                    for line in islice(logfile, None, 100):
+                        finished = False
+                        try:
+                            line = line.rstrip("\n").rstrip("\r")
+                            timestamp, text = line.split(" ", 1)
+                            event = make_event(text, timestamp=datetime.utcfromtimestamp(float(timestamp)))
+                            session.add(event)
+                            self.cache_event(session, event)
+                        except:
+                            print("[Logger] Warning: Could not parse %s" % line)
+                            raise
+                    if finished:
+                        break
 
     @Callback.background
     @command("log_migrate", "(.+)", admin=True)
