@@ -204,7 +204,7 @@ class Logger(Callback):
         self.db.create_all(Base.metadata)
         if os.path.exists(self.logpath):
             # Perform migration
-            self.sql_migrate(server.lower)
+            self.sql_migrate(lower=server.lower)
             os.rename(self.logpath, self.logpath + ".old")
         # Initialise db and shit
         super().__init__(server)
@@ -244,8 +244,10 @@ class Logger(Callback):
                 session.add(LastEventCache(**cached_event))
 
 
-    def sql_migrate(self, lower=str.lower):
+    def sql_migrate(self, logpath=None, lower=str.lower):
         """ Migrate existing logs to the new SQL database """
+        if logpath is None:
+            logpath = self.logpath
         with open(self.logpath) as logfile:
             with self.db() as session:
                 for line in logfile:
@@ -258,6 +260,12 @@ class Logger(Callback):
                     except:
                         print("[Logger] Warning: Could not parse %s" % line)
                         raise
+
+    @Callback.background
+    @command("log_migrate", "(.+)", admin=True)
+    def partial_migration(self, server, message, path):
+        self.sql_migrate(logpath=path, lower=server.lower)
+        return "Migration complete."
 
     def traceuser(self, hostmask, timestamp):
         # Load the logs into memory to compute graph
