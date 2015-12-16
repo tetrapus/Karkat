@@ -272,9 +272,7 @@ class Logger(Callback):
                 Event.type.in_(['NICK', 'JOIN']),
                 Event.timestamp >= timestamp,
             ).order_by(Event.timestamp).all()
-            print(logs)
             for log in logs:
-                print(log.data)
                 nick, x = log.sender.split("!", 1)
                 ident, mask = x.split("@", 1)
                 if log.type == "NICK" and (nick, ident, mask) in userinf:
