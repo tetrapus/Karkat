@@ -4,3 +4,6 @@ pyyaml
 pylast
 pyenchant
 pillow
+sqlalchemy
+typing
+
