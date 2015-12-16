@@ -248,7 +248,7 @@ class Logger(Callback):
         """ Migrate existing logs to the new SQL database """
         if logpath is None:
             logpath = self.logpath
-        with open(self.logpath) as logfile:
+        with open(logpath) as logfile:
             with self.db() as session:
                 for line in logfile:
                     try:
@@ -264,8 +264,9 @@ class Logger(Callback):
     @Callback.background
     @command("log_migrate", "(.+)", admin=True)
     def partial_migration(self, server, message, path):
+        yield "Migration started..."
         self.sql_migrate(logpath=path, lower=server.lower)
-        return "Migration complete."
+        yield "Migration complete."
 
     def traceuser(self, hostmask, timestamp):
         # Load the logs into memory to compute graph
