@@ -4,6 +4,8 @@ import re
 import os
 import os.path
 
+from itertools import islice
+
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, DateTime, Text, create_engine, Index
 
