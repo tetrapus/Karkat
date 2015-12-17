@@ -1,5 +1,7 @@
 docopt==0.6.2
+hypothesis==1.17.1
 mypy-lang==0.2.0
+nose==1.3.7
 Pillow==3.0.0
 pyenchant==1.6.6
 pylast==1.5.1
