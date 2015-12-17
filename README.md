@@ -1,5 +1,7 @@
 # Karkat
 
+[![Build Status](https://travis-ci.org/tetrapus/Karkat.svg?branch=master)](https://travis-ci.org/tetrapus/Karkat)
+
 Karkat is an extensible threaded python IRC bot, supporting dynamically loadable modules with interfaces at every level of abstraction.
 The default set of plugins are (partially) documented at http://tetrapus.github.io/Karkat/docs.html
 
