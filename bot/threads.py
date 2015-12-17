@@ -852,12 +852,12 @@ class StatefulBot(SelectiveBot):
         return self.user_modes.get(self.lower(channel), {}).get(self.lower(username), [])
 
     def rank_to_int(self, rank):
-        if not rank:
-            return 0
-        elif rank in self.valid_modes[0]:
+        if rank in self.valid_modes[0]:
             return len(self.valid_modes[0]) - self.valid_modes[0].index(rank)
         elif rank in self.valid_modes[1]:
             return len(self.valid_modes[0]) - self.valid_modes[1].index(rank)
+        else:
+            return 0
 
     def numeric_rank(self, channel, username):
         modes = self.get_user_modes(channel, username)
