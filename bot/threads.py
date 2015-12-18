@@ -720,7 +720,7 @@ class StatefulBot(SelectiveBot):
         self.channels = {}
         self.server_settings = {}
         self.away = None
-        self.valid_modes = ("", "")
+        self.valid_modes = ([], [])
         self.user_modes = {}
         self.channel_modes = {}
         self.listbuffer = {}
@@ -952,7 +952,7 @@ class StatefulBot(SelectiveBot):
                 self.server_settings[key] = value
     
         if "PREFIX" in self.server_settings:
-            self.valid_modes = re.match(r"\((.+)\)(.+)", self.server_settings["PREFIX"]).groups()
+            self.valid_modes = [list(i) for i in re.match(r"\((.+)\)(.+)", self.server_settings["PREFIX"]).groups()]
 
 
     @Callback.inline
