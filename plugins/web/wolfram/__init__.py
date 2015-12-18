@@ -22,8 +22,7 @@ try:
 except:
     print("Warning: Wolfram module not loaded: invalid or nonexistant api key.", file=sys.stderr)
     print("Request an apikey at https://developer.wolframalpha.com/portal/apisignup.html and place in apikeys.conf as wolfram.key.<key>", file=sys.stderr)
-    raise ImportError("Module not loaded.")
-
+    apikeys = None
 
 class WolframAlpha(Callback):
 
@@ -210,4 +209,5 @@ class WolframAlpha(Callback):
     def trigger(self, server, message, query):
         return self.wolfram_format(query, "", h_max=self.h_max, wasettings=self.getusersettings(message.address.nick))
 
-__initialise__ = WolframAlpha
+if apikeys is not None:
+    __initialise__ = WolframAlpha
