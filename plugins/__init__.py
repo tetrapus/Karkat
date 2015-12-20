@@ -23,4 +23,5 @@ __modules__ = [
     "logger",
     "infobot",
     "commands",
+    "karma",
 ]
