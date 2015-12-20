@@ -7,7 +7,7 @@ import os.path
 from itertools import islice
 
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, DateTime, Text, create_engine, Index
+from sqlalchemy import Column, Integer, DateTime, Text, Index
 
 from bot.events import Callback, command, msghandler
 from util.irc import IRCEvent
@@ -202,7 +202,7 @@ class Logger(Callback):
         self.logpath = server.get_config_dir("log.txt")
         self.dbpath = server.get_config_dir("log.db")
         self.sedchans = set()
-        self.db = Database("sqlite:///" + self.dbpath)
+        self.db = Database("sqlite:///" + self.dbpath, cache_limit=None)
         self.db.create_all(Base.metadata)
         if os.path.exists(self.logpath):
             # Perform migration
@@ -228,7 +228,7 @@ class Logger(Callback):
             if query.count():
                 query.update(cached_event)
             else:
-                session.add(LastSpokeCache(**cached_event))
+                self.db.add(LastSpokeCache(**cached_event))
 
         if event.type == 'NICK':
             cached_event['newnick'] = event.payload_lower[1:]
@@ -243,7 +243,7 @@ class Logger(Callback):
             if query.count():
                 query.update(cached_event)
             else:
-                session.add(LastEventCache(**cached_event))
+                self.db.add(LastEventCache(**cached_event))
 
 
     def sql_migrate(self, logpath=None, lower=str.lower):
@@ -302,10 +302,14 @@ class Logger(Callback):
     @Callback.inline
     def log(self, server, line) -> "ALL":
         timestamp = datetime.utcnow()
-        with self.db() as session:
-            event = make_event(line, timestamp=timestamp)
-            session.add(event)
-            self.cache_event(session, event)
+        event = make_event(line, timestamp=timestamp)
+        self.db.add(event)
+        self.cache_event(event)
+
+    @Callback.background
+    def flush(self, server, line) -> "ALL":
+        if len(self.db.cache) > 512:
+            self.db.flush()
     
     @command("seen lastseen", r"(\S+)")
     def seen(self, server, msg, user):
