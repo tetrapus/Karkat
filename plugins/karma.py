@@ -28,7 +28,7 @@ class Karma(Callback):
 
     def __init__(self, server):
         self.karmapath = server.get_config_dir("karma.db")
-        self.db = database.Database("sqlite://" + self.karmapath)
+        self.db = database.Database("sqlite:///" + self.karmapath)
         self.db.create_all(Base.metadata)
         self.nickre = re.compile(r"[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]{2,%d}" % (int(server.get("NICKLEN", 9))-1))
         super().__init__(server)
