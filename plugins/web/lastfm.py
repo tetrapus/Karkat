@@ -169,8 +169,8 @@ class LastFM(Callback):
             trackdata["album"] = " · %s" % album.get_name()
         return trackdata
 
-    @command("setlfm savelfm save", r"(\S*)")
-    def setlfm(self, server, message, 
+    @command("setlastfm savelastfm save", r"(\S*)")
+    def setlastfm(self, server, message, 
                username: "Your Last.FM username"):
         """
         Associates a nickname with a Last.FM account.
