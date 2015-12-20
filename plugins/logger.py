@@ -436,7 +436,7 @@ class Logger(Callback):
                     print("[Logger] Warning: Could not parse %s" % line)
             return "04⎟ No matches found."
 
-    def __destroy__(self):
+    def __destroy__(self, server):
         self.db.flush()
 
 __initialise__ = Logger
