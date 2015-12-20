@@ -126,26 +126,32 @@ def abstime(date):
         return date.strftime("%B %-d, %Y")
 
 
+def plural(num, type):
+    template = "%d %s"
+    if num != 1:
+        template += "s"
+    return template % (num, type)
+
 def timefmt(timestamp):
     timediff = (datetime.utcnow() - timestamp).total_seconds()
 
     minutes, seconds = divmod(timediff, 60)
     if not minutes:
-        return "%d seconds ago" % seconds
+        return "%s ago" % plural(seconds, 'second')
     hours, minutes = divmod(minutes, 60)
     if not hours:
-        return "%d minutes ago" % minutes
+        return "%s ago" % plural(minutes, 'minute')
     days, hours = divmod(hours, 24)
     if not days:
         if minutes > (5 + hours):
-            return "%d hours %d mins ago" % (hours, minutes)
+            return "%s %s ago" % (plural(hours, 'hour'), plural(minutes, 'minute'))
         else:
-            return "%d hours ago" % hours
+            return "%s ago" % plural(hours, 'hour')
     if days < 10:
         if hours > days:
-            return "%d days %d hours ago" % (days, hours)
+            return "%s %s ago" % (plural(days, 'day'), plural(hours, 'hour'))
         else:
-            return "%d days ago" % days
+            return "%s ago" % plural(days, 'day')
     else:
         return abstime(timestamp)
 
