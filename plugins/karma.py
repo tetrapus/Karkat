@@ -68,4 +68,4 @@ class Karma(Callback):
                 session.add(log)
             return "07⎟ %s now has %d karma." % self.get_karma(server.lower(user))
 
-__ initialise__ = Karma
+__initialise__ = Karma
