@@ -1,5 +1,5 @@
 from typing import Optional
-
+from threading import Lock
 from contextlib import contextmanager
 from contextlib import _GeneratorContextManager as Context
 
@@ -14,6 +14,7 @@ class Database(object):
         self.Session = sessionmaker(bind=self.engine)
         self.cache_limit = cache_limit
         self.cache = []
+        self._cache_lock = Lock()
     
     def create_all(self,  metadata: MetaData) -> None:
         metadata.create_all(self.engine)
@@ -23,8 +24,10 @@ class Database(object):
         """Provide a transactional scope around a series of operations."""
         session = self.Session()
         if self.cache:
-            for i in self.cache:
-                session.add(i)
+            with self._cache_lock:
+                for i in self.cache:
+                    session.add(i)
+                self.cache = []
             session.flush()
         try:
             yield session
@@ -39,7 +42,8 @@ class Database(object):
 
     def add(self, obj: object) -> None:
         """ Add an object to the database. """
-        self.cache.append(obj)
+        with self._cache_lock:
+            self.cache.append(obj)
         if self.cache_limit is not None and len(self.cache) > self.cache_limit:
             with self.transaction():
                 # Starting a transaction will flush the cache

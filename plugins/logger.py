@@ -8,6 +8,7 @@ from itertools import islice
 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, DateTime, Text, Index
+from sqlalchemy.sql import func
 
 from bot.events import Callback, command, msghandler
 from util.irc import IRCEvent
@@ -228,7 +229,7 @@ class Logger(Callback):
             if query.count():
                 query.update(cached_event)
             else:
-                self.db.add(LastSpokeCache(**cached_event))
+                session.add(LastSpokeCache(**cached_event))
 
         if event.type == 'NICK':
             cached_event['newnick'] = event.payload_lower[1:]
@@ -243,7 +244,7 @@ class Logger(Callback):
             if query.count():
                 query.update(cached_event)
             else:
-                self.db.add(LastEventCache(**cached_event))
+                session.add(LastEventCache(**cached_event))
 
 
     def sql_migrate(self, logpath=None, lower=str.lower):
@@ -304,12 +305,24 @@ class Logger(Callback):
         timestamp = datetime.utcnow()
         event = make_event(line, timestamp=timestamp)
         self.db.add(event)
-        self.cache_event(event)
+
+    def cache_update(self):
+        with self.db() as session:
+            last_entry = session.query(
+                func.max(LastEventCache.timestamp)
+            ).first()[0] or 0
+            events = session.query(Event).filter(
+                Event.timestamp > last_entry,
+                Event.type.in_(has_sender)
+            ).all()
+            for event in events:
+                self.cache_event(session, event)
 
     @Callback.background
     def flush(self, server, line) -> "ALL":
         if len(self.db.cache) > 512:
             self.db.flush()
+            self.cache_update()
     
     @command("seen lastseen", r"(\S+)")
     def seen(self, server, msg, user):
@@ -321,17 +334,9 @@ class Logger(Callback):
         if not context.startswith("#"):
             return
 
+        self.cache_update()
+
         with self.db() as session:
-            #last = session.query(
-            #    Event
-            #).filter(
-            #    Event.type.in_(types),
-            #    (Event.context == context) | (Event.context == None),
-            #    (Event.sender_nick == nick)
-            #    | ((Event.type == 'NICK') & (Event.payload_lower == ":" + nick))
-            #).order_by(
-            #    Event.timestamp.desc()
-            #).first()
             last = session.query(
                 LastEventCache
             ).filter(
@@ -373,6 +378,8 @@ class Logger(Callback):
         # Don't allow seen for pms, for confidentiality
         if not context.startswith("#"):
             return
+
+        self.cache_update()
 
         with self.db() as session:
             last = session.query(LastSpokeCache).filter(
