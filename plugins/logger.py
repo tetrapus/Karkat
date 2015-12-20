@@ -326,7 +326,7 @@ class Logger(Callback):
 
     @Callback.background
     def flush(self, server, line) -> "ALL":
-        if len(self.db.cache) > 512:
+        if len(self.db.cache) > 32:
             self.db.flush()
             self.cache_update()
     
@@ -436,5 +436,7 @@ class Logger(Callback):
                     print("[Logger] Warning: Could not parse %s" % line)
             return "04⎟ No matches found."
 
+    def __destroy__(self):
+        self.db.flush()
 
 __initialise__ = Logger

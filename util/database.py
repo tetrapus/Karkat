@@ -52,3 +52,6 @@ class Database(object):
     def flush(self):
         with self.transaction():
             pass
+
+    def __del__(self):
+        self.flush()
