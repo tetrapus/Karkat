@@ -27,7 +27,7 @@ class Registration(Callback):
         nick = server.lower(Address(words[0]).nick)            
         if nick not in server.registered:
             server.registered[nick] = False
-            server.printer.raw_message("WHOIS :%s" % nick)
+            #server.printer.raw_message("WHOIS :%s" % nick)
 
     @Callback.inline
     def identified(self, server, line):
@@ -40,7 +40,7 @@ class Registration(Callback):
         words = line.split()
         del server.registered[server.lower(Address(words[0]).nick)]
         server.registered[server.lower(words[2][1:])] = False        
-        server.printer.raw_message("WHOIS %s" % words[2])
+        #server.printer.raw_message("WHOIS %s" % words[2])
 
 
     def part(self, server, line):
@@ -69,7 +69,7 @@ class Registration(Callback):
         nick = server.lower(words[7])
         if nick not in server.registered:
             server.registered[nick] = False
-            server.printer.raw_message("WHOIS :%s" % nick)
+            #server.printer.raw_message("WHOIS :%s" % nick)
         
 
 __initialise__ = Registration
