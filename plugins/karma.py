@@ -10,7 +10,7 @@ from sqlalchemy.sql import func
 Base = declarative_base()
 
 class KarmaLog(Base):
-    __table_name__ = "karma"
+    __tablename__ = "karma"
     id = Column(Integer, primary_key=True)
 
     timestamp = Column(DateTime, nullable=False)
