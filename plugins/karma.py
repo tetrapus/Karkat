@@ -39,7 +39,7 @@ class Karma(Callback):
                 func.sum(KarmaLog.value)
             ).filter(
                 KarmaLog.receiver == user
-            ).first() or 0
+            ).first()[0] or 0
 
     @msghandler
     def increment(self, server, msg):
@@ -66,6 +66,6 @@ class Karma(Callback):
                     value=inc
                 )
                 session.add(log)
-            return "07⎟ %s now has %d karma." % self.get_karma(server.lower(user))
+            return "07⎟ %s now has %d karma." % (user, self.get_karma(server.lower(user)))
 
 __initialise__ = Karma
