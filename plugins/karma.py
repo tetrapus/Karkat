@@ -74,31 +74,29 @@ class Karma(Callback):
     def increment(self, server, msg):
         giver = msg.address.nick
         text = msg.text.rstrip(";")
-        if " " not in text:
-            if text.endswith("++"):
-                user, inc = text[:-2], 1
-            elif text.startswith("++"):
-                user, inc = text[2:], 1
-            elif text.endswith("--"):
-                user, inc = text[:-2], -1
-            elif text.startswith("--"):
-                user, inc = text[2:], -1
-            else:
-                return
-            with self.db() as session:
-                log = KarmaLog(
-                    timestamp=datetime.datetime.utcnow(),
-                    giver=giver,
-                    giver_lower=server.lower(giver),
-                    receiver=server.lower(user),
-                    receiver_raw=user,
-                    value=inc
-                )
-                session.add(log)
-                karma = self.get_karma(session, server.lower(user))
-            if server.eq(user, giver):
-                karma = karma + inc
-            return "07⎟ %s now has %d karma." % (user, karma)
+        plus_matches = re.match(r"^(?:\+\+(\w+)|(\w+)\+\+|\+1\s+(\w+))$", text)
+        minus_matches = re.match(r"^(?:\-\-(\w+)|(\w+)\-\-|\-1\s+(\w+))$", text)
+        if plus_matches:
+            user, inc = [i for i in plus_matches.groups() if i is not None][0], 1
+        elif minus_matches:
+            user, inc = [i for i in minus_matches.groups() if i is not None][0], -1
+        else:
+            return
+
+        with self.db() as session:
+            log = KarmaLog(
+                timestamp=datetime.datetime.utcnow(),
+                giver=giver,
+                giver_lower=server.lower(giver),
+                receiver=server.lower(user),
+                receiver_raw=user,
+                value=inc
+            )
+            session.add(log)
+            karma = self.get_karma(session, server.lower(user))
+        if server.eq(user, giver):
+            karma = karma + inc
+        return "07⎟ %s now has %d karma." % (user, karma)
 
     @command("karma", r"([a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]{2,%d})")
     def karma(self, server, msg, user):
