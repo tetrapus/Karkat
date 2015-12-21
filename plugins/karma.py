@@ -109,9 +109,11 @@ class Karma(Callback):
             self.settings[server.lower(msg.context)] = False
             return "07⎟ Karma disabled."
 
-    @command("karma", r"([a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]{2,%d})")
+    @command("karma", r"(\w*)")
     def karma(self, server, msg, user):
         """ Show a user's karma score. """
+        if not user:
+            user = msg.address.nick
         with self.db() as session:
             key = server.lower(user)
             karma = self.get_karma(session, key)
