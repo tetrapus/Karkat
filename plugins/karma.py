@@ -75,6 +75,7 @@ class Karma(Callback):
     @msghandler
     def increment(self, server, msg):
         giver = msg.address.nick
+        context = server.lower(msg.context)
         text = msg.text.rstrip(";")
         plus_matches = re.match(r"^(?:\+\+(\w+)|(\w+)\+\+|\+1\s+(\w+))", text)
         minus_matches = re.match(r"^(?:\-\-(\w+)|(\w+)\-\-|\-1\s+(\w+))", text)
@@ -95,6 +96,8 @@ class Karma(Callback):
                 value=inc
             )
             session.add(log)
+            if context in self.settings and not self.settings[context]:
+                return
             karma = self.get_karma(session, server.lower(user))
         if server.eq(user, giver):
             karma = karma + inc
