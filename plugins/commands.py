@@ -32,7 +32,8 @@ class CommandIndex(Callback):
             metadata = {
                 'module': handler.module,
                 'path': handler.name,
-                'description': self.parse_description(cb.__doc__)
+                'description': self.parse_description(cb.__doc__),
+                'admin': getattr(handler.funct, 'admin_only', False)
             }
             if hasattr(handler.funct, 'triggers'):
                 metadata.update({
@@ -59,8 +60,9 @@ class CommandIndex(Callback):
 
     @command("command", "(.*)")
     def command_info(self, server, msg, cmd):
+        """ Get information about a command """
         if not cmd:
-            meta = random.choice([i for i in self.callbacks if i['description']])
+            meta = random.choice([i for i in self.callbacks if i['description'] and (not i['admin'] or server.is_admin(msg.address))])
         elif cmd.lower() in self.index:
             meta = self.index[cmd.lower()]
         else:

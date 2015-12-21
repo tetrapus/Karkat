@@ -222,6 +222,7 @@ def command(name=None,
         _.public = public
         _.triggers = triggers
         _.funct = funct
+        _.admin_only = admin
         return _
     return decorator
 
