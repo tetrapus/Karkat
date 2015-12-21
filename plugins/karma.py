@@ -1,5 +1,5 @@
 from bot.events import Callback, msghandler, command
-from util import database
+from util import database, files
 import re
 import datetime
 
@@ -30,6 +30,8 @@ class Karma(Callback):
         self.karmapath = server.get_config_dir("karma.db")
         self.db = database.Database("sqlite:///" + self.karmapath)
         self.db.create_all(Base.metadata)
+        self.settingspath = server.get_config_dir("karma-settings.json")
+        self.settings = files.Config(self.settingspath)
         self.nickre = re.compile(r"[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]{2,%d}" % (int(server.server_settings.get("NICKLEN", 9))-1))
         super().__init__(server)
 
@@ -74,8 +76,8 @@ class Karma(Callback):
     def increment(self, server, msg):
         giver = msg.address.nick
         text = msg.text.rstrip(";")
-        plus_matches = re.match(r"^(?:\+\+(\w+)|(\w+)\+\+|\+1\s+(\w+))$", text)
-        minus_matches = re.match(r"^(?:\-\-(\w+)|(\w+)\-\-|\-1\s+(\w+))$", text)
+        plus_matches = re.match(r"^(?:\+\+(\w+)|(\w+)\+\+|\+1\s+(\w+))", text)
+        minus_matches = re.match(r"^(?:\-\-(\w+)|(\w+)\-\-|\-1\s+(\w+))", text)
         if plus_matches:
             user, inc = [i for i in plus_matches.groups() if i is not None][0], 1
         elif minus_matches:
@@ -97,6 +99,15 @@ class Karma(Callback):
         if server.eq(user, giver):
             karma = karma + inc
         return "07⎟ %s now has %d karma." % (user, karma)
+
+    @command("setkarma", "(on|off)", admin=True)
+    def setkarma(self, server, msg, setting):
+        if setting == 'on':
+            self.settings[server.lower(msg.context)] = True
+            return "07⎟ Karma enabled."
+        elif setting == 'on':
+            self.settings[server.lower(msg.context)] = False
+            return "07⎟ Karma disabled."
 
     @command("karma", r"([a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]{2,%d})")
     def karma(self, server, msg, user):
