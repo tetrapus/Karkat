@@ -33,7 +33,7 @@ class Karma(Callback):
         self.nickre = re.compile(r"[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]{2,%d}" % (int(server.server_settings.get("NICKLEN", 9))-1))
         super().__init__(server)
 
-    def get_karma(self, session, user, giver):
+    def get_karma(self, session, user):
         return session.query(
             func.sum(KarmaLog.value)
         ).filter(
@@ -116,7 +116,7 @@ class Karma(Callback):
             biggest_fan = " Biggest fan: %s (%d)." % (fan[0].giver, fan[1])
         if hater is not None and fan[1] < 0:
             biggest_hater = " Worst critic: %s (%d)." % (hater[0].giver, hater[1])
-        message = "07⎟ %s has %s karma.%s%s%s" % (user, karma, karma_shame, biggest_fan, biggest_hater)
+        return "07⎟ %s has %s karma.%s%s%s" % (user, karma, karma_shame, biggest_fan, biggest_hater)
 
 
 __initialise__ = Karma
