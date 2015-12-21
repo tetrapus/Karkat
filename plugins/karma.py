@@ -1,10 +1,10 @@
-from bot.events import Callback, msghandler
+from bot.events import Callback, msghandler, command
 from util import database
 import re
 import datetime
 
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, DateTime, Text, Index
+from sqlalchemy import Column, Integer, DateTime, Text, Index, desc
 from sqlalchemy.sql import func
 
 Base = declarative_base()
@@ -33,13 +33,42 @@ class Karma(Callback):
         self.nickre = re.compile(r"[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]{2,%d}" % (int(server.server_settings.get("NICKLEN", 9))-1))
         super().__init__(server)
 
-    def get_karma(self, user):
-        with self.db() as session:
-            return session.query(
-                func.sum(KarmaLog.value)
-            ).filter(
-                KarmaLog.receiver == user
-            ).first()[0] or 0
+    def get_karma(self, session, user, giver):
+        return session.query(
+            func.sum(KarmaLog.value)
+        ).filter(
+            KarmaLog.receiver == user,
+            KarmaLog.giver_lower != user
+        ).first()[0] or 0
+
+    def get_self_karma(self, session, user):
+        return session.query(
+            func.sum(KarmaLog.value)
+        ).filter(
+            KarmaLog.receiver == user,
+            KarmaLog.giver_lower == user,
+            KarmaLog.value == 1
+        ).first()[0] or 0
+
+    def get_biggest_fan(self, session, user):
+        return session.query(
+            KarmaLog,
+            func.sum(KarmaLog.value).label('karma')
+        ).filter(
+            KarmaLog.receiver == user
+        ).group_by(
+            KarmaLog.giver_lower
+        ).order_by(desc('karma')).first()
+
+    def get_biggest_hater(self, session, user):
+        return session.query(
+            KarmaLog,
+            func.sum(KarmaLog.value).label('karma')
+        ).filter(
+            KarmaLog.receiver == user
+        ).group_by(
+            KarmaLog.giver_lower
+        ).order_by('karma').first()
 
     @msghandler
     def increment(self, server, msg):
@@ -66,6 +95,28 @@ class Karma(Callback):
                     value=inc
                 )
                 session.add(log)
-            return "07⎟ %s now has %d karma." % (user, self.get_karma(server.lower(user)))
+                karma = self.get_karma(session, server.lower(user))
+            if server.eq(user, giver):
+                karma = karma + inc
+            return "07⎟ %s now has %d karma." % (user, karma)
+
+    @command("karma", r"([a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]{2,%d})")
+    def karma(self, server, msg, user):
+        """ Show a user's karma score. """
+        with self.db() as session:
+            key = server.lower(user)
+            karma = self.get_karma(session, key)
+            self_karma = self.get_self_karma(session, key)
+            fan = self.get_biggest_fan(session, key)
+            hater = self.get_biggest_hater(session, key)
+        karma_shame, biggest_fan, biggest_hater = "", "", ""
+        if self_karma:
+            karma_shame = " %s has tried to give themself karma %d time%s." % (user, self_karma, "s" if self_karma != 1 else "")
+        if fan is not None and fan[1] > 0:
+            biggest_fan = " Biggest fan: %s (%d)." % (fan[0].giver, fan[1])
+        if hater is not None and fan[1] < 0:
+            biggest_hater = " Worst critic: %s (%d)." % (hater[0].giver, hater[1])
+        message = "07⎟ %s has %s karma.%s%s%s" % (user, karma, karma_shame, biggest_fan, biggest_hater)
+
 
 __initialise__ = Karma
