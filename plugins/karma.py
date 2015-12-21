@@ -105,7 +105,7 @@ class Karma(Callback):
         if setting == 'on':
             self.settings[server.lower(msg.context)] = True
             return "07⎟ Karma enabled."
-        elif setting == 'on':
+        elif setting == 'off':
             self.settings[server.lower(msg.context)] = False
             return "07⎟ Karma disabled."
 
