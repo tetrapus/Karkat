@@ -120,13 +120,13 @@ class Karma(Callback):
             self_karma = self.get_self_karma(session, key)
             fan = self.get_biggest_fan(session, key)
             hater = self.get_biggest_hater(session, key)
-        karma_shame, biggest_fan, biggest_hater = "", "", ""
-        if self_karma:
-            karma_shame = " %s has tried to give themself karma %d time%s." % (user, self_karma, "s" if self_karma != 1 else "")
-        if fan is not None and fan[1] > 0:
-            biggest_fan = " Biggest fan: %s (%d)." % (fan[0].giver, fan[1])
-        if hater is not None and fan[1] < 0:
-            biggest_hater = " Worst critic: %s (%d)." % (hater[0].giver, hater[1])
+            karma_shame, biggest_fan, biggest_hater = "", "", ""
+            if self_karma:
+                karma_shame = " %s has tried to give themself karma %d time%s." % (user, self_karma, "s" if self_karma != 1 else "")
+            if fan is not None and fan[1] > 0:
+                biggest_fan = " Biggest fan: %s (%d)." % (fan[0].giver, fan[1])
+            if hater is not None and fan[1] < 0:
+                biggest_hater = " Worst critic: %s (%d)." % (hater[0].giver, hater[1])
         return "07⎟ %s has %s karma.%s%s%s" % (user, karma, karma_shame, biggest_fan, biggest_hater)
 
 
