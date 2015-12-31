@@ -191,7 +191,7 @@ class Printer(WorkerThread):
 
     def log(self, data):
         if self.verbosity != self.QUIET:
-            #TODO: Turn this into an event callback.
+            # TODO: Turn this into an event callback.
             if self.verbosity & (self.FULL_MESSAGE | self.TYPE_ONLY):
                 if self.verbosity & self.TYPE_ONLY:
                     output = data.split()[0]
@@ -259,13 +259,13 @@ class ColourPrinter(Printer):
                 value.append("%s %s" % (line.split(" ")[0],
                                         self.defaultcolor(line.split(" ", 1)[-1])))
             else:
-                line = re.sub("\x03([^\d])",
+                line = re.sub(r"\x03([^\d])",
                               lambda x: (("\x03%s" % (color)) + (x.group(1) or "")),
                               line)
                 line = line.replace("\x0f", "\x0f\x03%s" % (color))
                 line = line.replace("\x0f\x03%s\x0f\x03%s" % (color, color), "\x0f")
                 value.append("\x03%s%s" % (color, line))
-        return ("\n".join(value)) # TODO: Minify.
+        return "\n".join(value) # TODO: Minify.
 
     def pack(self, msg, recipient, method):
         msg = str(msg)
@@ -383,12 +383,12 @@ class Connection(threading.Thread, object):
         self.mode = config.get("Mode", 0)
         self.ssl = config.get("SSL", False)
         self.password = config.get("Password", None)
-        
+
         self.nick = None
         self.nicks = config["Nick"]
 
         self.admins = config["Admins"]
-        self.config = config 
+        self.config = config
         self.name = conf.split(".")[0]
 
         self.connected = False
@@ -412,8 +412,8 @@ class Connection(threading.Thread, object):
         # Try our first nickname.
         nicks = collections.deque(self.nicks)
         self.nick = nicks.popleft()
-        self.sendline("USER %s %s * :%s\r\n" % (self.username, 
-                                                self.mode, 
+        self.sendline("USER %s %s * :%s\r\n" % (self.username,
+                                                self.mode,
                                                 self.realname))
         if self.password is not None:
             self.sendline("PASS %s" % (self.password))
@@ -427,17 +427,19 @@ class Connection(threading.Thread, object):
                     # We're done here.
                     self.sendline("PONG %s" % line.split()[-1])
                     break
-                errdict = {"433": "Invalid nickname, retrying.", 
+                errdict = {"433": "Invalid nickname, retrying.",
                            "436": "Nickname in use, retrying."}
                 if words[1] == "432":
-                    raise ValueError("Arguments sent to server are invalid; "\
-                            "are you sure the configuration file is correct?")
+                    raise ValueError(
+                        "Arguments sent to server are invalid; "
+                        "are you sure the configuration file is correct?"
+                    )
                 elif words[1] in errdict:
                     print(errdict[words[1]], file=sys.stderr)
                     self.nick = nicks.popleft()
                     self.sendline("NICK %s" % self.nick)
             else:
-                # If we haven't broken out of the loop, our nickname is 
+                # If we haven't broken out of the loop, our nickname is
                 # not valid.
                 continue
             break
@@ -456,24 +458,24 @@ class Connection(threading.Thread, object):
         return
 
     def cleanup(self):
-            # TODO: decouple printer and connection.
-            self.printer.terminate()
-            print("Terminating threads...")
+        # TODO: decouple printer and connection.
+        self.printer.terminate()
+        print("Terminating threads...")
 
-            self.printer.join()
-            if "-d" in sys.argv and self.buff.log:
-                print("%d high latency events recorded, max=%r, avg=%r" % (len(self.buff.log), max(self.buff.log), util.average(self.buff.log)))
+        self.printer.join()
+        if "-d" in sys.argv and self.buff.log:
+            print("%d high latency events recorded, max=%r, avg=%r" % (len(self.buff.log), max(self.buff.log), util.average(self.buff.log)))
 
     def run(self):
         try:
             while self.connected and self.buff.append(self.sock.recv(1024)):
                 for line in self.buff:
-                    self.dispatch(line)               
+                    self.dispatch(line)
 
         finally:
             self.sock.close()
             print("Connection closed.")
-            self.cleanup()            
+            self.cleanup()
 
             self.connected = False
 
@@ -492,6 +494,7 @@ class Connection(threading.Thread, object):
             self.encoding = encoding       # output encoding
             self.buff.encoding = encoding  # input encoding
 
+#EventHandler = Callable[[IRCClient, str], None]
 
 class EventHandler(object):
     GENERAL = 0
@@ -514,7 +517,7 @@ class EventHandler(object):
     @property
     def isGeneral(self):
         return self.cbtype == self.GENERAL
-    
+
 
     def __init__(self, trigger, function):
         self.trigger = trigger
@@ -561,7 +564,7 @@ class Bot(Connection):
                         EventHandler.GENERAL: self.callers[1],
                         EventHandler.INLINE: InlineQueue,
                         }
-        for c in self.callers: 
+        for c in self.callers:
             c.start()
 
     def rebalance(self):
@@ -608,7 +611,7 @@ class Bot(Connection):
         removed = []
         if trigger is not None:
             triggers = [trigger]
-        else: 
+        else:
             triggers = self.callbacks.keys()
 
         for i in triggers:
@@ -622,13 +625,13 @@ class Bot(Connection):
         removed = []
         if trigger is not None:
             triggers = [trigger]
-        else: 
+        else:
             triggers = self.callbacks.keys()
 
         for i in triggers:
             remove = [i for i in self.callbacks[i] if i.name == funct]
             for f in remove:
-                self.callbacks[i].remove(f)       
+                self.callbacks[i].remove(f)
                 removed.append(i)
         return removed
 
@@ -732,10 +735,10 @@ class StatefulBot(SelectiveBot):
                            "join" : [self.user_join],
                            "nick" : [self.user_nickchange],
                            "kick" : [self.user_kicked],
-                           "mode" : [self.channel_mode], 
+                           "mode" : [self.channel_mode],
                            "topic": [self.topic_changed],
                            "002"  : [self.on_connect],
-                           "332"  : [self.channel_topic],  
+                           "332"  : [self.channel_topic],
                            "352"  : [self.joined_channel],
                            "005"  : [self.onServerSettings],
                            "306"  : [self.went_away],
@@ -790,7 +793,7 @@ class StatefulBot(SelectiveBot):
             settings[mode] = arg
         else:
             del settings[mode]
-        
+
     def parse_C_mode(self, channel, action, mode, args):
         settings = self.channel_modes.setdefault(self.lower(channel), {})
 
@@ -820,7 +823,7 @@ class StatefulBot(SelectiveBot):
     def set_modes(self, channel, modes, args):
         """
         Parses a string of channel modes.
-        
+
         CHANMODES=A,B,C,D
             This is a list of channel modes according to 4 types.
             A = Mode that adds or removes a nick or address to a list. Always has a parameter.  Arity 1/1, List type
@@ -830,11 +833,11 @@ class StatefulBot(SelectiveBot):
 
             Note: Modes of type A return the list when there is no parameter present.
             Note: Some clients assumes that any mode not listed is of type D.
-            Note: Modes in PREFIX are not listed but could be considered type B. 
-        
+            Note: Modes in PREFIX are not listed but could be considered type B.
+
         Private modes supported: Iebaq
         """
-        types = zip(self.server_settings["CHANMODES"].split(",") + [self.valid_modes[0]], 
+        types = zip(self.server_settings["CHANMODES"].split(",") + [self.valid_modes[0]],
                     (self.parse_A_mode, self.parse_B_mode, self.parse_C_mode, self.parse_D_mode, self.parse_user_mode))
         action = "+"
         for i in modes:
@@ -879,7 +882,7 @@ class StatefulBot(SelectiveBot):
 
     def get_list(self, channel, mode):
         return self.get_channel_modes(channel).get(mode, [])
-    
+
     @Callback.inline
     def topic_changed(self, server, line):
         words = line.split(" ", 3)
@@ -950,7 +953,7 @@ class StatefulBot(SelectiveBot):
                 #    except LookupError:
                 #        raise Warning("Server sent invalid charset %r, using %s." % (value, self.encoding))
                 self.server_settings[key] = value
-    
+
         if "PREFIX" in self.server_settings:
             self.valid_modes = [list(i) for i in re.match(r"\((.+)\)(.+)", self.server_settings["PREFIX"]).groups()]
 
