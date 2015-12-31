@@ -16,6 +16,7 @@ import ssl
 import codecs
 
 import yaml
+from pathlib import Path
 
 import util
 from util.irc import Address, Callback, MAX_MESSAGE_SIZE
@@ -543,10 +544,12 @@ class Bot(Connection):
 
     def __init__(self, conf, **kwargs):
         super().__init__(conf, **kwargs)
-        self.callbacks = {"ALL": [], "DIE":[]}
+        self.config_dir = Path(self.get_config_dir())
+        self.callbacks = {"ALL": [], "DIE": []}
         self.register("ping", self.pong)
 
     def get_config_dir(self, *subdirs):
+        # TODO: Deprecate
         if "Data" in self.config:
             directory = self.config["Data"]
         else:

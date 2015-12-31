@@ -11,3 +11,5 @@ six==1.10.0
 SQLAlchemy==1.0.10
 typing==3.5.0.1
 wheel==0.24.0
+pathlib==1.0.1
+
