@@ -28,27 +28,28 @@ class Callback(object):
 
     @staticmethod
     def isInline(funct):
-        return hasattr(funct, "isInline") and funct.isInline 
-    
+        return hasattr(funct, "isInline") and funct.isInline
+
     @staticmethod
     def isThreadsafe(funct):
         return hasattr(funct, "isThreadsafe") and funct.isThreadsafe
-    
+
     @staticmethod
     def background(funct):
         funct.isBackground = True
         return funct
-    
+
     @staticmethod
     def isBackground(funct):
         return hasattr(funct, "isBackground") and funct.isBackground
-    
 
     ERROR = Exception
+
     class InvalidUsage(BaseException):
         def __init__(self, msg):
-            BaseException.__init__(self, "Arguments do not match the usage pattern.")
+            super().__init__(self, "Arguments do not match the usage pattern.")
             self.msg = msg
+
     USAGE = InvalidUsage
 
     def __init__(self, server):
@@ -69,7 +70,7 @@ class Callback(object):
                 val = getattr(self, attr)
                 annotations = getattr(val, "__annotations__")
                 if "return" in annotations:
-                    if type(annotations["return"]) == str: 
+                    if type(annotations["return"]) == str:
                         hooks.setdefault(annotations["return"], []).append(val)
                     else:
                         for i in annotations["return"]:
@@ -89,8 +90,10 @@ class Callback(object):
     def hook(*hooks):
         def decorator(funct):
             if "return" in funct.__annotations__:
-                raise Warning("Callback.register mutilates function annotations"
-                              ", but an annotation is already defined.")
+                raise Warning(
+                    "Callback.register mutilates function annotations, but an "
+                    "annotation is already defined."
+                )
             funct.__annotations__["return"] = hooks
             return funct
         return decorator
@@ -98,7 +101,7 @@ class Callback(object):
 def split_templates(templates):
     errors, prefixes = {}, {}
 
-    if templates is None: 
+    if templates is None:
         return errors, prefixes
 
     for prefix in templates:
@@ -116,15 +119,15 @@ def template(prefixes, errors):
     pass
 
 
-def command(name=None, 
-            args=None, 
-            prefixes=("!", "@."), 
-            templates=None, 
+def command(name=None,
+            args=None,
+            prefixes=("!", "@."),
+            templates=None,
             admin=None,
             rank=""):
     if callable(name):
         # Used with no arguments.
-        return command(name.__name__)(name) 
+        return command(name.__name__)(name)
     private, public = prefixes
     prefixes = private + public
     errors, templates = split_templates(templates)
@@ -139,10 +142,10 @@ def command(name=None,
 
         triggers = [i.lower() for i in triggers]
 
-        #TODO: Parse docstring as templates
+        # TODO: Parse docstring as templates
 
         @functools.wraps(funct)
-        def _(*argv): 
+        def _(*argv):
             try:
                 bot = argv[-2]
                 msg = Command(argv[-1])
@@ -228,7 +231,7 @@ def command(name=None,
 
 def msghandler(funct):
     @functools.wraps(funct)
-    def _(*argv): 
+    def _(*argv):
         try:
             bot = argv[-2]
             msg = Message(argv[-1])
