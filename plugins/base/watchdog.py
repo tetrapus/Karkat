@@ -13,22 +13,26 @@ class Watchdog(Callback):
     """
     Periodically test whether the connection is active, using the scheduler.
     """
-    
+
     def __init__(self, server):
         self.server = server
         self.last = time.time()
         self.lastcheck = time.time()
         self.watchdog = schedule_after(90, self.check, stop_after=None)
-        super().__init__(server)    
+        super().__init__(server)
 
     @Callback.inline
-    def reset_timer(self, server, line) -> "ALL":
-        """ Update last-heard time, and check whether the scheduler is alive """
+    def reset_timer(self, *_) -> "ALL":
+        """
+        Update last-heard time, and check whether the scheduler is alive.
+        """
         self.last = time.time()
         delta = time.time() - self.last
         if delta > 180:
-            print("!!! Warning: Watchdog failure detected,"\
-                  " spawning a fallback thread.")
+            print(
+                "!!! Warning: Watchdog failure detected, spawning a fallback "
+                "thread."
+            )
             self.watchdog = FallbackWatchdog(self)
             self.watchdog.start()
 
@@ -41,6 +45,7 @@ class Watchdog(Callback):
             self.server.connected = False
         elif delta > 180:
             self.server.printer.raw_message("PING :♥")
+
 
 class FallbackWatchdog(threading.Thread, object):
     """ Use a separate thread to trigger the watchdog """
