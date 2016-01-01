@@ -2,7 +2,6 @@
 Handles CTCP replies.
 """
 
-import os
 import yaml
 
 from pathlib import Path
@@ -37,9 +36,11 @@ def __initialise__(server):
             """ Reply to ctcp requests """
             msg = Message(line)
             text = msg.text
+
             if len(text) > 1 and text[0] == text[-1] == "\x01":
                 text = text[1:-1].split(" ")
                 command = text[0].upper()
+
                 if command in replies:
                     server.printer.raw_message(
                         "NOTICE %s :\x01%s %s\x01" % (
@@ -50,6 +51,7 @@ def __initialise__(server):
                     )
 
         server.register("privmsg", ctcpreply)
+
     else:
         print(
             "%s: Warning: No config files found. "
