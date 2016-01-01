@@ -1,377 +1,30 @@
-""" This module contains the worker threads for Karkat's system. """
+""" This module will soon be split up. """
 
 import os
 import sys
 import threading
 import time
-import queue
 import re
 import collections
 import socket
 import inspect
 import fnmatch
-import random
-import json
 import ssl
 import codecs
 
-import yaml
 from pathlib import Path
+
+import yaml
 
 import util
 from util.irc import Address, Callback, MAX_MESSAGE_SIZE
-from util.text import lineify, TimerBuffer, Buffer, ircstrip
+from util.text import TimerBuffer, Buffer
 
+# TODO: Get rid of these aliases
+from .workers.executor import AsyncExecutor as Caller
+from .workers.executor import InlineExecutor as InlineQueue
+from .workers.ircsender import MultiPrinter
 
-class Work(queue.Queue):
-    """
-    This object is an iterable work queue.
-    """
-
-    class TERM(object):
-        """
-        The sentinel which represents a request to terminate the iterator.
-
-        To use this object, append it to the queue.
-        """
-        def __init__(self):
-            raise TypeError("TERM is a singleton!")
-
-    def __init__(self):
-        """
-        Create a new Work Queue.
-        """
-
-        self._lock = threading.Lock()
-        self.last = None
-        queue.Queue.__init__(self)
-
-    def __iter__(self):
-        """
-        The object itself is iterable. Returns self.
-        """
-        return self
-
-    def __next__(self):
-        """
-        Tells the queue a task is done and deques a new one.
-        """
-        with self._lock:
-            try:
-                self.task_done()
-            except ValueError:
-                # This means first iteration. We don't really care.
-                pass
-            value = self.get()
-            if value == Work.TERM:
-                self.task_done()
-                raise StopIteration
-            else:
-                self.last = value
-                return value
-
-
-class WorkerThread(threading.Thread, object):
-    """
-    A thread which feeds tasks off of a queue.
-    """
-
-    def __init__(self, work=None):
-        threading.Thread.__init__(self)
-        self.work = work or Work()
-
-    def terminate(self):
-        """
-        Send a terminate signal to the thread, which tells the thread to exit
-        after processing all previously queued work.
-        """
-        self.work.put(Work.TERM)
-
-
-class PrinterBuffer(object):
-    """
-    Context manager for prettier printing.
-    """
-    try:
-        adpool = json.load(open("ads.json"))
-    except:
-        adpool = []
-    lastad = 0
-
-    def __init__(self, printer, recipient, method):
-        """
-        Obj is an object that supports the message method.
-        """
-        self.buffer = []
-        self.recipient = recipient
-        self.method = method
-        self.sender = printer
-
-    def __enter__(self):
-        return self
-
-    def add(self, line):
-        """
-        Add a line to the output.
-        """
-        self.buffer.append(line)
-
-    def __iadd__(self, line):
-        self.buffer.append(line)
-        return self
-
-    def __exit__(self, cls, value, traceback):
-        if self.buffer:
-            self.sender.message("\n".join(self.buffer),
-                                self.recipient,
-                                self.method)
-            self.serve_ad()
-            self.buffer = []
-
-    def serve_ad(self):
-        if len(self.__class__.adpool) and time.time() - self.__class__.lastad > 151200/len(self.__class__.adpool) and random.random() > 0.8:
-            ad = self.__class__.adpool.pop()
-            self.sender.message("│ SPONSORED │ %s" % ad, self.recipient, self.method)
-            with open("ads.json", "w") as f:
-                json.dump(self.__class__.adpool, f)
-            self.__class__.lastad = time.time()
-
-class Printer(WorkerThread):
-    """ This queue-like thread controls the output to a socket."""
-
-    QUIET = 0
-    QUEUE_STATE = 1
-    FULL_MESSAGE = 2
-    TYPE_ONLY = 4
-
-    class PRINTERMSG: pass
-
-    def __init__(self, connection):
-        WorkerThread.__init__(self)
-        self.flush = False
-        self.bot = connection
-        self.verbosity = self.TYPE_ONLY | self.QUEUE_STATE
-        self.servername = connection.server[0]
-        self.history = {}
-        self.callbacks = []
-        if hasattr(connection, "lower"):
-            self.lower = connection.lower
-        else:
-            self.lower = str.lower
-
-    def send(self, message):
-        """
-        Send data through the underlying socket.
-        """
-        self.bot.sendline(message)
-
-    def clear(self):
-        """
-        Tell the thread to remove rather than process all the queued data.
-        """
-        self.flush = True
-
-    def pack(self, msg, recipient, method):
-        return "%s %s :%s" % (method, recipient, msg)
-
-    def can_send(self, msg, recipient, method):
-        return self.bot.can_send(msg, recipient, method)
-
-    def message(self, mesg, recipient, method="PRIVMSG"):
-        """
-        Send a message.
-        """
-        msg = lineify(str(mesg))
-        self.history[self.lower(recipient)] = msg
-        for message in [i for i in msg if i]:
-            self.work.put(self.pack(message, recipient, method))
-        return mesg # Debugging
-
-    def raw_message(self, mesg):
-        self.work.put(mesg)
-
-    def log(self, data):
-        if self.verbosity != self.QUIET:
-            # TODO: Turn this into an event callback.
-            if self.verbosity & (self.FULL_MESSAGE | self.TYPE_ONLY):
-                if self.verbosity & self.TYPE_ONLY:
-                    output = data.split()[0]
-                else:
-                    output = ircstrip(data)
-                sys.stdout.write("%s ← %s" % (self.servername, output))
-            if self.work.qsize() and self.verbosity & self.QUEUE_STATE:
-                sys.stdout.write(" ⬩ %d messages queued." % self.work.qsize())
-            print()
-
-    def run(self):
-        while True:
-            for data in self.work:
-                if not self.flush:
-                    try:
-                        self.send(data)
-                    except BaseException:
-                        print("Printer could not send: %r\n" % data, file=sys.stderr)
-                        sys.excepthook(*sys.exc_info())
-                    else:
-                        self.log(data)
-                else:
-                    self.flush = False
-                    self.work = Work()
-                    break
-            else:
-                break
-
-    def buffer(self, recipient, method="PRIVMSG"):
-        """
-        Create a context manager with the given target and method bound to
-        the current printer object.
-        """
-        return PrinterBuffer(self, recipient, method)
-
-    def respond(self, line, method="PRIVMSG"):
-        """
-        Create a context manager which parses the input words and responds
-        in PM if messaged, else in the channel.
-        """
-        if line[2].startswith("#"):
-            target = line[2]
-        else:
-            target = Address(line[0]).nick
-        return PrinterBuffer(self, target, method)
-
-
-class ColourPrinter(Printer):
-    """
-    Add a default colour to messages.
-    """
-    def __init__(self, sock):
-        Printer.__init__(self, sock)
-        self.color = "14"
-        self.hasink = True
-
-    def defaultcolor(self, data):
-        """
-        Parse a message and colour it in.
-        """
-        value = []
-        color = self.color
-        for line in data.rstrip().split("\n"):
-            if " " in line and line[0] + line[-1] == "\x01\x01":
-                value.append("%s %s" % (line.split(" ")[0],
-                                        self.defaultcolor(line.split(" ", 1)[-1])))
-            else:
-                line = re.sub(r"\x03([^\d])",
-                              lambda x: (("\x03%s" % (color)) + (x.group(1) or "")),
-                              line)
-                line = line.replace("\x0f", "\x0f\x03%s" % (color))
-                line = line.replace("\x0f\x03%s\x0f\x03%s" % (color, color), "\x0f")
-                value.append("\x03%s%s" % (color, line))
-        return "\n".join(value) # TODO: Minify.
-
-    def pack(self, msg, recipient, method):
-        msg = str(msg)
-        if method.upper() in ["PRIVMSG", "NOTICE"] and self.hasink:
-            msg = super().pack(self.defaultcolor(msg), recipient, method)
-        else:
-            msg = super().pack(msg, recipient, method)
-
-        return msg
-
-
-class MultiPrinter(ColourPrinter):
-    def __init__(self, bot):
-        super().__init__(bot)
-        self.bots = [bot]
-        self.outmap = {}
-
-    def send(self, message):
-        words = message.split(" ", 2)
-        if words[0].lower() not in ["notice", "privmsg"] or len(words) != 3 or words[1].startswith("#") or len(self.bots) == 1:
-            bot = 0
-        elif words[1] in self.outmap:
-            bot = self.outmap[words[1]]
-        else:
-            bot = min(range(len(self.bots)), key=lambda x: list(self.outmap.values()).count(x))
-            self.outmap[words[1]] = bot
-        sys.stdout.write("[%d] " % bot)
-        self.bots[bot].sendline(message)
-
-    def add(self, bot):
-        self.bots.append(bot)
-
-class InlineQueue(object):
-    @staticmethod
-    def queue(handler, args):
-        try:
-            handler(*args)
-        except BaseException:
-            print("Error in inline function " + handler.name, file=sys.stderr)
-            sys.excepthook(*sys.exc_info())
-
-
-class Caller(WorkerThread):
-    """
-    A worker thread for executing jobs asynchronously.
-    """
-
-    forklimit = 10
-
-    def __init__(self, work=None):
-        WorkerThread.__init__(self)
-        self.last = None
-        self.lastf = (None, None)
-
-    def queue(self, funct, args):
-        """
-        Queue a job.
-        """
-        # TODO: Integrate forking
-        # NOT THREADSAFE OH GOD FIX THIS
-        self.work.put((funct, args))
-
-    def dump(self):
-        """
-        Dumps the contents of the caller's queue, returns it, then terminates.
-        """
-
-        newq = Work()
-        requeue = []
-        with self.work._lock:
-            # This blocks the queue.
-            # The lock will be acquired after the queue feeds a task
-            # to the caller, or the caller is still executing a task.
-            lastarg = self.work.last
-            while not self.work.empty():
-                funct, args = self.work.get()
-                if Callback.isThreadsafe(funct) or funct != lastarg:
-                    newq.put((funct, args))
-                else:
-                    requeue.append((funct, args))
-            for funct, args in requeue:
-                # These functions aren't threadsafe, so we can't safely fork
-                # off a queue with these tasks because we know that the
-                # function is probably already executing.
-                self.work.put((funct, args))
-            self.terminate()
-        return newq
-
-    def terminate(self):
-        """
-        Send a 'TERM signal'
-        """
-        self.work.put(Work.TERM)
-
-    def run(self):
-        for funct, args in self.work:
-            self.last = time.time()
-            self.lastf = (funct, args)
-            try:
-                funct(*args)
-            except BaseException:
-                print("Error in function %s%s" % (funct.name, args))
-                sys.excepthook(*sys.exc_info())
-            self.last = None
-        assert self.work.qsize() == 0
 
 class Connection(threading.Thread, object):
     def __init__(self, conf, debug=None):
@@ -465,7 +118,13 @@ class Connection(threading.Thread, object):
 
         self.printer.join()
         if "-d" in sys.argv and self.buff.log:
-            print("%d high latency events recorded, max=%r, avg=%r" % (len(self.buff.log), max(self.buff.log), util.average(self.buff.log)))
+            print(
+                "%d high latency events recorded, max=%r, avg=%r" % (
+                    len(self.buff.log),
+                    max(self.buff.log),
+                    util.average(self.buff.log)
+                )
+            )
 
     def run(self):
         try:
@@ -519,6 +178,7 @@ class EventHandler(object):
     def isGeneral(self):
         return self.cbtype == self.GENERAL
 
+    # Methods
 
     def __init__(self, trigger, function):
         self.trigger = trigger
@@ -561,16 +221,19 @@ class Bot(Connection):
         self.sendline("PONG " + line.split(" ", 1)[1])
 
     def makeCallers(self, callers=2):
+        # TODO: Init in __init__?
         # Make `callers` general purpose callers.
         self.callers = [Caller() for _ in range(callers + 2)]
-        self.caller = {EventHandler.BACKGROUND: self.callers[0],
-                        EventHandler.GENERAL: self.callers[1],
-                        EventHandler.INLINE: InlineQueue,
-                        }
+        self.caller = {
+            EventHandler.BACKGROUND: self.callers[0],
+            EventHandler.GENERAL: self.callers[1],
+            EventHandler.INLINE: InlineQueue,
+        }
         for c in self.callers:
             c.start()
 
     def rebalance(self):
+        # TODO: Refactor/abstract into ExecutorPool
         longest = max(self.callers[2:], key=lambda x: x.work.qsize())
         if all(_.last for _ in self.callers[2:]) and longest.work.qsize() > 50:
             print("All queues backed up: expanding.")
@@ -581,7 +244,10 @@ class Bot(Connection):
         for c in self.callers[2:]:
             ltime = c.last
             if ltime and time.time() - ltime > 8:
-                print("Caller is taking too long executing %s%s: forking." % (c.lastf[0].name, c.lastf[1]))
+                print(
+                    "Caller is taking too long executing %s%s: forking." %
+                    (c.lastf[0].name, c.lastf[1])
+                )
                 self.callers.remove(c)
                 self.callers.append(Caller(c.dump()))
                 self.callers[-1].start()
@@ -593,8 +259,10 @@ class Bot(Connection):
             funct(self)
         print("Cleaned up.")
 
-        for c in self.callers: c.terminate()
-        for c in self.callers: c.join()
+        for c in self.callers:
+            c.terminate()
+        for c in self.callers:
+            c.join()
         print("Threads terminated.")
 
     def run(self):
@@ -646,7 +314,7 @@ class Bot(Connection):
         else:
             handlerq = self.caller[handler.cbtype]
 
-        handlerq.queue(handler, (self, line))
+        handlerq.call(handler, self, line)
 
     def dispatch(self, line):
         """
@@ -688,7 +356,7 @@ class Bot(Connection):
 class SelectiveBot(Bot):
     def __init__(self, conf, **kwargs):
         super().__init__(conf, **kwargs)
-        self.blacklist = {None:[]}
+        self.blacklist = {None: []}
 
     def execute(self, handler, line):
         """ Executes a callback. """
@@ -707,6 +375,7 @@ class IAL(object):
         for i in self.ial:
             if i.nick == nick:
                 return i
+
 
 class StatefulBot(SelectiveBot):
     """ Beware of thread safety when manipulating server state. If a callback
@@ -732,22 +401,25 @@ class StatefulBot(SelectiveBot):
         self.listbuffer = {}
         self.topic = {}
         self.hostmask = None
-        self.rawmap = {346:"I", 348:"e", 367:"b", 386:"q", 388:"a"} # TODO: parse these.
-        self.register_all({"quit" : [self.user_quit],
-                           "part" : [self.user_left],
-                           "join" : [self.user_join],
-                           "nick" : [self.user_nickchange],
-                           "kick" : [self.user_kicked],
-                           "mode" : [self.channel_mode],
-                           "topic": [self.topic_changed],
-                           "002"  : [self.on_connect],
-                           "332"  : [self.channel_topic],
-                           "352"  : [self.joined_channel],
-                           "005"  : [self.onServerSettings],
-                           "306"  : [self.went_away],
-                           "305"  : [self.came_back],
-                           "301"  : [self.user_awaymsg],
-                           "324"  : [self.joined_channel_modes]})
+        # TODO: parse these.
+        self.rawmap = {346: "I", 348: "e", 367: "b", 386: "q", 388: "a"}
+        self.register_all({
+            "quit": [self.user_quit],
+            "part": [self.user_left],
+            "join": [self.user_join],
+            "nick": [self.user_nickchange],
+            "kick": [self.user_kicked],
+            "mode": [self.channel_mode],
+            "topic": [self.topic_changed],
+            "002": [self.on_connect],
+            "332": [self.channel_topic],
+            "352": [self.joined_channel],
+            "005": [self.onServerSettings],
+            "306": [self.went_away],
+            "305": [self.came_back],
+            "301": [self.user_awaymsg],
+            "324": [self.joined_channel_modes],
+        })
         for i in self.rawmap:
             self.register(str(i), self.list_builder)
             self.register(str(i+1), self.list_end)
@@ -763,7 +435,7 @@ class StatefulBot(SelectiveBot):
         else:
             return nick.lower()
 
-    lower = nickkey # for convenience
+    lower = nickkey  # for convenience
 
     def isIn(self, nick, ls):
         return self.lower(nick) in [self.lower(i) for i in ls]

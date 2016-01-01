@@ -12,7 +12,7 @@ Options:
     -i PASSWORD, --identify=PASSWORD   Identify with the given password
     -s --stdin                         Take password from STDIN
     -r --restart                       Restart on disconnect
-    -c NUM, --connections=NUM          Number of output connections [default: 1]
+    -c NUM, --conns=NUM          Number of output connections [default: 1]
 """
 
 import os
@@ -22,7 +22,8 @@ from collections import deque
 
 import docopt
 
-from bot.threads import StatefulBot, Printer, Bot
+from bot.workers.ircsenders import IRCSender as Printer
+from bot.threads import StatefulBot, Bot
 from util.irc import Callback, Message
 import util.text
 import util.scheduler
@@ -43,8 +44,8 @@ def main():
     args = docopt.docopt(__doc__ % {"name": sys.argv[0]}, version=__version__)
     exclude = args["--exclude"].split(",") if args["--exclude"] else []
     config_file = args["<config>"]
-    num_connections = int(args["--connections"])
-    
+    num_connections = int(args["--conns"])
+
     if args["--stdin"]:
         args["--identify"] = input("Password: ")
         sys.argv.extend(["--identify", args["--identify"]])
@@ -56,7 +57,7 @@ def main():
 
     server = StatefulBot(config_file, debug=debug)
 
-    if int(args["--connections"]) > 1:
+    if int(args["--conns"]) > 1:
         def cleanup(output):
             """ Signal main thread to terminate """
             output.connected = False
