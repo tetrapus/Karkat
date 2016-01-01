@@ -1,3 +1,9 @@
+"""
+Log IRC events.
+
+Includes features for interacting with the log.
+"""
+
 import time
 from datetime import datetime
 import re
@@ -10,7 +16,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, DateTime, Text, Index
 from sqlalchemy.sql import func
 
-from bot.events import Callback, command, msghandler
+from bot.events import Callback, command  # , msghandler
 from util.irc import IRCEvent
 from util.database import Database
 
@@ -22,11 +28,12 @@ __depends__ = ["util.database", "util.irc", "bot.events"]
 #       search
 
 # Data model
-has_context = ["PART", "NOTICE", "PRIVMSG", "JOIN"]
-has_sender = ['NICK', 'QUIT', 'PART', 'NOTICE', 'PRIVMSG', 'JOIN']
+HAS_CONTEXT = ["PART", "NOTICE", "PRIVMSG", "JOIN"]
+HAS_SENDER = ['NICK', 'QUIT', 'PART', 'NOTICE', 'PRIVMSG', 'JOIN']
 
 
 Base = declarative_base()
+
 
 class Event(Base):
     __tablename__ = 'events'
@@ -50,6 +57,7 @@ class Event(Base):
 
 Index("idx_event_trace", Event.type, Event.timestamp)
 
+
 class LastEventCache(Base):
     __tablename__ = 'last_event_cache'
     id = Column(Integer, primary_key=True)
@@ -60,7 +68,13 @@ class LastEventCache(Base):
     context = Column(Text)
     data = Column(Text, nullable=False)
 
-Index("idx_last_event_cache", LastEventCache.context, LastEventCache.nick, LastEventCache.newnick)
+Index(
+    "idx_last_event_cache",
+    LastEventCache.context,
+    LastEventCache.nick,
+    LastEventCache.newnick
+)
+
 
 class LastSpokeCache(Base):
     __tablename__ = 'last_spoke_cache'
@@ -103,7 +117,7 @@ def make_event(message, timestamp=None, key=str.lower):
             evt.sender_ident, evt.sender_hostmask = rest.split("@", 1)
 
         # Check if the message has a context
-        if evt.type in has_context:
+        if evt.type in HAS_CONTEXT:
             args = args.split(" ", 1)
             if len(args) > 1:
                 context, args = args
@@ -132,6 +146,7 @@ def plural(num, type):
         template += "s"
     return template % (num, type)
 
+
 def timefmt(timestamp):
     timediff = (datetime.utcnow() - timestamp).total_seconds()
 
@@ -144,7 +159,10 @@ def timefmt(timestamp):
     days, hours = divmod(hours, 24)
     if not days:
         if minutes > (5 + hours):
-            return "%s %s ago" % (plural(hours, 'hour'), plural(minutes, 'minute'))
+            return "%s %s ago" % (
+                plural(hours, 'hour'),
+                plural(minutes, 'minute')
+            )
         else:
             return "%s ago" % plural(hours, 'hour')
     if days < 10:
@@ -155,6 +173,7 @@ def timefmt(timestamp):
     else:
         return abstime(timestamp)
 
+
 def msgfmt(evt):
     nick = evt.sender.split("!", 1)[0]
     if evt.payload.startswith(":\x01ACTION ") and evt.payload.endswith("\x01"):
@@ -162,6 +181,7 @@ def msgfmt(evt):
     elif evt.payload.startswith(":\x01") and evt.payload.endswith("\x01"):
         return "\x0306• CTCP\x03 %s" % (evt.payload[2:-1])
     return "\x0315<\x03%s\x0315>\x03 %s" % (nick, evt.payload[1:])
+
 
 def noticefmt(evt):
     nick = evt.sender.split("!", 1)[0]
@@ -171,17 +191,20 @@ def noticefmt(evt):
         return "\x0313• NCTCP\x03 %s" % (evt.payload[2:-1])
     return "\x0313-\x03%s\x0313-\x03 %s" % (nick, evt.payload[1:])
 
+
 def nickfmt(evt):
     nick = evt.sender.split("!", 1)[0]
     return "\x0303•\x03 %s changed their nick to %s" % (nick, evt.payload[1:])
 
-def quitfmt(evt): 
+
+def quitfmt(evt):
     nick = evt.sender.split("!", 1)[0]
     if evt.payload:
         quitmsg = " (%s)" % evt.payload[1:]
     else:
         quitmsg = ""
     return "\x0307•\x03 %s disconnected%s" % (nick, quitmsg)
+
 
 def partfmt(evt):
     nick = evt.sender.split("!", 1)[0]
@@ -191,10 +214,11 @@ def partfmt(evt):
         partmsg = ""
     return "\x0307•\x03 %s left %s%s" % (nick, evt.context, partmsg)
 
+
 def joinfmt(evt):
     nick = evt.sender.split("!", 1)[0]
     return "\x0303•\x03 %s joined %s" % (nick, evt.context)
-            
+
 
 class Logger(Callback):
     formatters = {"NICK": nickfmt,
@@ -242,7 +266,7 @@ class Logger(Callback):
         else:
             cached_event['newnick'] = None
 
-        if event.type in has_sender:
+        if event.type in HAS_SENDER:
             query = session.query(LastEventCache).filter(
                 LastEventCache.nick == event.sender_nick,
                 LastEventCache.context == event.context
@@ -251,7 +275,6 @@ class Logger(Callback):
                 query.update(cached_event)
             else:
                 session.add(LastEventCache(**cached_event))
-
 
     def sql_migrate(self, logpath=None, lower=str.lower):
         """ Migrate existing logs to the new SQL database """
@@ -266,7 +289,12 @@ class Logger(Callback):
                         try:
                             line = line.rstrip("\n").rstrip("\r")
                             timestamp, text = line.split(" ", 1)
-                            event = make_event(text, timestamp=datetime.utcfromtimestamp(float(timestamp)))
+                            event = make_event(
+                                text,
+                                timestamp=datetime.utcfromtimestamp(
+                                    float(timestamp)
+                                )
+                            )
                             session.add(event)
                             self.cache_event(session, event)
                         except:
@@ -284,7 +312,7 @@ class Logger(Callback):
 
     def traceuser(self, hostmask, timestamp):
         # Load the logs into memory to compute graph
-        # FIXME
+        # FIXME: Paginate log loading
         start_nick, x = hostmask.split("!", 1)
         start_ident, start_mask = x.split("@", 1)
         userinf = {(start_nick, start_ident, start_mask)}
@@ -300,9 +328,10 @@ class Logger(Callback):
                 ident, mask = x.split("@", 1)
                 if log.type == "NICK" and (nick, ident, mask) in userinf:
                     userinf.add((log.payload[1:], ident, mask))
-                elif log.type == "JOIN" and any(log.sender_nick == self.lower(n)
-                                             or (ident, mask) == (i, m)
-                                             for n, i, m in userinf):
+                elif log.type == "JOIN" and any(
+                        log.sender_nick == self.lower(n) or
+                        (ident, mask) == (i, m) for n, i, m in userinf
+                ):
                     userinf.add((nick, ident, mask))
         return userinf
 
@@ -319,7 +348,7 @@ class Logger(Callback):
             ).first()[0] or 0
             events = session.query(Event).filter(
                 Event.timestamp > last_entry,
-                Event.type.in_(has_sender)
+                Event.type.in_(HAS_SENDER)
             ).all()
             for event in events:
                 self.cache_event(session, event)
@@ -329,7 +358,7 @@ class Logger(Callback):
         if len(self.db.cache) > 32:
             self.db.flush()
             self.cache_update()
-    
+
     @command("seen lastseen", r"(\S+)")
     def seen(self, server, msg, user):
         if server.eq(user, msg.address.nick):
@@ -357,7 +386,11 @@ class Logger(Callback):
             if last is None:
                 return "04⎟ I haven't seen %s yet." % user
 
-            event = make_event(last.data, timestamp=last.timestamp, key=server.lower)
+            event = make_event(
+                last.data,
+                timestamp=last.timestamp,
+                key=server.lower
+            )
 
             message = self.formatters[event.type](event)
             timestamp = last.timestamp
@@ -392,10 +425,10 @@ class Logger(Callback):
                 LastSpokeCache.context == context,
                 LastSpokeCache.nick == nick
             ).first()
-            
+
             if last is None:
                 return "04⎟ I haven't seen %s speak yet." % user
-                
+
             event = make_event(last.data, timestamp=last.timestamp)
 
             return "%s · \x1d%s" % (msgfmt(event), timefmt(last.timestamp))
@@ -412,31 +445,47 @@ class Logger(Callback):
 
 #    @msghandler
     def substitute(self, server, msg):
+        raise NotImplementedError
         if not server.isIn(msg.context, self.sedchans):
             return
         match = re.match(r"^(\S+:\s+)?s(\W)(.*?)\2(.*?)(\2g?)?$", msg.text)
         if match:
             target, sep, pattern, sub, flags = match.groups()
-            if target is not None: target = target.rstrip(": ")
-            if flags is not None: flags = set(flags[1:])
+            if target is not None:
+                target = target.rstrip(": ")
+            if flags is not None:
+                flags = set(flags[1:])
             pattern = re.escape(pattern)
             for timestamp, line in reversed(self.logs):
                 # TODO: implement real regular expressions
                 # also self-regex
                 try:
                     evt = IRCEvent(line)
-                    if (evt.type == "PRIVMSG" 
-                        and server.eq(msg.context, evt.args[0])
-                        and (target is None or server.eq(target, evt.sender.nick))
-                        and not re.match(r"^(\S+:\s+)?s(\W)(.*?)\2(.*?)(\2g?)?$", evt.args[1])
-                        and re.search(pattern, evt.args[1], flags=re.IGNORECASE)):
-                        evt.args[1] = re.sub(pattern, "\x1f%s\x1f" % sub, evt.args[1], count=0 if 'g' in flags else 1, flags=re.IGNORECASE)
+                    if (
+                        evt.type == "PRIVMSG" and
+                        server.eq(msg.context, evt.args[0]) and
+                        (
+                            target is None or
+                            server.eq(target, evt.sender.nick)
+                        ) and
+                        not re.match(
+                            r"^(\S+:\s+)?s(\W)(.*?)\2(.*?)(\2g?)?$",
+                            evt.args[1]
+                        ) and
+                        re.search(pattern, evt.args[1], flags=re.IGNORECASE)
+                    ):
+                        evt.args[1] = re.sub(
+                            pattern,
+                            "\x1f%s\x1f" % sub,
+                            evt.args[1],
+                            count=0 if 'g' in flags else 1, flags=re.IGNORECASE
+                        )
                         return msgfmt(evt)
                 except:
                     print("[Logger] Warning: Could not parse %s" % line)
             return "04⎟ No matches found."
 
-    def __destroy__(self, server):
+    def __destroy__(self, *_):
         self.db.flush()
 
 __initialise__ = Logger

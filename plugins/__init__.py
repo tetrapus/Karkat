@@ -13,7 +13,7 @@ __modules__ = [
     "unicode",
     "bigtext",
     "spellchecker",
-    "tell", 
+    "tell",
     "ai",
     "queue",
     "inspire",
