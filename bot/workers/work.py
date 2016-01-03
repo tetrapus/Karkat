@@ -62,14 +62,8 @@ class Work(object):
         Tells the queue a task is done and deques a new one.
         """
         with self._lock:
-            try:
-                self._queue.task_done()
-            except ValueError:
-                # This means first iteration. We don't really care.
-                pass
             value = self._queue.get()
             if value == Work.TERM:
-                self._queue.task_done()
                 raise StopIteration
             else:
                 self.last = value
