@@ -178,7 +178,6 @@ class Flexicutor(AsyncExecutor):
             last_job = self.work.last
             self.__mutex__ = getattr(last_job, '__mutex__', {last_job})
             for job in old_jobs:
-                # FIXME: EventHandler __mutex__ support
                 if job[0] in self.__mutex__:
                     # We aren't assuming thread safety, so we must requeue
                     # the functions in the mutex set.
@@ -186,17 +185,19 @@ class Flexicutor(AsyncExecutor):
                 else:
                     self.next_thread.put(job)
             self.next_thread.start()
-            # Once the blockage is clear, we can revive this worker.
-            self.work.put((self.revive, (), {}))
+            # We quarantine jobs from this mutexset to this thread.
+            # self.work.put((self.revive, (), {}))
 
     def revive(self):
         """ Kill the child and start accepting jobs. """
+        # FIXME: not threadsafe!!!
         with self.dump_lock:
             if self.next_thread is not None:
                 # Kill off the thread
                 self.next_thread.terminate()
                 self.next_thread = None
             self.__mutex__ = set()
+
 
     def process(self, job):
         """ Call a function in this worker thread. """
