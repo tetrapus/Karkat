@@ -136,7 +136,7 @@ class Flexicutor(AsyncExecutor):
     DUMP_THRESHHOLD = 45
 
     def __init__(self):
-        super().__init__(self)
+        super().__init__()
         self.last = None
         self.dump_lock = Lock()
         self.__mutex__ = set()
@@ -229,7 +229,6 @@ class FlexicutorPool(Executor):
     # any queue-to-execution latency properties.
 
     def __init__(self, workers=2):
-        super().__init__(self)
         self.executors = [Flexicutor() for _ in range(workers)]
         # NOTE: This is not threadsafe for multiple callers, but as it is just
         # a heuristic, we don't really care.
