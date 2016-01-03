@@ -79,7 +79,7 @@ class IRCSender(Worker):
     TYPE_ONLY = 4
 
     def __init__(self, connection):
-        super().__init__(self)
+        super().__init__()
         self.bot = connection
         self.verbosity = self.TYPE_ONLY | self.QUEUE_STATE
         self.servername = connection.server[0]

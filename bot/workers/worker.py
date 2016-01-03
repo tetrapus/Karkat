@@ -20,7 +20,7 @@ class Worker(threading.Thread):
     __metaclass__ = ABCMeta
 
     def __init__(self, work=None):
-        super().__init__(self)
+        super().__init__()
         self.work = work or Work()
         self.flush = False
 
