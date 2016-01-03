@@ -58,7 +58,7 @@ class PrinterBuffer(object):
         if (
                 len(self.__class__.adpool) and
                 (time.time() - self.__class__.lastad >
-                 151200/len(self.__class__.adpool)) and
+                 151200 / len(self.__class__.adpool)) and
                 random.random() > 0.8
         ):
             advert = self.__class__.adpool.pop()
@@ -96,7 +96,11 @@ class IRCSender(Worker):
         """
         self.bot.sendline(message)
 
-    def pack(self, msg, recipient, method):
+    @staticmethod
+    def pack(msg, recipient, method):
+        """
+        Return the IRC command for a targetted message.
+        """
         return "%s %s :%s" % (method, recipient, msg)
 
     def can_send(self, msg, recipient, method):

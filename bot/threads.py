@@ -3,7 +3,6 @@
 import os
 import sys
 import threading
-import time
 import re
 import collections
 import socket
@@ -20,9 +19,13 @@ import util
 from util.irc import Address, Callback, MAX_MESSAGE_SIZE
 from util.text import TimerBuffer, Buffer
 
-# TODO: Get rid of these aliases
-from .workers.executor import AsyncExecutor as Caller
-from .workers.executor import InlineExecutor as InlineQueue
+from .workers.executor import (
+    AsyncExecutor,
+    FlexicutorPool,
+    Flexicutor,
+    ExecutorMap,
+    InlineExecutor,
+)
 from .workers.ircsender import MultiPrinter
 
 
@@ -154,9 +157,11 @@ class Connection(threading.Thread, object):
             self.encoding = encoding       # output encoding
             self.buff.encoding = encoding  # input encoding
 
-#EventHandler = Callable[[IRCClient, str], None]
+# EventHandler = Callable[[IRCClient, str], None]
+
 
 class EventHandler(object):
+    # FIXME: Replace cbtype with __mutex__
     GENERAL = 0
     INLINE = 1
     THREADSAFE = 2
@@ -189,12 +194,19 @@ class EventHandler(object):
         self.funct = function
         if Callback.isInline(function):
             self.cbtype = self.INLINE
+            self.__mutex__ = {function}
         elif Callback.isThreadsafe(function):
             self.cbtype = self.THREADSAFE
+            self.__mutex__ = set()
         elif Callback.isBackground(function):
             self.cbtype = self.BACKGROUND
+            self.__mutex__ = {function}
         else:
             self.cbtype = self.GENERAL
+            if hasattr(function, '__mutex__'):
+                self.__mutex__ = function.__mutex__
+            else:
+                self.__mutex__ = {function}
 
     def __call__(self, *args):
         return self.funct(*args)
@@ -204,6 +216,12 @@ class Bot(Connection):
 
     def __init__(self, conf, **kwargs):
         super().__init__(conf, **kwargs)
+        self.executor = ExecutorMap({
+            EventHandler.BACKGROUND: AsyncExecutor(),
+            EventHandler.GENERAL: Flexicutor(),
+            EventHandler.THREADSAFE: FlexicutorPool(),
+            EventHandler.INLINE: InlineExecutor(),
+        }, key=lambda x: x.cbtype)
         self.config_dir = Path(self.get_config_dir())
         self.callbacks = {"ALL": [], "DIE": []}
         self.register("ping", self.pong)
@@ -220,53 +238,18 @@ class Bot(Connection):
     def pong(self, server, line):
         self.sendline("PONG " + line.split(" ", 1)[1])
 
-    def makeCallers(self, callers=2):
-        # TODO: Init in __init__?
-        # Make `callers` general purpose callers.
-        self.callers = [Caller() for _ in range(callers + 2)]
-        self.caller = {
-            EventHandler.BACKGROUND: self.callers[0],
-            EventHandler.GENERAL: self.callers[1],
-            EventHandler.INLINE: InlineQueue,
-        }
-        for c in self.callers:
-            c.start()
-
-    def rebalance(self):
-        # TODO: Refactor/abstract into ExecutorPool
-        longest = max(self.callers[2:], key=lambda x: x.work.qsize())
-        if all(_.last for _ in self.callers[2:]) and longest.work.qsize() > 50:
-            print("All queues backed up: expanding.")
-            self.callers.append(Caller())
-            self.callers[-1].start()
-            self.callers.remove(longest)
-            longest.terminate()
-        for c in self.callers[2:]:
-            ltime = c.last
-            if ltime and time.time() - ltime > 8:
-                print(
-                    "Caller is taking too long executing %s%s: forking." %
-                    (c.lastf[0].name, c.lastf[1])
-                )
-                self.callers.remove(c)
-                self.callers.append(Caller(c.dump()))
-                self.callers[-1].start()
-                print("Caller added.")
-
     def cleanup(self):
         super().cleanup()
         for funct in self.callbacks["DIE"]:
             funct(self)
         print("Cleaned up.")
 
-        for c in self.callers:
-            c.terminate()
-        for c in self.callers:
-            c.join()
+        self.executor.terminate()
+        self.executor.join()
         print("Threads terminated.")
 
     def run(self):
-        self.makeCallers()
+        self.executor.start()
         super().run()
 
     def register_all(self, callbacks):
@@ -308,13 +291,7 @@ class Bot(Connection):
 
     def execute(self, handler, line):
         """ Executes a callback. """
-        # TODO: replace queues with something more generic.
-        if handler.isThreadsafe:
-            handlerq = min(self.callers, key=lambda x: x.work.qsize())
-        else:
-            handlerq = self.caller[handler.cbtype]
-
-        handlerq.call(handler, self, line)
+        self.executor.call(handler, self, line)
 
     def dispatch(self, line):
         """
@@ -322,9 +299,7 @@ class Bot(Connection):
         """
         line = line.rstrip()
         words = line.split()
-        msgType = words[words[0] not in ["PING", "ERROR"]]
-
-        self.rebalance()
+        msgType = words[words[0] not in ["PING", "ERROR"]].lower()
 
         for funct in self.callbacks["ALL"] + self.callbacks.get(msgType.lower(), []):
             self.execute(funct, line)

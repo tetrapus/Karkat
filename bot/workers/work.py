@@ -5,7 +5,7 @@ import queue
 import threading
 
 
-class Work(queue.Queue):
+class Work(object):
     """
     This object is an iterable work queue.
     """
@@ -19,7 +19,11 @@ class Work(queue.Queue):
 
         self._lock = threading.Lock()
         self.last = None
-        queue.Queue.__init__(self)
+        self._queue = queue.Queue()
+
+    def empty(self):
+        """ Returns true if probably empty. """
+        return self._queue.empty()
 
     def flush(self):
         """ Locks the queue and flushes all items from it. """
@@ -27,19 +31,21 @@ class Work(queue.Queue):
 
         with self._lock:
             while not self.empty():
-                jobs.append(super().get())
+                jobs.append(self._queue.get())
 
         return jobs
 
     def get(self, *args, **kwargs):
         """ See queue.Queue.get """
         with self._lock:
-            super().get(*args, **kwargs)
+            value = self._queue.get(*args, **kwargs)
+            self.last = value
+            return value
 
     def put(self, *args, **kwargs):
         """ See queue.Queue.put """
         with self._lock:
-            super().put(*args, **kwargs)
+            self._queue.put(*args, **kwargs)
 
     def terminate(self):
         """ Queues the TERM sentinel, which breaks out of the iterator. """
@@ -57,14 +63,17 @@ class Work(queue.Queue):
         """
         with self._lock:
             try:
-                self.task_done()
+                self._queue.task_done()
             except ValueError:
                 # This means first iteration. We don't really care.
                 pass
-            value = super().get()
+            value = self._queue.get()
             if value == Work.TERM:
-                self.task_done()
+                self._queue.task_done()
                 raise StopIteration
             else:
                 self.last = value
                 return value
+
+    def __len__(self):
+        return self._queue.qsize()

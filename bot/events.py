@@ -65,11 +65,15 @@ class Callback(object):
         # Figure out all the hooks
         hooks = {}
 
+        __mutex__ = set()
+
         for attr in dir(self):
             try:
                 val = getattr(self, attr)
                 annotations = getattr(val, "__annotations__")
                 if "return" in annotations:
+                    __mutex__.add(val)
+                    val.__mutex__ = val
                     if type(annotations["return"]) == str:
                         hooks.setdefault(annotations["return"], []).append(val)
                     else:
