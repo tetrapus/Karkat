@@ -26,7 +26,7 @@ from .workers.executors import (
     ExecutorMap,
     InlineExecutor,
 )
-from .workers.ircsender import MultiPrinter
+from .workers.ircsenders import MultiPrinter
 
 
 class Connection(threading.Thread, object):
