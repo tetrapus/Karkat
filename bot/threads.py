@@ -19,7 +19,7 @@ import util
 from util.irc import Address, Callback, MAX_MESSAGE_SIZE
 from util.text import TimerBuffer, Buffer
 
-from .workers.executor import (
+from .workers.executors import (
     AsyncExecutor,
     FlexicutorPool,
     Flexicutor,
