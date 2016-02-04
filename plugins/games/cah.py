@@ -22,11 +22,11 @@ def defaultdeck(black, white):
     questions = [i.strip() for i in open(datadir + "/black.txt").read().split("\n")] + black
     answers = [i.strip() for i in open(datadir + "/white.txt").read().split("\n")] + white
     # Get questions from reddit
-    reddit = requests.get("http://www.reddit.com/r/AskReddit/hot.json", headers={"User-Agent": "Karkat-CardsAgainstHumanity-Scraper"}).json()
-    reddit = reddit["data"]["children"]
-    titles = [i["data"]["title"] for i in reddit if i["data"]["title"].endswith("?")]
+    #reddit = requests.get("http://www.reddit.com/r/AskReddit/hot.json", headers={"User-Agent": "Karkat-CardsAgainstHumanity-Scraper"}).json()
+    #reddit = reddit["data"]["children"]
+    #titles = [i["data"]["title"] for i in reddit if i["data"]["title"].endswith("?")]
     # 5% of cards max should be reddit cards
-    questions.extend(titles)
+    #questions.extend(titles)
 
     # Get trends from Know Your Meme
     #memes = requests.get("http://knowyourmeme.com/").text
@@ -263,7 +263,7 @@ class CardsAgainstHumanity(object):
         
         self.printplayers()
         time.sleep(0.5)
-        self.printer.message(CAHPREFIX + "%s will be the Card Czar for Round %d%s." % (self.czar.nick, self.round, "of %d" % self.rounds if self.rounds else ""), self.channel)
+        self.printer.message(CAHPREFIX + "%s will be the Card Czar for Round %d%s." % (self.czar.nick, self.round, " of %d" % self.rounds if self.rounds else ""), self.channel)
         self.question = self.questions.pop()
         self.question = re.sub(r"\$([A-Z]+)", lambda x: self.var(x.group(1)), self.question)
 
