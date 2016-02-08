@@ -1,4 +1,4 @@
-#! /usr/bin/env python3.3
+#! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Usage: %(name)s [options] <config>
@@ -40,6 +40,10 @@ def main():
     Karkat's mainloop simply spawns a server and registers all plugins.
     You can replace this.
     """
+    # Check if we are running on a compatible python interpreter
+    if (sys.version_info.minor < 3):
+        return print("Error: your version of python is unsupported; please upgrade to python>=3.3")
+
     # Parse command line args
     args = docopt.docopt(__doc__ % {"name": sys.argv[0]}, version=__version__)
     exclude = args["--exclude"].split(",") if args["--exclude"] else []
