@@ -32,7 +32,7 @@ class Karma(Callback):
         self.db.create_all(Base.metadata)
         self.settingspath = server.get_config_dir("karma-settings.json")
         self.settings = files.Config(self.settingspath)
-        self.RE_NICK = r"[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]{2,%d}" % (
+        self.RE_NICK = r"[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]{1,%d}" % (
             int(server.server_settings.get("NICKLEN", 9))-1
         )
         self.RE_PLUS = r"^(?:\+\+({0})|({0})\+\+|\+1\s+({0}))".format(
