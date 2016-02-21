@@ -135,7 +135,9 @@ class Karma(Callback):
             hater = self.get_biggest_hater(session, key)
             karma_shame, biggest_fan, biggest_hater = "", "", ""
             if self_karma:
-                karma_shame = " · %d self-karma attempts" % (self_karma)
+                karma_shame = " · %d self-karma attempt%s" % (
+                    self_karma, 's' if self_karma != 1 else ''
+                )
             if fan is not None and fan[1] > 0:
                 biggest_fan = " · Biggest fan: %s (%d)" % (fan[0].giver, fan[1])
             if hater is not None and fan[1] < 0:
