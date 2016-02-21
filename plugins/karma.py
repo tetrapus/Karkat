@@ -85,8 +85,8 @@ class Karma(Callback):
         giver = msg.address.nick
         context = server.lower(msg.context)
         text = msg.text.rstrip(";")
-        plus_matches = re.match(self.RE_PLUS, text)
-        minus_matches = re.match(self.RE_MINUS, text)
+        plus_matches = re.match(self.RE_PLUS, text, flags=re.IGNORECASE)
+        minus_matches = re.match(self.RE_MINUS, text, flags=re.IGNORECASE)
         if plus_matches:
             user = [i for i in plus_matches.groups() if i is not None][0]
             inc = 1
@@ -140,7 +140,7 @@ class Karma(Callback):
                 )
             if fan is not None and fan[1] > 0:
                 biggest_fan = " · Biggest fan: %s (%d)" % (fan[0].giver, fan[1])
-            if hater is not None and fan[1] < 0:
+            if hater is not None and hater[1] < 0:
                 biggest_hater = " · Worst critic: %s (%d)" % (
                     hater[0].giver, hater[1]
                 )
