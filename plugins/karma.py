@@ -32,7 +32,15 @@ class Karma(Callback):
         self.db.create_all(Base.metadata)
         self.settingspath = server.get_config_dir("karma-settings.json")
         self.settings = files.Config(self.settingspath)
-        self.nickre = re.compile(r"[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]{2,%d}" % (int(server.server_settings.get("NICKLEN", 9))-1))
+        self.RE_NICK = r"[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]{2,%d}" % (
+            int(server.server_settings.get("NICKLEN", 9))-1
+        )
+        self.RE_PLUS = r"^(?:\+\+({0})|({0})\+\+|\+1\s+({0}))".format(
+            self.RE_NICK
+        )
+        self.RE_MINUS = r"^(?:\-\-({0})|({0})\-\-|\-1\s+({0}))".format(
+            self.RE_NICK
+        )
         super().__init__(server)
 
     def get_karma(self, session, user):
@@ -77,12 +85,14 @@ class Karma(Callback):
         giver = msg.address.nick
         context = server.lower(msg.context)
         text = msg.text.rstrip(";")
-        plus_matches = re.match(r"^(?:\+\+(\w+)|(\w+)\+\+|\+1\s+(\w+))", text)
-        minus_matches = re.match(r"^(?:\-\-(\w+)|(\w+)\-\-|\-1\s+(\w+))", text)
+        plus_matches = re.match(self.RE_PLUS, text)
+        minus_matches = re.match(self.RE_MINUS, text)
         if plus_matches:
-            user, inc = [i for i in plus_matches.groups() if i is not None][0], 1
+            user = [i for i in plus_matches.groups() if i is not None][0]
+            inc = 1
         elif minus_matches:
-            user, inc = [i for i in minus_matches.groups() if i is not None][0], -1
+            user = [i for i in minus_matches.groups() if i is not None][0]
+            inc = -1
         else:
             return
 
@@ -125,12 +135,16 @@ class Karma(Callback):
             hater = self.get_biggest_hater(session, key)
             karma_shame, biggest_fan, biggest_hater = "", "", ""
             if self_karma:
-                karma_shame = " %s has tried to give themself karma %d time%s." % (user, self_karma, "s" if self_karma != 1 else "")
+                karma_shame = " · %d self-karma attempts" % (self_karma)
             if fan is not None and fan[1] > 0:
-                biggest_fan = " Biggest fan: %s (%d)." % (fan[0].giver, fan[1])
+                biggest_fan = " · Biggest fan: %s (%d)" % (fan[0].giver, fan[1])
             if hater is not None and fan[1] < 0:
-                biggest_hater = " Worst critic: %s (%d)." % (hater[0].giver, hater[1])
-        return "07⎟ %s has %s karma.%s%s%s" % (user, karma, karma_shame, biggest_fan, biggest_hater)
+                biggest_hater = " · Worst critic: %s (%d)" % (
+                    hater[0].giver, hater[1]
+                )
+        return "\x0307⎟\x03 %s \x0307⎟\x03 %s karma%s%s%s" % (
+            user, karma, karma_shame, biggest_fan, biggest_hater
+        )
 
 
 __initialise__ = Karma
