@@ -108,7 +108,7 @@ def bigtext(server, message, flags, lines, text):
         lines = 3
     if not flags: flags = ""
     if "!" not in flags:
-        text = re.sub(r"\$[a-z]+", subs, text, flags=re.IGNORECASE)
+        text = re.sub(r"(\$|\\)[a-z]+", subs, text, flags=re.IGNORECASE)
     if len(text * lines) > 90:
         text = text[:int(90/lines)] + "..."
     if "c" in flags:
